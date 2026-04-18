@@ -1,0 +1,58 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  default: none
+  enable:
+    - dupl
+    - errcheck
+    - goconst
+    - gocyclo
+    - gosec
+    - govet
+    - ineffassign
+    - revive
+    - staticcheck
+    - unparam
+    - unused
+
+  settings:
+    dupl:
+      threshold: 150
+    gocyclo:
+      min-complexity: 10
+    revive:
+      rules:
+        - name: exported
+        - name: error-return
+        - name: error-naming
+        - name: var-naming
+        - name: package-comments
+
+  exclusions:
+    paths:
+      - pkg/testutil/
+    rules:
+      - path: _test\.go$
+        linters:
+          - dupl
+          - goconst
+          - gocyclo
+          - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/llmstatus/llmstatus
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
