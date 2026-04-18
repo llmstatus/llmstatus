@@ -60,6 +60,23 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-005)
+- `store/migrations/0002_schema.sql` — `providers`, `models`, and
+  `incidents` tables in PostgreSQL 17 with CHECK constraints, FK
+  references, and targeted indexes
+- `store/migrations/0002_schema.down.sql` — teardown for the above
+- `internal/store/postgres/queries.sql` — typed SQL queries (sqlc input)
+  covering full CRUD for all three tables plus incident deduplication
+- `sqlc.yaml` — sqlc v2 config (engine: postgresql, driver: pgx/v5);
+  UUID fields map to `github.com/google/uuid.UUID`, JSONB to
+  `encoding/json.RawMessage`
+- `internal/store/postgres/gen/` — sqlc-generated Go package `pgstore`
+  with typed structs, `Querier` interface, and query implementations
+- `.golangci.yml` path exclusion for `internal/store/postgres/gen/`
+  (generated code is not linted)
+- Dependencies: `github.com/jackc/pgx/v5 v5.9.1`,
+  `github.com/google/uuid v1.6.0`
+
 ### Added (auto-merge helpers)
 - `scripts/merge-pr.sh` — approve + merge a PR end-to-end without
   manual intervention

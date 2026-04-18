@@ -36,6 +36,7 @@ linters:
   exclusions:
     paths:
       - pkg/testutil/
+      - internal/store/postgres/gen/
     rules:
       - path: _test\.go$
         linters:

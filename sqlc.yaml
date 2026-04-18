@@ -1,0 +1,22 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "store/migrations"
+    queries: "internal/store/postgres/queries.sql"
+    gen:
+      go:
+        package: "pgstore"
+        out: "internal/store/postgres/gen"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
+        emit_empty_slices: true
+        overrides:
+          - db_type: "uuid"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
+          - db_type: "jsonb"
+            go_type:
+              import: "encoding/json"
+              type: "RawMessage"
