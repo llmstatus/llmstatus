@@ -60,6 +60,18 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-008)
+- `internal/probes/adapters/anthropic.go` — second real adapter implementing
+  `ProbeLightInference` for `api.anthropic.com/v1/messages`; handles HTTP 529
+  (Anthropic-specific "overloaded" status) as `server_5xx`; uses `x-api-key`
+  and `anthropic-version: 2023-06-01` headers; registered via `init()`
+- 5 fixtures in `internal/probes/adapters/anthropic/testdata/` covering
+  success, 401, 429, 500, and 529; 7 test functions including timeout and
+  context-cancel cases
+- `docs/known-quirks.md` — Anthropic section expanded: `x-api-key` auth,
+  required `anthropic-version` header, 529 overloaded status, and
+  `input_tokens`/`output_tokens` naming convention
+
 ### Added (LLMS-003)
 - `internal/probes/runner.go` — `Runner` schedules `ProbeLightInference` for
   every active (provider, model) pair at a configurable interval; bounded
