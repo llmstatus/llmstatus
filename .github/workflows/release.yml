@@ -41,7 +41,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push images
-        uses: docker/bake-action@v6
+        uses: docker/bake-action@v7
         with:
           push: true
           files: docker-bake.hcl
