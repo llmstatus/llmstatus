@@ -60,6 +60,25 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-009)
+- `internal/detector/` — event-detection subsystem with three layers:
+  - `reader.go` — `ProbeReader` interface + `InfluxReader` that queries
+    InfluxDB 3 via `POST /api/v3/query_sql`; no gRPC dependency
+  - `rules.go` — `EvaluateRules` applies Rule 6.1 (≥50% error rate in 5m →
+    `provider_down`, critical) and Rule 6.2 (>5% in 10m → `elevated_errors`,
+    major); Rule 6.1 suppresses Rule 6.2 for the same provider;
+    minimum 3 probes required before any rule fires
+  - `runner.go` — `Runner` fetches stats, evaluates rules, deduplicates via
+    `GetOngoingByProviderAndRule`, creates incidents, and auto-resolves
+    stale auto-detected incidents; manual incidents are never auto-resolved
+- `cmd/detector/main.go` — production binary with graceful shutdown via
+  `signal.NotifyContext`; config via `DATABASE_URL`, `INFLUX_HOST`,
+  `INFLUX_TOKEN`, `INFLUX_DATABASE`, `DETECTOR_INTERVAL` (default 60s)
+- Incident slug format: `YYYY-MM-DD-{provider_id}-{rule-with-dashes}`
+  (e.g. `2026-04-18-openai-provider-down`)
+- 17 unit tests: 8 rule-evaluation cases, 3 InfluxReader cases (httptest),
+  6 runner cases with `fakeReader` + `fakeIncidentStore`
+
 ### Added (LLMS-010)
 - `internal/api/` — public read API using Go 1.22+ `net/http.ServeMux`
   with method+path patterns (no external router dependency)
