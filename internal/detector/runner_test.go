@@ -15,9 +15,11 @@ import (
 // ---- fake ProbeReader -------------------------------------------------------
 
 type fakeReader struct {
-	stats5m  []ProbeStats
-	stats10m []ProbeStats
-	err      error
+	stats5m   []ProbeStats
+	stats10m  []ProbeStats
+	latency   []LatencyStats
+	regional  []RegionalStats
+	err       error
 }
 
 func (f *fakeReader) ErrorRateByProvider(_ context.Context, window time.Duration) ([]ProbeStats, error) {
@@ -28,6 +30,14 @@ func (f *fakeReader) ErrorRateByProvider(_ context.Context, window time.Duration
 		return f.stats5m, nil
 	}
 	return f.stats10m, nil
+}
+
+func (f *fakeReader) LatencyByProvider(_ context.Context, _ time.Duration) ([]LatencyStats, error) {
+	return f.latency, f.err
+}
+
+func (f *fakeReader) RegionalErrorRateByProvider(_ context.Context, _ time.Duration) ([]RegionalStats, error) {
+	return f.regional, f.err
 }
 
 // ---- fake IncidentStore -----------------------------------------------------

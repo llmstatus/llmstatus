@@ -43,6 +43,15 @@ public APIs must add an entry under `## [Unreleased]`.
 - `gocyclo` CI step now ignores `_test.go` files; table-driven tests
   legitimately exceed the 10-complexity threshold
 
+### Added (LLMS-019)
+- Detection rule 6.3 — **latency degradation** (`latency_degradation`, severity `minor`): fires when p95 `duration_ms` over the last 5 min exceeds 3× the p95 over the past 24 h
+- Detection rule 6.4 — **regional outage** (`regional_outage`, severity `minor`): fires when one `region_id` has >50% error rate over 5 min while the provider is not globally down
+- `LatencyStats` and `RegionalStats` types added to the detector package
+- `ProbeReader` interface extended: `LatencyByProvider`, `RegionalErrorRateByProvider`
+- InfluxDB 3 queries for both new methods use `approx_percentile_cont` and `region_id` grouping
+- `Runner.runOnce` now evaluates all four rules; latency/regional fetch failures are non-fatal (logged as `WARN`)
+- **Known limitation**: rule 6.3 baseline is the last 24 h (V1 simplification); METHODOLOGY.md specifies same-hour 7-day median (tracked in REVIEW_QUEUE.md)
+
 ### Added (LLMS-017)
 - `GET /feed.xml` — global RSS 2.0 feed of all incidents (last 50, all providers)
 - `GET /v1/providers/{id}/feed.xml` — per-provider RSS 2.0 feed; returns HTTP 404 for unknown provider IDs

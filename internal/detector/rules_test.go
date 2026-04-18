@@ -1,7 +1,9 @@
 package detector
 
 import (
+	"context"
 	"testing"
+	"time"
 )
 
 func TestEvaluateRules_NoProbes(t *testing.T) {
@@ -105,6 +107,244 @@ func TestEvaluateRules_MultipleProviders(t *testing.T) {
 	if len(detections) != 2 {
 		t.Fatalf("expected 2 detections (openai down + deepseek elevated), got %d", len(detections))
 	}
+}
+
+// ---- Rule 6.3 tests -----------------------------------------------------------
+
+func TestEvaluateLatencyRule_Fires(t *testing.T) {
+	current := []LatencyStats{{ProviderID: "openai", P95Ms: 6000, SampleCount: 10}}
+	baseline := []LatencyStats{{ProviderID: "openai", P95Ms: 1000, SampleCount: 20}}
+	// 6000 > 3 × 1000 → should fire
+	detections := EvaluateLatencyRule(current, baseline)
+	if len(detections) != 1 {
+		t.Fatalf("expected 1 detection, got %d", len(detections))
+	}
+	d := detections[0]
+	if d.Rule != RuleLatencyDegradation {
+		t.Errorf("Rule: got %q, want %q", d.Rule, RuleLatencyDegradation)
+	}
+	if d.Severity != "minor" {
+		t.Errorf("Severity: got %q, want minor", d.Severity)
+	}
+	if d.P95Ms != 6000 || d.BaselineP95Ms != 1000 {
+		t.Errorf("P95Ms=%f BaselineP95Ms=%f", d.P95Ms, d.BaselineP95Ms)
+	}
+}
+
+func TestEvaluateLatencyRule_BelowThreshold(t *testing.T) {
+	// 2500 < 3 × 1000 → should NOT fire
+	current := []LatencyStats{{ProviderID: "openai", P95Ms: 2500, SampleCount: 10}}
+	baseline := []LatencyStats{{ProviderID: "openai", P95Ms: 1000, SampleCount: 20}}
+	got := EvaluateLatencyRule(current, baseline)
+	if len(got) != 0 {
+		t.Errorf("expected no detections at 2.5× baseline, got %d", len(got))
+	}
+}
+
+func TestEvaluateLatencyRule_TooFewCurrentSamples(t *testing.T) {
+	current := []LatencyStats{{ProviderID: "openai", P95Ms: 9999, SampleCount: 2}} // < 5
+	baseline := []LatencyStats{{ProviderID: "openai", P95Ms: 100, SampleCount: 20}}
+	got := EvaluateLatencyRule(current, baseline)
+	if len(got) != 0 {
+		t.Errorf("expected no detection with too few current samples, got %d", len(got))
+	}
+}
+
+func TestEvaluateLatencyRule_TooFewBaselineSamples(t *testing.T) {
+	current := []LatencyStats{{ProviderID: "openai", P95Ms: 9999, SampleCount: 10}}
+	baseline := []LatencyStats{{ProviderID: "openai", P95Ms: 100, SampleCount: 1}} // < 5
+	got := EvaluateLatencyRule(current, baseline)
+	if len(got) != 0 {
+		t.Errorf("expected no detection with too few baseline samples, got %d", len(got))
+	}
+}
+
+func TestEvaluateLatencyRule_NoBaseline(t *testing.T) {
+	current := []LatencyStats{{ProviderID: "openai", P95Ms: 9999, SampleCount: 10}}
+	got := EvaluateLatencyRule(current, nil)
+	if len(got) != 0 {
+		t.Errorf("expected no detection when no baseline exists, got %d", len(got))
+	}
+}
+
+func TestEvaluateLatencyRule_ZeroBaselineP95(t *testing.T) {
+	current := []LatencyStats{{ProviderID: "openai", P95Ms: 9999, SampleCount: 10}}
+	baseline := []LatencyStats{{ProviderID: "openai", P95Ms: 0, SampleCount: 10}}
+	got := EvaluateLatencyRule(current, baseline)
+	if len(got) != 0 {
+		t.Errorf("expected no detection with zero baseline p95, got %d", len(got))
+	}
+}
+
+// ---- Rule 6.4 tests -----------------------------------------------------------
+
+func TestEvaluateRegionalRule_Fires(t *testing.T) {
+	regional := []RegionalStats{
+		{ProviderID: "openai", Region: "us-east-1", Total: 10, Errors: 6}, // 60%
+		{ProviderID: "openai", Region: "eu-central", Total: 10, Errors: 0}, // 0% — healthy
+	}
+	// Global stats show openai is NOT down overall.
+	global := []ProbeStats{{ProviderID: "openai", Total: 20, Errors: 6}} // 30%
+	detections := EvaluateRegionalRule(regional, global)
+	if len(detections) != 1 {
+		t.Fatalf("expected 1 detection, got %d: %+v", len(detections), detections)
+	}
+	d := detections[0]
+	if d.Rule != RuleRegionalOutage {
+		t.Errorf("Rule: got %q, want %q", d.Rule, RuleRegionalOutage)
+	}
+	if d.Severity != "minor" {
+		t.Errorf("Severity: got %q, want minor", d.Severity)
+	}
+	if d.Region != "us-east-1" {
+		t.Errorf("Region: got %q, want us-east-1", d.Region)
+	}
+}
+
+func TestEvaluateRegionalRule_GloballyDown_Suppressed(t *testing.T) {
+	// Provider is already globally DOWN — regional rule must not fire.
+	regional := []RegionalStats{
+		{ProviderID: "openai", Region: "us-east-1", Total: 10, Errors: 9},
+	}
+	global := []ProbeStats{{ProviderID: "openai", Total: 10, Errors: 6}} // 60% → down
+	got := EvaluateRegionalRule(regional, global)
+	if len(got) != 0 {
+		t.Errorf("expected no detection when provider is globally down, got %d", len(got))
+	}
+}
+
+func TestEvaluateRegionalRule_BelowThreshold(t *testing.T) {
+	regional := []RegionalStats{
+		{ProviderID: "openai", Region: "us-east-1", Total: 10, Errors: 4}, // 40% < 50%
+	}
+	got := EvaluateRegionalRule(regional, nil)
+	if len(got) != 0 {
+		t.Errorf("expected no detection below threshold, got %d", len(got))
+	}
+}
+
+func TestEvaluateRegionalRule_TooFewProbes(t *testing.T) {
+	regional := []RegionalStats{
+		{ProviderID: "openai", Region: "us-east-1", Total: 2, Errors: 2}, // < 3
+	}
+	got := EvaluateRegionalRule(regional, nil)
+	if len(got) != 0 {
+		t.Errorf("expected no detection with too few regional probes, got %d", len(got))
+	}
+}
+
+func TestEvaluateRegionalRule_MultipleRegions(t *testing.T) {
+	regional := []RegionalStats{
+		{ProviderID: "openai", Region: "us-east-1", Total: 10, Errors: 6}, // 60% — fire
+		{ProviderID: "openai", Region: "ap-northeast-1", Total: 10, Errors: 9}, // 90% — fire
+		{ProviderID: "openai", Region: "eu-central", Total: 10, Errors: 0}, // healthy
+	}
+	global := []ProbeStats{{ProviderID: "openai", Total: 30, Errors: 15}} // 50% — exactly at threshold, NOT > threshold
+	detections := EvaluateRegionalRule(regional, global)
+	if len(detections) != 2 {
+		t.Fatalf("expected 2 regional detections, got %d", len(detections))
+	}
+}
+
+func TestRegionalStats_ErrorRate(t *testing.T) {
+	cases := []struct {
+		total, errors int64
+		want          float64
+	}{
+		{0, 0, 0},
+		{10, 5, 0.5},
+		{10, 0, 0},
+	}
+	for _, tc := range cases {
+		s := RegionalStats{Total: tc.total, Errors: tc.errors}
+		if got := s.ErrorRate(); got != tc.want {
+			t.Errorf("ErrorRate(%d/%d) = %f, want %f", tc.errors, tc.total, got, tc.want)
+		}
+	}
+}
+
+// ---- Rule 6.3 + 6.4 runner integration ----------------------------------------
+
+func TestRunner_LatencyDegradation_CreatesIncident(t *testing.T) {
+	store := &fakeIncidentStore{}
+	r := New(&latencyFakeReader{
+		current:  []LatencyStats{{ProviderID: "openai", P95Ms: 9000, SampleCount: 10}},
+		baseline: []LatencyStats{{ProviderID: "openai", P95Ms: 1000, SampleCount: 20}},
+	}, store, time.Hour)
+	r.runOnce(context.Background())
+
+	found := false
+	for _, inc := range store.created {
+		if inc.DetectionRule.String == RuleLatencyDegradation {
+			found = true
+			if inc.Severity != "minor" {
+				t.Errorf("Severity: got %q, want minor", inc.Severity)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected latency_degradation incident to be created")
+	}
+}
+
+func TestRunner_RegionalOutage_CreatesIncident(t *testing.T) {
+	store := &fakeIncidentStore{}
+	r := New(&regionalFakeReader{
+		regional: []RegionalStats{
+			{ProviderID: "anthropic", Region: "us-east-1", Total: 5, Errors: 4}, // 80%
+		},
+	}, store, time.Hour)
+	r.runOnce(context.Background())
+
+	found := false
+	for _, inc := range store.created {
+		if inc.DetectionRule.String == RuleRegionalOutage {
+			found = true
+			if inc.Severity != "minor" {
+				t.Errorf("Severity: got %q, want minor", inc.Severity)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected regional_outage incident to be created")
+	}
+}
+
+// ---- specialized test readers --------------------------------------------------
+
+// latencyFakeReader returns distinct data for current (5m) vs baseline (24h).
+type latencyFakeReader struct {
+	current  []LatencyStats
+	baseline []LatencyStats
+	callN    int
+}
+
+func (f *latencyFakeReader) ErrorRateByProvider(_ context.Context, _ time.Duration) ([]ProbeStats, error) {
+	return nil, nil
+}
+func (f *latencyFakeReader) LatencyByProvider(_ context.Context, window time.Duration) ([]LatencyStats, error) {
+	if window <= 5*time.Minute {
+		return f.current, nil
+	}
+	return f.baseline, nil
+}
+func (f *latencyFakeReader) RegionalErrorRateByProvider(_ context.Context, _ time.Duration) ([]RegionalStats, error) {
+	return nil, nil
+}
+
+// regionalFakeReader only populates regional stats.
+type regionalFakeReader struct {
+	regional []RegionalStats
+}
+
+func (f *regionalFakeReader) ErrorRateByProvider(_ context.Context, _ time.Duration) ([]ProbeStats, error) {
+	return nil, nil
+}
+func (f *regionalFakeReader) LatencyByProvider(_ context.Context, _ time.Duration) ([]LatencyStats, error) {
+	return nil, nil
+}
+func (f *regionalFakeReader) RegionalErrorRateByProvider(_ context.Context, _ time.Duration) ([]RegionalStats, error) {
+	return f.regional, nil
 }
 
 func TestProbeStats_ErrorRate(t *testing.T) {
