@@ -10,6 +10,10 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Fixed (LLMS-027)
+- `cmd/api/main.go` now passes `historyReader` to both `WithHistoryReader` and `WithLiveStatsReader`; previously `uptime_24h`/`p95_ms` would never appear in production despite the pipeline being complete
+- Added `TestListProviders_WithLiveStats` and `TestListProviders_LiveStatsNil_OmitsFields` to confirm field presence/absence
+
 ### Fixed (LLMS-020)
 - Corrected middleware stack order to `accessLog → requestID → cors → handler` so that X-Request-ID is present on every response, including CORS preflight (OPTIONS) 204 responses that previously short-circuited before `requestIDMiddleware` ran
 - Added `TestCORS_Preflight` assertion: `X-Request-ID` header must be non-empty on preflight responses

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/llmstatus/llmstatus/internal/api"
+	"github.com/llmstatus/llmstatus/internal/store/influx"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
 
@@ -81,6 +82,74 @@ func TestListProviders_WithOngoingIncident(t *testing.T) {
 	}
 	if body.Data[0].ActiveIncidentID == nil {
 		t.Error("expected active_incident_id to be set")
+	}
+}
+
+func TestListProviders_WithLiveStats(t *testing.T) {
+	store := &fakeStore{
+		providers: []pgstore.Provider{fixtureProvider("openai", "OpenAI")},
+	}
+	liveReader := &fakeLiveStatsReader{
+		stats: []influx.ProviderLiveStat{
+			{ProviderID: "openai", Uptime24h: 0.99, P95Ms: 450.5},
+		},
+	}
+	srv := api.New(store, api.WithLiveStatsReader(liveReader))
+
+	rec := doGet(t, srv, "/v1/providers")
+
+	var body struct {
+		Data []struct {
+			ID        string   `json:"id"`
+			Uptime24h *float64 `json:"uptime_24h"`
+			P95Ms     *float64 `json:"p95_ms"`
+		} `json:"data"`
+	}
+	mustDecode(t, rec.Body, &body)
+
+	if len(body.Data) != 1 {
+		t.Fatalf("data length: got %d, want 1", len(body.Data))
+	}
+	p := body.Data[0]
+	if p.Uptime24h == nil {
+		t.Fatal("uptime_24h: got nil, want non-nil")
+	}
+	if *p.Uptime24h < 0.989 || *p.Uptime24h > 0.991 {
+		t.Errorf("uptime_24h: got %f, want ~0.99", *p.Uptime24h)
+	}
+	if p.P95Ms == nil {
+		t.Fatal("p95_ms: got nil, want non-nil")
+	}
+	if *p.P95Ms != 450.5 {
+		t.Errorf("p95_ms: got %f, want 450.5", *p.P95Ms)
+	}
+}
+
+func TestListProviders_LiveStatsNil_OmitsFields(t *testing.T) {
+	store := &fakeStore{
+		providers: []pgstore.Provider{fixtureProvider("openai", "OpenAI")},
+	}
+	srv := api.New(store) // no WithLiveStatsReader
+
+	rec := doGet(t, srv, "/v1/providers")
+
+	var body struct {
+		Data []json.RawMessage `json:"data"`
+	}
+	mustDecode(t, rec.Body, &body)
+	if len(body.Data) != 1 {
+		t.Fatalf("data length: got %d, want 1", len(body.Data))
+	}
+	// Fields must be absent (omitempty), not null.
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(body.Data[0], &raw); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if _, ok := raw["uptime_24h"]; ok {
+		t.Error("uptime_24h should be absent when liveStats is nil")
+	}
+	if _, ok := raw["p95_ms"]; ok {
+		t.Error("p95_ms should be absent when liveStats is nil")
 	}
 }
 
