@@ -1,24 +1,53 @@
 package testutil
 
-import "testing"
+import (
+	"context"
+	"encoding/json"
+	"testing"
 
-// FixtureProvider inserts a representative Provider row and returns its
-// primary key. Intended for integration tests that need a foreign-key
-// parent without bespoke setup.
-//
-// Scaffolded by LLMS-001. Implementation follows in LLMS-002+.
-func FixtureProvider(t *testing.T, dsn string) int64 {
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/llmstatus/llmstatus/internal/store/postgres/gen"
+)
+
+// FixtureProvider inserts a minimal Provider row and returns its ID.
+// Safe to call from parallel tests — each invocation uses a unique ID suffix.
+func FixtureProvider(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
-	t.Skip("testutil.FixtureProvider: not implemented (LLMS-002)")
-	return 0
+
+	id := "fixture_" + t.Name()
+	q := pgstore.New(pool)
+	err := q.UpsertProvider(context.Background(), pgstore.UpsertProviderParams{
+		ID:       id,
+		Name:     "Fixture Provider",
+		Category: "official",
+		BaseUrl:  "https://api.fixture.test",
+		AuthType: "bearer",
+		Region:   "global",
+		Active:   true,
+		Config:   json.RawMessage(`{}`),
+	})
+	if err != nil {
+		t.Fatalf("FixtureProvider: upsert provider %q: %v", id, err)
+	}
+	return id
 }
 
-// FixtureChannel inserts a Channel row for the given provider and returns
-// its primary key.
-//
-// Scaffolded by LLMS-001. Implementation follows in LLMS-002+.
-func FixtureChannel(t *testing.T, dsn string, providerID int64) int64 {
+// FixtureModel inserts a minimal Model row for the given provider and returns
+// the generated model row ID.
+func FixtureModel(t *testing.T, pool *pgxpool.Pool, providerID string) int64 {
 	t.Helper()
-	t.Skip("testutil.FixtureChannel: not implemented (LLMS-002)")
-	return 0
+
+	q := pgstore.New(pool)
+	m, err := q.UpsertModel(context.Background(), pgstore.UpsertModelParams{
+		ProviderID:  providerID,
+		ModelID:     "fixture-model",
+		DisplayName: "Fixture Model",
+		ModelType:   "chat",
+		Active:      true,
+	})
+	if err != nil {
+		t.Fatalf("FixtureModel: upsert model for provider %q: %v", providerID, err)
+	}
+	return m.ID
 }
