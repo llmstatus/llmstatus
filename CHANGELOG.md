@@ -60,6 +60,21 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-013)
+- `web/app/incidents/page.tsx` — incidents list (all statuses, limit 50); ISR 30s;
+  graceful API-error fallback; empty-state message
+- `web/app/incidents/[slug]/page.tsx` — permanent incident detail page; ISR 60s;
+  `generateMetadata` with `{provider} incident on {date}: {title}` title format;
+  JSON-LD `Event` schema (`safeJsonLd` escapes `<` → `\u003c` to prevent
+  `</script>` injection from API data); breadcrumb navigation; timeline, description,
+  affected models/regions sections; `notFound()` on 404
+- `web/components/IncidentCard.tsx` — added optional `href` prop; when set the card
+  renders as a `<Link>` with hover border transition; `formatDate` exported for reuse
+- `web/lib/api.ts` — replaced `IncidentSummary` with fuller `IncidentDetail` (matches
+  Go `incidentResponse` exactly); added `getIncident(slug)` function; `listIncidents`
+  now accepts `status` and `limit` params
+- `web/app/providers/[id]/page.tsx` — incident cards now link to `/incidents/{slug}`
+
 ### Added (LLMS-012)
 - `web/app/providers/[id]/page.tsx` — provider detail page; server component,
   ISR 60s; `generateMetadata` produces `Is {Provider} API down?` title + data-driven

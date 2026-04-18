@@ -47,15 +47,22 @@ export interface ProviderDetail extends ProviderSummary {
   active_incidents: IncidentRef[];
 }
 
-export interface IncidentSummary {
+export type IncidentStatus = "ongoing" | "monitoring" | "resolved";
+
+export interface IncidentDetail {
   id: string;
   slug: string;
   provider_id: string;
   severity: Severity;
   title: string;
-  status: "ongoing" | "monitoring" | "resolved";
+  description?: string;
+  status: IncidentStatus;
+  affected_models: string[];
+  affected_regions: string[];
   started_at: string;
   resolved_at?: string;
+  detection_method: string;
+  human_reviewed: boolean;
 }
 
 async function apiFetch<T>(path: string, revalidate: number): Promise<T> {
@@ -77,6 +84,10 @@ export function getProvider(id: string): Promise<ProviderDetail> {
   return apiFetch<ProviderDetail>(`/v1/providers/${encodeURIComponent(id)}`, 60);
 }
 
-export function listIncidents(status = "ongoing"): Promise<IncidentSummary[]> {
-  return apiFetch<IncidentSummary[]>(`/v1/incidents?status=${status}`, 30);
+export function listIncidents(status = "all", limit = 50): Promise<IncidentDetail[]> {
+  return apiFetch<IncidentDetail[]>(`/v1/incidents?status=${status}&limit=${limit}`, 30);
+}
+
+export function getIncident(slug: string): Promise<IncidentDetail> {
+  return apiFetch<IncidentDetail>(`/v1/incidents/${encodeURIComponent(slug)}`, 60);
 }
