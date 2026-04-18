@@ -43,112 +43,91 @@ export default async function ProviderPage({ params }: Props) {
     throw e;
   }
 
-  // History fetch is best-effort — sparkline is hidden if unavailable.
+  // History fetch is best-effort — charts are hidden if unavailable.
   const history = await getProviderHistory(id, "30d").catch(() => null);
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="border-b border-[var(--ink-600)] px-6 py-4">
-        <div className="mx-auto max-w-4xl flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-mono text-sm font-semibold tracking-widest text-[var(--signal-amber)] uppercase hover:opacity-80 transition-opacity"
-          >
-            llmstatus.io
-          </Link>
-          <span className="text-xs text-[var(--ink-400)]">
-            Real-time AI API monitoring
-          </span>
+    <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
+      {/* Breadcrumb */}
+      <nav className="mb-6 text-xs text-[var(--ink-400)]">
+        <Link href="/" className="hover:text-[var(--ink-200)] transition-colors">
+          All providers
+        </Link>
+        <span className="mx-2">/</span>
+        <span className="text-[var(--ink-300)]">{provider.name}</span>
+      </nav>
+
+      {/* Header */}
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-[var(--ink-100)]">
+            {provider.name}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--ink-400)]">
+            {provider.category} · {provider.region}
+            {provider.status_page_url && (
+              <>
+                {" · "}
+                <a
+                  href={provider.status_page_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[var(--ink-200)] transition-colors"
+                >
+                  Status page ↗
+                </a>
+              </>
+            )}
+          </p>
         </div>
-      </header>
+        <StatusPill status={provider.current_status} />
+      </div>
 
-      <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
-        {/* Breadcrumb */}
-        <nav className="mb-6 text-xs text-[var(--ink-400)]">
-          <Link href="/" className="hover:text-[var(--ink-200)] transition-colors">
-            All providers
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-[var(--ink-300)]">{provider.name}</span>
-        </nav>
-
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-[var(--ink-100)]">
-              {provider.name}
-            </h1>
-            <p className="mt-1 text-sm text-[var(--ink-400)]">
-              {provider.category} · {provider.region}
-              {provider.status_page_url && (
-                <>
-                  {" · "}
-                  <a
-                    href={provider.status_page_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-[var(--ink-200)] transition-colors"
-                  >
-                    Status page ↗
-                  </a>
-                </>
-              )}
-            </p>
-          </div>
-          <StatusPill status={provider.current_status} />
-        </div>
-
-        {/* Active incidents */}
-        {provider.active_incidents.length > 0 && (
-          <section className="mb-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
-              Active Incidents
-            </h2>
-            <div className="flex flex-col gap-2">
-              {provider.active_incidents.map((inc) => (
-                <IncidentCard key={inc.id} incident={inc} href={`/incidents/${inc.slug}`} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Uptime sparkline */}
-        {history !== null && (
-          <section className="mb-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
-              Uptime History
-            </h2>
-            <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4">
-              <UptimeSparkline buckets={history} days={30} />
-            </div>
-          </section>
-        )}
-
-        {history !== null && history.some((b) => b.p95_ms > 0) && (
-          <section className="mb-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
-              Latency (p95)
-            </h2>
-            <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4">
-              <LatencyBar buckets={history} days={30} />
-            </div>
-          </section>
-        )}
-
-        {/* Models */}
-        <section>
+      {/* Active incidents */}
+      {provider.active_incidents.length > 0 && (
+        <section className="mb-8">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
-            Monitored Models
+            Active Incidents
           </h2>
-          <ModelList models={provider.models} />
+          <div className="flex flex-col gap-2">
+            {provider.active_incidents.map((inc) => (
+              <IncidentCard key={inc.id} incident={inc} href={`/incidents/${inc.slug}`} />
+            ))}
+          </div>
         </section>
-      </main>
+      )}
 
-      <footer className="border-t border-[var(--ink-600)] px-6 py-4">
-        <div className="mx-auto max-w-4xl text-xs text-[var(--ink-400)]">
-          Data sourced from real API calls, not status pages. Updated every 60 s.
-        </div>
-      </footer>
-    </div>
+      {/* Uptime sparkline */}
+      {history !== null && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+            Uptime History
+          </h2>
+          <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4">
+            <UptimeSparkline buckets={history} days={30} />
+          </div>
+        </section>
+      )}
+
+      {/* Latency bar */}
+      {history !== null && history.some((b) => b.p95_ms > 0) && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+            Latency (p95)
+          </h2>
+          <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4">
+            <LatencyBar buckets={history} days={30} />
+          </div>
+        </section>
+      )}
+
+      {/* Models */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+          Monitored Models
+        </h2>
+        <ModelList models={provider.models} />
+      </section>
+    </main>
   );
 }

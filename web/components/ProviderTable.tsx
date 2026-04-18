@@ -39,7 +39,7 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
           {providers.map((p, idx) => (
             <tr
               key={p.id}
-              className={`border-b border-[var(--ink-600)] last:border-0 ${
+              className={`border-b border-[var(--ink-600)] last:border-0 transition-colors hover:bg-[var(--canvas-overlay)] ${
                 idx % 2 === 0 ? "bg-[var(--canvas-raised)]" : "bg-[var(--canvas-base)]"
               }`}
             >

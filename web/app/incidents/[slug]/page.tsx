@@ -78,131 +78,115 @@ export default async function IncidentPage({ params }: Props) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
       {/* eslint-disable-next-line react/no-danger -- safeJsonLd escapes </ to prevent script injection */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
 
-      <header className="border-b border-[var(--ink-600)] px-6 py-4">
-        <div className="mx-auto max-w-4xl flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-mono text-sm font-semibold tracking-widest text-[var(--signal-amber)] uppercase hover:opacity-80 transition-opacity"
-          >
-            llmstatus.io
-          </Link>
-          <span className="text-xs text-[var(--ink-400)]">Real-time AI API monitoring</span>
+      {/* Breadcrumb */}
+      <nav className="mb-6 text-xs text-[var(--ink-400)]">
+        <Link href="/" className="hover:text-[var(--ink-200)] transition-colors">
+          All providers
+        </Link>
+        <span className="mx-2">/</span>
+        <Link href="/incidents" className="hover:text-[var(--ink-200)] transition-colors">
+          Incidents
+        </Link>
+        <span className="mx-2">/</span>
+        <span className="text-[var(--ink-300)]">{inc.slug}</span>
+      </nav>
+
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <span className={`text-xs font-semibold uppercase tracking-wide ${severityColor}`}>
+            {severityLabel}
+          </span>
+          <span className="text-[var(--ink-600)]">·</span>
+          <span className={`text-xs font-semibold uppercase tracking-wide ${STATUS_STYLE[inc.status] ?? ""}`}>
+            {inc.status}
+          </span>
         </div>
-      </header>
-
-      <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
-        {/* Breadcrumb */}
-        <nav className="mb-6 text-xs text-[var(--ink-400)]">
-          <Link href="/" className="hover:text-[var(--ink-200)] transition-colors">
-            All providers
-          </Link>
-          <span className="mx-2">/</span>
-          <Link href="/incidents" className="hover:text-[var(--ink-200)] transition-colors">
-            Incidents
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-[var(--ink-300)]">{inc.slug}</span>
-        </nav>
-
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <span className={`text-xs font-semibold uppercase tracking-wide ${severityColor}`}>
-              {severityLabel}
-            </span>
-            <span className="text-[var(--ink-600)]">·</span>
-            <span className={`text-xs font-semibold uppercase tracking-wide ${STATUS_STYLE[inc.status] ?? ""}`}>
-              {inc.status}
-            </span>
-          </div>
-          <h1 className="text-2xl font-semibold text-[var(--ink-100)] mb-1">{inc.title}</h1>
-          <div className="flex items-center gap-3 mt-1">
-            <p className="text-sm text-[var(--ink-400)]">
-              Provider:{" "}
-              <Link
-                href={`/providers/${inc.provider_id}`}
-                className="text-[var(--ink-300)] hover:text-[var(--ink-200)] transition-colors"
-              >
-                {inc.provider_id}
-              </Link>
-            </p>
-            <span className="text-[var(--ink-600)]">·</span>
-            <ProbeTimestamp iso={inc.started_at} prefix="Started" />
-          </div>
+        <h1 className="text-2xl font-semibold text-[var(--ink-100)] mb-1">{inc.title}</h1>
+        <div className="flex items-center gap-3 mt-1">
+          <p className="text-sm text-[var(--ink-400)]">
+            Provider:{" "}
+            <Link
+              href={`/providers/${inc.provider_id}`}
+              className="text-[var(--ink-300)] hover:text-[var(--ink-200)] transition-colors"
+            >
+              {inc.provider_id}
+            </Link>
+          </p>
+          <span className="text-[var(--ink-600)]">·</span>
+          <ProbeTimestamp iso={inc.started_at} prefix="Started" />
         </div>
+      </div>
 
-        {/* Timeline */}
-        <section className="mb-8 rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] divide-y divide-[var(--ink-600)]">
-          <Row label="Started" value={formatDate(inc.started_at)} />
-          {inc.resolved_at && (
-            <Row label="Resolved" value={formatDate(inc.resolved_at)} />
-          )}
-          <Row label="Detection" value={inc.detection_method} />
-          <Row label="Human reviewed" value={inc.human_reviewed ? "Yes" : "No"} />
+      {/* Timeline */}
+      <section className="mb-8 rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] divide-y divide-[var(--ink-600)]">
+        <Row label="Started" value={formatDate(inc.started_at)} />
+        {inc.resolved_at && (
+          <Row label="Resolved" value={formatDate(inc.resolved_at)} />
+        )}
+        <Row label="Detection" value={inc.detection_method} />
+        <Row label="Human reviewed" value={inc.human_reviewed ? "Yes" : "No"} />
+      </section>
+
+      {/* Description */}
+      {inc.description && (
+        <section className="mb-8">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+            Description
+          </h2>
+          <p className="text-sm text-[var(--ink-200)] leading-6">{inc.description}</p>
         </section>
+      )}
 
-        {/* Description */}
-        {inc.description && (
-          <section className="mb-8">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
-              Description
-            </h2>
-            <p className="text-sm text-[var(--ink-200)] leading-6">{inc.description}</p>
-          </section>
-        )}
+      {/* Affected models */}
+      {inc.affected_models.length > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+            Affected Models
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {inc.affected_models.map((m) => (
+              <li
+                key={m}
+                className="rounded px-2 py-0.5 font-mono text-xs bg-[var(--canvas-sunken)] text-[var(--ink-200)]"
+              >
+                {m}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        {/* Affected models */}
-        {inc.affected_models.length > 0 && (
-          <section className="mb-6">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
-              Affected Models
-            </h2>
-            <ul className="flex flex-wrap gap-2">
-              {inc.affected_models.map((m) => (
-                <li
-                  key={m}
-                  className="rounded px-2 py-0.5 font-mono text-xs bg-[var(--canvas-sunken)] text-[var(--ink-200)]"
-                >
-                  {m}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+      {/* Affected regions */}
+      {inc.affected_regions.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+            Affected Regions
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {inc.affected_regions.map((r) => (
+              <li
+                key={r}
+                className="rounded px-2 py-0.5 font-mono text-xs bg-[var(--canvas-sunken)] text-[var(--ink-200)]"
+              >
+                {r}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        {/* Affected regions */}
-        {inc.affected_regions.length > 0 && (
-          <section>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
-              Affected Regions
-            </h2>
-            <ul className="flex flex-wrap gap-2">
-              {inc.affected_regions.map((r) => (
-                <li
-                  key={r}
-                  className="rounded px-2 py-0.5 font-mono text-xs bg-[var(--canvas-sunken)] text-[var(--ink-200)]"
-                >
-                  {r}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-      </main>
-
-      <footer className="border-t border-[var(--ink-600)] px-6 py-4">
-        <div className="mx-auto max-w-4xl text-xs text-[var(--ink-400)]">
-          This URL is permanent and will not change. Detection method: {inc.detection_method}.
-        </div>
-      </footer>
-    </div>
+      <p className="text-xs text-[var(--ink-500)]">
+        This URL is permanent. Detection method: {inc.detection_method}.
+      </p>
+    </main>
   );
 }
 
