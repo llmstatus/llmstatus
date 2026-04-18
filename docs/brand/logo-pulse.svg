@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 60" width="80" height="60">
+  <!--
+    llmstatus.io status pulse mark - [ ● ]
+    For live indicators, badges, dynamic favicons
+    The dot has a pulse animation when embedded
+    -->
+  <style>
+    .bracket { fill: #D97706; font-family: 'JetBrains Mono','Berkeley Mono',ui-monospace,monospace; font-weight: 500; font-size: 44px; }
+    .pulse-dot { fill: #5EEAD4; }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+    .animate { animation: pulse 2s ease-in-out infinite; }
+  </style>
+  <text x="0" y="44" class="bracket">[</text>
+  <circle cx="40" cy="30" r="8" class="pulse-dot animate"/>
+  <text x="56" y="44" class="bracket">]</text>
+</svg>

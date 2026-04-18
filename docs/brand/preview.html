@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>llmstatus.io — Brand System Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --canvas-base:    #0A0E14;
+  --canvas-raised:  #0F141B;
+  --canvas-sunken:  #060A10;
+  --canvas-overlay: #151B24;
+
+  --ink-100: #E8ECF1;
+  --ink-200: #C1C8D4;
+  --ink-300: #8B94A3;
+  --ink-400: #5A6472;
+  --ink-500: #3C4452;
+  --ink-600: #242B36;
+
+  --signal-ok:      #5EEAD4;
+  --signal-ok-bg:   #0F3530;
+  --signal-warn:    #F59E0B;
+  --signal-warn-bg: #3D2909;
+  --signal-down:    #F87171;
+  --signal-down-bg: #3A1515;
+  --signal-amber:   #D97706;
+
+  --viz-1: #5EEAD4;
+  --viz-2: #60A5FA;
+  --viz-3: #F59E0B;
+  --viz-4: #A78BFA;
+  --viz-5: #FB923C;
+
+  --mono: 'JetBrains Mono', 'Berkeley Mono', ui-monospace, monospace;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--canvas-base);
+  color: var(--ink-100);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 32px 96px;
+}
+
+/* Grid background for hero */
+.grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+/* Section */
+section {
+  border-top: 1px solid var(--ink-600);
+  padding: 64px 0;
+}
+
+section:first-of-type { border-top: none; padding-top: 0; }
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-300);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ink-600);
+}
+
+.section-title {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--ink-100);
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.section-desc {
+  color: var(--ink-300);
+  font-size: 14px;
+  max-width: 640px;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+/* === LOGO === */
+.logo-showcase {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.logo-card {
+  background: var(--canvas-raised);
+  border: 1px solid var(--ink-600);
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  position: relative;
+}
+
+.logo-card__label {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.logo-card__usage {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-400);
+}
+
+/* Main wordmark */
+.logo-primary {
+  font-family: var(--mono);
+  font-size: 42px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-primary .bracket {
+  color: var(--signal-amber);
+  font-weight: 400;
+}
+
+/* Compact [ ls ] */
+.logo-compact {
+  font-family: var(--mono);
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--ink-100);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-compact .bracket {
+  color: var(--signal-amber);
+}
+
+/* Pulse [ ● ] */
+.logo-pulse {
+  font-family: var(--mono);
+  font-size: 36px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-pulse .bracket {
+  color: var(--signal-amber);
+  font-weight: 400;
+}
+
+.pulse-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--signal-ok);
+  box-shadow: 0 0 0 0 rgba(94, 234, 212, 0.7);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(94, 234, 212, 0.7); }
+  70% { box-shadow: 0 0 0 12px rgba(94, 234, 212, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(94, 234, 212, 0); }
+}
+
+/* Pure wordmark */
+.logo-wordmark {
+  font-family: var(--mono);
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--ink-100);
+}
+
+/* === HOMEPAGE MOCKUP === */
+.hero-mockup {
+  background: var(--canvas-raised);
+  border: 1px solid var(--ink-600);
+  padding: 48px 32px;
+  margin-bottom: 24px;
+}
+
+.hero-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--ink-600);
+  margin-bottom: 32px;
+}
+
+.hero-nav__logo {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.hero-nav__logo .bracket {
+  color: var(--signal-amber);
+}
+
+.hero-nav__links {
+  display: flex;
+  gap: 24px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-300);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hero-content__tagline {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--signal-amber);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+
+.hero-content__title {
+  font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+  max-width: 720px;
+}
+
+.hero-content__subtitle {
+  color: var(--ink-300);
+  font-size: 15px;
+  max-width: 560px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.hero-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.hero-meta__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-ok);
+  display: inline-block;
+  margin-right: 6px;
+  animation: pulse-small 2s infinite;
+}
+
+@keyframes pulse-small {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Status table */
+.status-table {
+  background: var(--canvas-raised);
+  border: 1px solid var(--ink-600);
+  font-family: var(--mono);
+  font-size: 13px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.status-table thead th {
+  background: var(--canvas-sunken);
+  border-bottom: 1px solid var(--ink-600);
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-300);
+  font-weight: 500;
+}
+
+.status-table thead th.num { text-align: right; }
+
+.status-table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ink-600);
+  color: var(--ink-100);
+}
+
+.status-table tbody tr:hover { background: var(--canvas-overlay); }
+.status-table tbody tr:last-child td { border-bottom: none; }
+
+.status-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-table td.provider {
+  font-weight: 500;
+}
+
+.status-table td.meta {
+  color: var(--ink-400);
+  font-size: 11px;
+}
+
+/* Status pill */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+
+.pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.pill--ok { color: var(--signal-ok); }
+.pill--ok .pill__dot { background: var(--signal-ok); }
+.pill--warn { color: var(--signal-warn); }
+.pill--warn .pill__dot { background: var(--signal-warn); }
+.pill--down { color: var(--signal-down); }
+.pill--down .pill__dot { background: var(--signal-down); }
+
+/* Incident card */
+.incident {
+  background: var(--canvas-raised);
+  border: 1px solid var(--signal-warn);
+  border-left: 3px solid var(--signal-warn);
+  padding: 20px 24px;
+  margin-top: 24px;
+}
+
+.incident__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.incident__title {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-100);
+}
+
+.incident__time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.incident__body {
+  color: var(--ink-200);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.incident__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ink-600);
+}
+
+.incident__stat-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.incident__stat-value {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink-100);
+  font-variant-numeric: tabular-nums;
+}
+
+/* === COLORS === */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.color-card {
+  background: var(--canvas-raised);
+  border: 1px solid var(--ink-600);
+  overflow: hidden;
+}
+
+.color-swatch {
+  height: 80px;
+  border-bottom: 1px solid var(--ink-600);
+}
+
+.color-info {
+  padding: 12px 16px;
+}
+
+.color-name {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-100);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.color-hex {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-400);
+}
+
+/* === TYPOGRAPHY === */
+.type-demo {
+  background: var(--canvas-raised);
+  border: 1px solid var(--ink-600);
+  padding: 32px;
+}
+
+.type-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 32px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--ink-600);
+  align-items: baseline;
+}
+
+.type-row:last-child { border-bottom: none; }
+
+.type-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.type-sample-display {
+  font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.02em;
+}
+
+.type-sample-title {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--ink-100);
+}
+
+.type-sample-body {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink-200);
+  line-height: 1.6;
+}
+
+.type-sample-data {
+  font-family: var(--mono);
+  font-size: 16px;
+  color: var(--ink-100);
+  font-variant-numeric: tabular-nums;
+}
+
+.type-sample-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* === BADGES === */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.badge {
+  background: var(--canvas-sunken);
+  border: 1px solid var(--ink-600);
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.badge__provider {
+  color: var(--ink-300);
+}
+
+.badge__status {
+  color: var(--ink-100);
+  font-weight: 500;
+}
+
+.badge__separator {
+  color: var(--ink-500);
+}
+
+/* === CHINA VIEW === */
+.china-view {
+  background: var(--canvas-raised);
+  border: 1px solid var(--ink-600);
+  padding: 24px;
+}
+
+.china-view__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ink-600);
+}
+
+.china-view__title {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-100);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.china-view__title-tag {
+  background: var(--signal-warn-bg);
+  color: var(--signal-warn);
+  padding: 2px 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.china-view__meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.china-view__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.china-view__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px;
+  padding: 10px 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  align-items: center;
+  border-bottom: 1px solid var(--ink-600);
+}
+
+.china-view__row:nth-last-child(1),
+.china-view__row:nth-last-child(2) { border-bottom: none; }
+
+.china-view__provider { color: var(--ink-100); }
+.china-view__latency { color: var(--ink-300); font-variant-numeric: tabular-nums; }
+
+/* Footer note */
+.footer {
+  padding: 48px 0 0;
+  margin-top: 64px;
+  border-top: 1px solid var(--ink-600);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 768px) {
+  .logo-showcase, .color-grid, .badge-grid { grid-template-columns: 1fr; }
+  .hero-content__title { font-size: 28px; }
+  .incident__stats { grid-template-columns: 1fr; }
+  .china-view__grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ============ 1. LOGO ============ -->
+<section>
+  <div class="section-label">01 / Logo System</div>
+  <h2 class="section-title">Four marks, one system.</h2>
+  <p class="section-desc">The primary wordmark is bracketed to evoke observation, sampling, and measurement — the language of engineers. All marks use the monospace family.</p>
+
+  <div class="logo-showcase">
+
+    <div class="logo-card">
+      <div class="logo-card__label">01 / Primary Wordmark</div>
+      <div class="logo-primary">
+        <span class="bracket">[</span>llmstatus<span class="bracket">]</span>
+      </div>
+      <div class="logo-card__usage">Header, OG, primary uses</div>
+    </div>
+
+    <div class="logo-card">
+      <div class="logo-card__label">02 / Compact Mark</div>
+      <div class="logo-compact">
+        <span class="bracket">[</span>ls<span class="bracket">]</span>
+      </div>
+      <div class="logo-card__usage">Favicon, small sizes</div>
+    </div>
+
+    <div class="logo-card">
+      <div class="logo-card__label">03 / Status Pulse</div>
+      <div class="logo-pulse">
+        <span class="bracket">[</span>
+        <span class="pulse-dot"></span>
+        <span class="bracket">]</span>
+      </div>
+      <div class="logo-card__usage">Live indicator, loading</div>
+    </div>
+
+    <div class="logo-card">
+      <div class="logo-card__label">04 / Pure Wordmark</div>
+      <div class="logo-wordmark">llmstatus</div>
+      <div class="logo-card__usage">Plain text signatures, footers</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ 2. HOMEPAGE MOCKUP ============ -->
+<section>
+  <div class="section-label">02 / Homepage — Above the fold</div>
+  <h2 class="section-title">The homepage must say what we do in 3 seconds.</h2>
+  <p class="section-desc">No marketing theater. Just: who we are, what we measure, what's happening right now.</p>
+
+  <!-- Hero -->
+  <div class="hero-mockup grid-bg">
+    <div class="hero-nav">
+      <div class="hero-nav__logo">
+        <span style="color: var(--signal-amber);">[</span>llmstatus<span style="color: var(--signal-amber);">]</span>
+      </div>
+      <div class="hero-nav__links">
+        <span>Providers</span>
+        <span>Incidents</span>
+        <span>China View</span>
+        <span>API</span>
+        <span>About</span>
+      </div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-content__tagline">// Public observatory · Independent</div>
+      <h1 class="hero-content__title">Independent real-time monitoring<br>for the AI infrastructure.</h1>
+      <p class="hero-content__subtitle">Measured from 7 global locations. Not scraped from official status pages.</p>
+      <div class="hero-meta">
+        <span><span class="hero-meta__dot"></span>LIVE · 20 providers</span>
+        <span>Last check 23s ago</span>
+        <span>Next in 37s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status table -->
+  <table class="status-table">
+    <thead>
+      <tr>
+        <th>Provider</th>
+        <th class="num">p95 (ms)</th>
+        <th class="num">Uptime 24h</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="provider">OpenAI</td>
+        <td class="num">680</td>
+        <td class="num">99.98%</td>
+        <td><span class="pill pill--ok"><span class="pill__dot"></span>Operational</span></td>
+      </tr>
+      <tr>
+        <td class="provider">Anthropic</td>
+        <td class="num">1,240</td>
+        <td class="num">99.67%</td>
+        <td><span class="pill pill--warn"><span class="pill__dot"></span>Degraded</span></td>
+      </tr>
+      <tr>
+        <td class="provider">Google Gemini</td>
+        <td class="num">920</td>
+        <td class="num">100.00%</td>
+        <td><span class="pill pill--ok"><span class="pill__dot"></span>Operational</span></td>
+      </tr>
+      <tr>
+        <td class="provider">DeepSeek</td>
+        <td class="num">—</td>
+        <td class="num">91.22%</td>
+        <td><span class="pill pill--down"><span class="pill__dot"></span>Down</span></td>
+      </tr>
+      <tr>
+        <td class="provider">Moonshot</td>
+        <td class="num">340</td>
+        <td class="num">100.00%</td>
+        <td><span class="pill pill--ok"><span class="pill__dot"></span>Operational</span></td>
+      </tr>
+      <tr>
+        <td class="provider">Qwen</td>
+        <td class="num">420</td>
+        <td class="num">99.95%</td>
+        <td><span class="pill pill--ok"><span class="pill__dot"></span>Operational</span></td>
+      </tr>
+      <tr>
+        <td class="provider">OpenRouter</td>
+        <td class="num">890</td>
+        <td class="num">99.45%</td>
+        <td><span class="pill pill--ok"><span class="pill__dot"></span>Operational</span></td>
+      </tr>
+      <tr>
+        <td class="provider">Example Aggregator <span class="meta">(self-monitored)</span></td>
+        <td class="num">320</td>
+        <td class="num">99.99%</td>
+        <td><span class="pill pill--ok"><span class="pill__dot"></span>Operational</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Incident -->
+  <div class="incident">
+    <div class="incident__header">
+      <div class="incident__title">[Anthropic] Elevated error rate detected</div>
+      <div class="incident__time">Started 42m ago · Monitoring</div>
+    </div>
+    <div class="incident__body">
+      Our probes from us-west-2, us-east-1, and eu-central-1 observed an 8.4% error rate between 14:23 and 15:07 UTC, compared to a baseline of 0.1%. Affected: Claude Opus 4.7, Claude Sonnet 4.6. Streaming requests most impacted.
+    </div>
+    <div class="incident__stats">
+      <div>
+        <div class="incident__stat-label">Error rate (peak)</div>
+        <div class="incident__stat-value">8.4%</div>
+      </div>
+      <div>
+        <div class="incident__stat-label">Duration (ongoing)</div>
+        <div class="incident__stat-value">42m</div>
+      </div>
+      <div>
+        <div class="incident__stat-label">Affected regions</div>
+        <div class="incident__stat-value">3 / 7</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. CHINA VIEW ============ -->
+<section>
+  <div class="section-label">03 / China View — the killer feature</div>
+  <h2 class="section-title">From mainland China.</h2>
+  <p class="section-desc">No other monitor publishes this. Real probes from Shanghai and Guangzhou nodes. This is what developers in China actually experience.</p>
+
+  <div class="china-view">
+    <div class="china-view__header">
+      <div class="china-view__title">
+        🇨🇳 From Mainland China
+        <span class="china-view__title-tag">Exclusive</span>
+      </div>
+      <div class="china-view__meta">Shanghai + Guangzhou · Updated 31s ago</div>
+    </div>
+
+    <div class="china-view__grid">
+      <div class="china-view__row">
+        <span class="china-view__provider">OpenAI</span>
+        <span class="china-view__latency">—</span>
+        <span class="pill pill--down"><span class="pill__dot"></span>Blocked</span>
+      </div>
+      <div class="china-view__row">
+        <span class="china-view__provider">Anthropic</span>
+        <span class="china-view__latency">—</span>
+        <span class="pill pill--down"><span class="pill__dot"></span>Blocked</span>
+      </div>
+      <div class="china-view__row">
+        <span class="china-view__provider">Google Gemini</span>
+        <span class="china-view__latency">—</span>
+        <span class="pill pill--down"><span class="pill__dot"></span>Blocked</span>
+      </div>
+      <div class="china-view__row">
+        <span class="china-view__provider">DeepSeek</span>
+        <span class="china-view__latency">p95 230ms</span>
+        <span class="pill pill--ok"><span class="pill__dot"></span>Operational</span>
+      </div>
+      <div class="china-view__row">
+        <span class="china-view__provider">Moonshot</span>
+        <span class="china-view__latency">p95 180ms</span>
+        <span class="pill pill--ok"><span class="pill__dot"></span>Operational</span>
+      </div>
+      <div class="china-view__row">
+        <span class="china-view__provider">Qwen</span>
+        <span class="china-view__latency">p95 150ms</span>
+        <span class="pill pill--ok"><span class="pill__dot"></span>Operational</span>
+      </div>
+      <div class="china-view__row">
+        <span class="china-view__provider">OpenRouter</span>
+        <span class="china-view__latency">p95 2,340ms</span>
+        <span class="pill pill--warn"><span class="pill__dot"></span>High latency</span>
+      </div>
+      <div class="china-view__row">
+        <span class="china-view__provider">Example Aggregator</span>
+        <span class="china-view__latency">p95 320ms</span>
+        <span class="pill pill--ok"><span class="pill__dot"></span>Operational</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. COLORS ============ -->
+<section>
+  <div class="section-label">04 / Color System</div>
+  <h2 class="section-title">85% canvas. 12% ink. 3% signal.</h2>
+  <p class="section-desc">If the page looks colorful, we broke it. Color is signal, not decoration.</p>
+
+  <h3 style="font-family: var(--mono); font-size: 14px; color: var(--ink-300); margin: 24px 0 12px; text-transform: uppercase; letter-spacing: 0.05em;">Canvas</h3>
+  <div class="color-grid">
+    <div class="color-card">
+      <div class="color-swatch" style="background:#0A0E14;"></div>
+      <div class="color-info"><div class="color-name">Base</div><div class="color-hex">#0A0E14</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#0F141B;"></div>
+      <div class="color-info"><div class="color-name">Raised</div><div class="color-hex">#0F141B</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#060A10;"></div>
+      <div class="color-info"><div class="color-name">Sunken</div><div class="color-hex">#060A10</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#151B24;"></div>
+      <div class="color-info"><div class="color-name">Overlay</div><div class="color-hex">#151B24</div></div>
+    </div>
+  </div>
+
+  <h3 style="font-family: var(--mono); font-size: 14px; color: var(--ink-300); margin: 24px 0 12px; text-transform: uppercase; letter-spacing: 0.05em;">Ink</h3>
+  <div class="color-grid">
+    <div class="color-card">
+      <div class="color-swatch" style="background:#E8ECF1;"></div>
+      <div class="color-info"><div class="color-name">Ink 100</div><div class="color-hex">#E8ECF1</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#8B94A3;"></div>
+      <div class="color-info"><div class="color-name">Ink 300</div><div class="color-hex">#8B94A3</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#5A6472;"></div>
+      <div class="color-info"><div class="color-name">Ink 400</div><div class="color-hex">#5A6472</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#3C4452;"></div>
+      <div class="color-info"><div class="color-name">Ink 500</div><div class="color-hex">#3C4452</div></div>
+    </div>
+  </div>
+
+  <h3 style="font-family: var(--mono); font-size: 14px; color: var(--ink-300); margin: 24px 0 12px; text-transform: uppercase; letter-spacing: 0.05em;">Signals</h3>
+  <div class="color-grid">
+    <div class="color-card">
+      <div class="color-swatch" style="background:#5EEAD4;"></div>
+      <div class="color-info"><div class="color-name">Signal · OK</div><div class="color-hex">#5EEAD4</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#F59E0B;"></div>
+      <div class="color-info"><div class="color-name">Signal · Warn</div><div class="color-hex">#F59E0B</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#F87171;"></div>
+      <div class="color-info"><div class="color-name">Signal · Down</div><div class="color-hex">#F87171</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#D97706;"></div>
+      <div class="color-info"><div class="color-name">Signal · Amber (brand)</div><div class="color-hex">#D97706</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. TYPOGRAPHY ============ -->
+<section>
+  <div class="section-label">05 / Typography</div>
+  <h2 class="section-title">Monospace as primary. Plex Sans as secondary.</h2>
+  <p class="section-desc">Using Berkeley Mono is ideal. JetBrains Mono is the free alternative shown here. Inter is explicitly forbidden — it's the AI-slop default.</p>
+
+  <div class="type-demo">
+    <div class="type-row">
+      <div class="type-label">Display · 40</div>
+      <div class="type-sample-display">[ llmstatus ]</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Title · 28</div>
+      <div class="type-sample-title">Independent monitoring.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Body · 14</div>
+      <div class="type-sample-body">Our probes from us-west-2, us-east-1, and eu-central-1 observed an 8.4% error rate between 14:23 and 15:07 UTC, compared to a baseline of 0.1%. Affected models: Claude Opus 4.7, Claude Sonnet 4.6.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Data · 16</div>
+      <div class="type-sample-data">p95 680ms · 99.98% uptime · 42m ongoing</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Meta · 11</div>
+      <div class="type-sample-meta">LAST CHECKED 23S AGO · NEXT IN 37S</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. BADGES ============ -->
+<section>
+  <div class="section-label">06 / Embeddable Badges</div>
+  <h2 class="section-title">Distribution via embed.</h2>
+  <p class="section-desc">Each provider gets an SVG badge anyone can paste into their README or docs. Every embed is a backlink and a brand impression.</p>
+
+  <div class="badge-grid">
+    <div class="badge">
+      <span class="badge__provider">openai</span>
+      <span class="badge__separator">│</span>
+      <span class="pill pill--ok"><span class="pill__dot"></span>OK</span>
+    </div>
+    <div class="badge">
+      <span class="badge__provider">anthropic</span>
+      <span class="badge__separator">│</span>
+      <span class="pill pill--warn"><span class="pill__dot"></span>DEGRADED</span>
+    </div>
+    <div class="badge">
+      <span class="badge__provider">deepseek</span>
+      <span class="badge__separator">│</span>
+      <span class="pill pill--down"><span class="pill__dot"></span>DOWN</span>
+    </div>
+    <div class="badge">
+      <span class="badge__provider">openai</span>
+      <span class="badge__separator">│</span>
+      <span style="color: var(--ink-200); font-variant-numeric: tabular-nums;">99.98%</span>
+      <span class="badge__separator">│</span>
+      <span style="color: var(--ink-300);">24h</span>
+    </div>
+    <div class="badge">
+      <span class="badge__provider">claude</span>
+      <span class="badge__separator">│</span>
+      <span style="color: var(--ink-200); font-variant-numeric: tabular-nums;">p95 1,240ms</span>
+    </div>
+    <div class="badge">
+      <span class="badge__provider">gemini</span>
+      <span class="badge__separator">│</span>
+      <span style="color: var(--signal-ok);">●</span>
+      <span style="color: var(--ink-200); font-variant-numeric: tabular-nums;">100.00%</span>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<div class="footer">
+  <span>// llmstatus.io brand preview · v0.1</span>
+  <span>a public project by the llmstatus.io maintainers</span>
+</div>
+
+</div>
+</body>
+</html>

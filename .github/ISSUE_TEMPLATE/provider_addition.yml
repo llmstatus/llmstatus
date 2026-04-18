@@ -1,0 +1,101 @@
+name: New provider adapter
+description: Propose adding a new AI API provider to llmstatus.io.
+title: "[LLMS-] provider: add <provider-name>"
+labels:
+  - provider-addition
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adding a provider is the single most common contribution. Please fill
+        this in so maintainers can evaluate feasibility before you write code.
+
+        Read `CONTRIBUTING.md` §"Adding a New Provider Adapter" first.
+
+  - type: input
+    id: provider_name
+    attributes:
+      label: Provider name
+      placeholder: e.g. Moonshot, Mistral, Zhipu
+    validations:
+      required: true
+
+  - type: input
+    id: provider_id
+    attributes:
+      label: Proposed provider ID
+      description: snake_case, no spaces. This will appear in URLs and the DB.
+      placeholder: e.g. moonshot, mistral, zhipu_ai
+    validations:
+      required: true
+
+  - type: input
+    id: api_docs
+    attributes:
+      label: API documentation URL
+    validations:
+      required: true
+
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Authentication scheme
+      options:
+        - API key (Bearer token)
+        - API key (custom header)
+        - OAuth 2.0
+        - mTLS
+        - Other / none
+    validations:
+      required: true
+
+  - type: dropdown
+    id: have_key
+    attributes:
+      label: Do you have a paid API key available to test with?
+      description: Free tiers and trial keys produce unreliable probe data. We cannot merge adapters tested only on free tiers.
+      options:
+        - "Yes — I have a paid account"
+        - "No — need the operator to acquire one"
+    validations:
+      required: true
+
+  - type: textarea
+    id: models
+    attributes:
+      label: Models to probe
+      description: List the specific model IDs we should monitor, one per line.
+      placeholder: |
+        moonshot-v1-8k
+        moonshot-v1-32k
+    validations:
+      required: true
+
+  - type: textarea
+    id: regions
+    attributes:
+      label: Regional endpoints
+      description: If the provider has multiple regional endpoints (e.g. us-east, eu-west, cn-shanghai), list them.
+    validations:
+      required: false
+
+  - type: textarea
+    id: quirks
+    attributes:
+      label: Known quirks
+      description: Unusual error codes, rate-limit header names, streaming differences, etc. Anything you have already observed. These will go into `docs/known-quirks.md`.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I read `CONTRIBUTING.md` §"Adding a New Provider Adapter"
+          required: true
+        - label: I will handle timeouts, 4xx, 5xx, and provider-specific errors
+          required: true
+        - label: I will capture real-response fixtures (success + at least 3 error types)
+          required: true

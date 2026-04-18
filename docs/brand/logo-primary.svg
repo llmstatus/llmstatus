@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 60" width="320" height="60">
+  <!--
+    llmstatus.io primary wordmark
+    Amber brackets + near-white wordmark
+    Font: JetBrains Mono 500 (use Berkeley Mono for production)
+    -->
+  <style>
+    .bracket { fill: #D97706; font-family: 'JetBrains Mono','Berkeley Mono',ui-monospace,monospace; font-weight: 500; font-size: 44px; }
+    .wordmark { fill: #E8ECF1; font-family: 'JetBrains Mono','Berkeley Mono',ui-monospace,monospace; font-weight: 500; font-size: 44px; letter-spacing: 0; }
+  </style>
+  <text x="0" y="44" class="bracket">[</text>
+  <text x="32" y="44" class="wordmark">llmstatus</text>
+  <text x="290" y="44" class="bracket">]</text>
+</svg>

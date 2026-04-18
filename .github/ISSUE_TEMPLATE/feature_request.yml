@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose a new capability for llmstatus.io.
+title: "[LLMS-] feat: "
+labels:
+  - enhancement
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please discuss non-trivial features here before opening a pull request.
+        This saves everyone time.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem does this solve? Who benefits?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: One paragraph is enough. A rough API sketch helps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Does this change the methodology?
+      description: Any change affecting metric computation, incident detection, or data publication is a methodology change (see GOVERNANCE.md).
+      options:
+        - "No"
+        - "Yes — methodology change (requires operator approval)"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues and did not find a duplicate
+          required: true
+        - label: This is not a request to add a new provider (use the provider template instead)
+          required: true

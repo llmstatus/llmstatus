@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go — lint, test, coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.x"
+          cache: true
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: gocyclo (complexity gate)
+        run: |
+          go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+          gocyclo -over 10 . | tee /tmp/cyclo.txt
+          test ! -s /tmp/cyclo.txt
+
+      - name: Test with race detector
+        run: go test ./... -race -short -coverprofile=coverage.out
+
+      - name: Coverage gate
+        run: |
+          go tool cover -func=coverage.out | awk '/total:/ {print; if ($3+0 < 70) {print "Coverage below 70%"; exit 1}}'
+
+  web:
+    name: Web — lint, typecheck, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck --if-present
+      - run: npm run build
+
+  integration:
+    name: Integration tests (Postgres + InfluxDB)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: llmstatus
+          POSTGRES_PASSWORD: llmstatus
+          POSTGRES_DB: llmstatus_test
+        options: >-
+          --health-cmd "pg_isready -U llmstatus"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+      influxdb:
+        image: influxdb:3.0
+        env:
+          INFLUXDB_INIT_MODE: setup
+          INFLUXDB_INIT_USERNAME: llmstatus
+          INFLUXDB_INIT_PASSWORD: llmstatus-dev
+          INFLUXDB_INIT_ORG: llmstatus
+          INFLUXDB_INIT_BUCKET: probes
+          INFLUXDB_INIT_ADMIN_TOKEN: dev-token
+        ports:
+          - 8086:8086
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.x"
+          cache: true
+      - name: Run integration tests
+        env:
+          PGHOST: localhost
+          PGUSER: llmstatus
+          PGPASSWORD: llmstatus
+          PGDATABASE: llmstatus_test
+          INFLUX_URL: http://localhost:8086
+          INFLUX_TOKEN: dev-token
+          INFLUX_ORG: llmstatus
+          INFLUX_BUCKET: probes
+        run: go test ./... -race -run Integration -tags=integration
+
+  changelog:
+    name: Changelog updated
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    env:
+      BASE_REF: ${{ github.base_ref }}
+      PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Verify CHANGELOG.md changed (or PR labeled no-changelog)
+        run: |
+          if [[ ",${PR_LABELS}," == *",no-changelog,"* ]]; then
+            echo "PR labeled no-changelog, skipping."
+            exit 0
+          fi
+          if git diff --name-only "origin/${BASE_REF}...HEAD" | grep -q '^CHANGELOG.md$'; then
+            echo "CHANGELOG.md updated."
+          else
+            echo "CHANGELOG.md not updated. Add an entry under ## [Unreleased] or label the PR 'no-changelog'."
+            exit 1
+          fi

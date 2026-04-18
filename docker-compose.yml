@@ -1,0 +1,139 @@
+# llmstatus.io — local development environment
+#
+# This compose file runs the full stack locally:
+# - TimescaleDB (PostgreSQL + time-series extension)
+# - Redis (API cache)
+# - Ingestion API (receives probe results)
+# - Detector (runs incident detection rules)
+# - Public API (read-only data API)
+# - Web (Next.js frontend)
+#
+# Usage:
+#   docker compose up -d             # start everything
+#   docker compose logs -f ingest    # tail a specific service
+#   docker compose down -v           # stop and wipe data
+#
+# First-time setup:
+#   cp .env.example .env
+#   # fill in at least DATABASE_URL, REDIS_URL, and one provider API key
+#   docker compose up -d db redis
+#   docker compose exec db psql -U llmstatus -f /migrations/001_init.sql
+#   docker compose up -d
+
+version: "3.9"
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: llmstatus-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: llmstatus
+      POSTGRES_PASSWORD: llmstatus
+      POSTGRES_DB: llmstatus
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/migrations:/migrations:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "llmstatus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: llmstatus-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ingest:
+    build:
+      context: .
+      dockerfile: ops/Dockerfile.python
+    container_name: llmstatus-ingest
+    command: uvicorn ingest.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app:cached
+
+  detector:
+    build:
+      context: .
+      dockerfile: ops/Dockerfile.python
+    container_name: llmstatus-detector
+    command: python -m detector.runner
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./:/app:cached
+
+  api:
+    build:
+      context: .
+      dockerfile: ops/Dockerfile.python
+    container_name: llmstatus-api
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8001
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./:/app:cached
+
+  web:
+    build:
+      context: ./web
+      dockerfile: ../ops/Dockerfile.web
+    container_name: llmstatus-web
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app:cached
+      - /app/node_modules
+      - /app/.next
+
+  # Local probe runner — for development.
+  # In production, probes run on 7 separate geographic nodes.
+  probe-local:
+    build:
+      context: .
+      dockerfile: ops/Dockerfile.python
+    container_name: llmstatus-probe-local
+    command: python -m probes.runner
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_REGION: local-dev
+    depends_on:
+      - ingest
+    volumes:
+      - ./:/app:cached
+
+volumes:
+  db_data:

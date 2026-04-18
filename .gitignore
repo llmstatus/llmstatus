@@ -1,0 +1,54 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.local
+*.local.md
+
+# Claude Code working files (kept locally, not in the public repo)
+CLAUDE.md
+.claude/
+JOURNAL.md
+REVIEW_QUEUE.md
+
+# Go build output
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Next.js / Node
+node_modules/
+.next/
+out/
+.turbo/
+.pnp.*
+*.tsbuildinfo
+next-env.d.ts
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Databases and fixtures
+*.sqlite
+*.sqlite-journal
+*.db
+
+# Docker
+docker-compose.override.yml

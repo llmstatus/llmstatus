@@ -1,0 +1,26 @@
+# Code owners for llmstatus.io
+#
+# Syntax: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-security/customizing-your-repository/about-code-owners
+#
+# Order matters — the last matching pattern wins.
+#
+# The @llmstatus/* GitHub teams must exist in the llmstatus GitHub
+# organization. If you rename a team, update this file.
+
+# Default: any change needs maintainer review
+*                               @llmstatus/maintainers
+
+# Methodology and public-facing data semantics — operator must approve
+/METHODOLOGY.md                 @llmstatus/operators
+/docs/ROADMAP.md                @llmstatus/operators
+
+# Brand system — maintainer + design team approval
+/docs/brand/                    @llmstatus/maintainers @llmstatus/design
+
+# Governance and conduct — operator approval required
+/GOVERNANCE.md                  @llmstatus/operators
+/CODE_OF_CONDUCT.md             @llmstatus/operators
+/SECURITY.md                    @llmstatus/operators
+
+# CI / release pipeline
+/.github/                       @llmstatus/maintainers

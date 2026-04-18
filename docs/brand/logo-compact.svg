@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!--
+    llmstatus.io compact mark - [ls]
+    For favicon, app icon, small-size uses
+    -->
+  <rect width="64" height="64" fill="#0A0E14"/>
+  <style>
+    .bracket { fill: #D97706; font-family: 'JetBrains Mono','Berkeley Mono',ui-monospace,monospace; font-weight: 500; font-size: 36px; }
+    .mark { fill: #E8ECF1; font-family: 'JetBrains Mono','Berkeley Mono',ui-monospace,monospace; font-weight: 500; font-size: 36px; }
+  </style>
+  <text x="4" y="46" class="bracket">[</text>
+  <text x="20" y="46" class="mark">ls</text>
+  <text x="48" y="46" class="bracket">]</text>
+</svg>

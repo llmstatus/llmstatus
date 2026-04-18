@@ -1,0 +1,38 @@
+# CLAUDE.md (template)
+
+This file is **not** checked into the llmstatus.io repository — see
+`.gitignore`. It is private to each contributor who uses Claude Code,
+Cursor, Aider, or a similar agent to work on this project.
+
+Copy this template into `CLAUDE.md` in the repository root (or keep it in
+the parent directory, one level above the repo) and customise it for
+your environment.
+
+---
+
+## Your setup
+
+- Role: [e.g. maintainer / contributor / operator]
+- Environment: [e.g. macOS 14, Docker Desktop, WSL2]
+- Preferred language: [English / 中文 / ...]
+
+## Local conventions your agent should follow
+
+- Keep all code and commit messages in English.
+- Do not include `Co-Authored-By` trailers in commits.
+- Run `make check` (or the equivalent `go test ./... && npm -C web run lint`)
+  before claiming a task is complete.
+- Open `LLMS-` issues on GitHub before starting non-trivial work.
+- Open pull requests against `main`; never commit directly.
+
+## Project rules to always respect
+
+See (in order of precedence):
+1. Top-level `LICENSE`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`
+2. `CONTRIBUTING.md` — process rules
+3. `METHODOLOGY.md` — measurement semantics (cannot be bent without an
+   operator-approved methodology PR)
+4. `docs/brand/BRAND_SYSTEM.md` — visual and copy rules
+5. `docs/ROADMAP.md` — the current plan
+
+Add your personal notes below this line.
