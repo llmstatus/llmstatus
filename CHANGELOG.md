@@ -60,6 +60,22 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-006)
+- `pkg/testutil/postgres.go` — `NewPostgres(t)` spins up a Postgres 17
+  container via testcontainers-go, applies all `store/migrations/*.sql`
+  up files in order, and returns a ready `*pgxpool.Pool`; skips when
+  `-short` is set; container cleaned up via `t.Cleanup`
+- `pkg/testutil/fixtures.go` — `FixtureProvider` and `FixtureModel`
+  helpers for integration tests (replaces stale stubs with real schema)
+- `tests/integration/store/store_test.go` — 12 integration sub-tests
+  covering full CRUD for providers, models, and incidents including
+  upsert idempotency, deduplication query, and resolve flow
+- `go.uber.org/goleak v1.3.0` — `TestMain` goroutine-leak guard
+- `github.com/google/go-cmp` — deep equality in assertions
+- `github.com/testcontainers/testcontainers-go v0.42.0` + postgres module
+- CI: `integration` job now uses testcontainers (no pre-wired service
+  containers); `go vet` extended to `./tests/...`
+
 ### Added (LLMS-005)
 - `store/migrations/0002_schema.sql` — `providers`, `models`, and
   `incidents` tables in PostgreSQL 17 with CHECK constraints, FK
