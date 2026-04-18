@@ -43,6 +43,13 @@ public APIs must add an entry under `## [Unreleased]`.
 - `gocyclo` CI step now ignores `_test.go` files; table-driven tests
   legitimately exceed the 10-complexity threshold
 
+### Added (LLMS-015)
+- Per-IP fixed-window rate limiting on the public API (`internal/api/RateLimiter`)
+- `WithRateLimiter` functional option on `api.New()`; default 60 req/min configurable via `API_RATE_LIMIT` env var
+- Standard `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` response headers on every request
+- `Retry-After` header and `429 Too Many Requests` response when limit is exceeded
+- Client IP extracted from `X-Forwarded-For` (nginx first-entry) with fallback to TCP remote address
+
 ### Added (LLMS-002)
 - `internal/httpclient/` — shared HTTP client with default 30s timeout,
   `User-Agent: llmstatus.io/<version>`, per-request `X-Request-ID`, and

@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -35,6 +36,7 @@ func main() {
 	influxToken := requireEnv("INFLUX_TOKEN")
 	influxDB := requireEnv("INFLUX_DATABASE")
 	addr := envOr("API_ADDR", ":8081")
+	rateLimit := envInt("API_RATE_LIMIT", 60)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
@@ -52,10 +54,14 @@ func main() {
 		Token:    influxToken,
 		Database: influxDB,
 	}, nil)
+	limiter := api.NewRateLimiter(rateLimit, time.Minute)
 
 	srv := &http.Server{
-		Addr:         addr,
-		Handler:      api.New(store, api.WithHistoryReader(historyReader)),
+		Addr: addr,
+		Handler: api.New(store,
+			api.WithHistoryReader(historyReader),
+			api.WithRateLimiter(limiter),
+		),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -91,6 +97,16 @@ func requireEnv(key string) string {
 func envOr(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	return def
+}
+
+func envInt(key string, def int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+		slog.Warn("api: invalid env var, using default", "key", key, "default", def)
 	}
 	return def
 }

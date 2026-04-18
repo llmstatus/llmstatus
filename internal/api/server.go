@@ -22,22 +22,29 @@ var _ Store = (*pgstore.Queries)(nil)
 type Server struct {
 	store   Store
 	history HistoryReader // optional; nil → GET /history returns 503
+	limiter *RateLimiter  // optional; nil → no rate limiting
 	mux     *http.ServeMux
+	handler http.Handler // mux optionally wrapped with limiter middleware
 }
 
 // New creates a Server and registers all routes. Pass functional options
-// (e.g. WithHistoryReader) to enable optional capabilities.
+// (e.g. WithHistoryReader, WithRateLimiter) to enable optional capabilities.
 func New(store Store, opts ...func(*Server)) *Server {
 	s := &Server{store: store, mux: http.NewServeMux()}
 	for _, o := range opts {
 		o(s)
 	}
 	s.registerRoutes()
+	if s.limiter != nil {
+		s.handler = s.limiter.Middleware(s.mux)
+	} else {
+		s.handler = s.mux
+	}
 	return s
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
+	s.handler.ServeHTTP(w, r)
 }
 
 func (s *Server) registerRoutes() {
