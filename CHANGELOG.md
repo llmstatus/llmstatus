@@ -10,6 +10,12 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-033)
+- `/badges` page — live badge preview + Markdown / HTML / URL embed snippets for every monitored provider; linked from site nav
+- `CopyButton` client component — clipboard copy with 1.8s "Copied" confirmation
+- `web/app/api/badge/[id]/route.ts` — Next.js proxy route that forwards badge requests to the Go API (`/badge/{id}.svg`); lets the static badges page render `<img>` tags without exposing the internal `API_URL` to the browser
+- `/badges` added to sitemap with `changeFrequency: "monthly"`
+
 ### Fixed (LLMS-032)
 - `docker-compose.yml` rewritten for Go + Next.js stack; removes all Python/uvicorn references which no longer exist
 - `deploy/docker/Dockerfile.golang` — single parameterized multi-stage Go build (`--build-arg CMD=<api|ingest|detector|prober|migrate>`); runtime image is `alpine:3.21` with only `ca-certificates` + `tzdata`
