@@ -10,6 +10,13 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-022)
+- `ProbeTimestamp` client component — relative "X ago" display, auto-refreshes every 10 s (brand spec §6.4); used on `IncidentCard` and incident detail page header
+- `IncidentCard` now shows `ProbeTimestamp` instead of static `formatDate` for started time
+
+### Changed (LLMS-022)
+- `StatusPill` updated to match brand spec §6.1: removed background pill (`rounded-full` + bg color), now dot-only with all-caps 11px text at 0.05em tracking
+
 ### Added
 - Initial open-source repository scaffolding
 - Apache-2.0 License for source code, CC BY 4.0 for methodology and data

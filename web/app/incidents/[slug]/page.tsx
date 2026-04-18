@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { getIncident, ApiNotFoundError, type IncidentDetail, type Severity } from "@/lib/api";
 import { formatDate } from "@/components/IncidentCard";
+import { ProbeTimestamp } from "@/components/ProbeTimestamp";
 
 export const revalidate = 60;
 
@@ -122,15 +123,19 @@ export default async function IncidentPage({ params }: Props) {
             </span>
           </div>
           <h1 className="text-2xl font-semibold text-[var(--ink-100)] mb-1">{inc.title}</h1>
-          <p className="text-sm text-[var(--ink-400)]">
-            Provider:{" "}
-            <Link
-              href={`/providers/${inc.provider_id}`}
-              className="text-[var(--ink-300)] hover:text-[var(--ink-200)] transition-colors"
-            >
-              {inc.provider_id}
-            </Link>
-          </p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-sm text-[var(--ink-400)]">
+              Provider:{" "}
+              <Link
+                href={`/providers/${inc.provider_id}`}
+                className="text-[var(--ink-300)] hover:text-[var(--ink-200)] transition-colors"
+              >
+                {inc.provider_id}
+              </Link>
+            </p>
+            <span className="text-[var(--ink-600)]">·</span>
+            <ProbeTimestamp iso={inc.started_at} prefix="Started" />
+          </div>
         </div>
 
         {/* Timeline */}
