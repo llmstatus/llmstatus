@@ -10,6 +10,11 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Fixed (LLMS-025)
+- `internal/detector` coverage raised from 79.7% → 89.3% (floor: 85%)
+- Added tests: `Run` context-cancel, `runOnce` 5m read error, `ensureIncident` store error + create error, `resolveStale` list error + resolve error, `incidentTitle` all rule branches
+- `fakeIncidentStore` extended with `getErr`/`createErr`/`listErr`/`resolveErr` fields for targeted error injection
+
 ### Added (LLMS-024)
 - `SiteHeader` server component: logo link + nav (`Providers` / `Incidents`) with active-page highlighting via `NavLink` client component (`usePathname`)
 - `SiteFooter` server component: standard footer copy, rendered once in root `layout.tsx`

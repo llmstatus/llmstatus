@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -43,12 +44,19 @@ func (f *fakeReader) RegionalErrorRateByProvider(_ context.Context, _ time.Durat
 // ---- fake IncidentStore -----------------------------------------------------
 
 type fakeIncidentStore struct {
-	incidents []pgstore.Incident
-	created   []pgstore.CreateIncidentParams
-	resolved  []pgstore.ResolveIncidentParams
+	incidents   []pgstore.Incident
+	created     []pgstore.CreateIncidentParams
+	resolved    []pgstore.ResolveIncidentParams
+	getErr      error // non-nil → GetOngoingByProviderAndRule returns this error
+	createErr   error // non-nil → CreateIncident returns this error
+	listErr     error // non-nil → ListIncidentsByStatus returns this error
+	resolveErr  error // non-nil → ResolveIncident returns this error
 }
 
 func (f *fakeIncidentStore) GetOngoingByProviderAndRule(_ context.Context, arg pgstore.GetOngoingByProviderAndRuleParams) (pgstore.Incident, error) {
+	if f.getErr != nil {
+		return pgstore.Incident{}, f.getErr
+	}
 	for _, inc := range f.incidents {
 		if inc.ProviderID == arg.ProviderID &&
 			inc.DetectionRule.Valid &&
@@ -61,6 +69,9 @@ func (f *fakeIncidentStore) GetOngoingByProviderAndRule(_ context.Context, arg p
 }
 
 func (f *fakeIncidentStore) CreateIncident(_ context.Context, arg pgstore.CreateIncidentParams) (pgstore.Incident, error) {
+	if f.createErr != nil {
+		return pgstore.Incident{}, f.createErr
+	}
 	f.created = append(f.created, arg)
 	inc := pgstore.Incident{
 		ID:              uuid.New(),
@@ -77,6 +88,9 @@ func (f *fakeIncidentStore) CreateIncident(_ context.Context, arg pgstore.Create
 }
 
 func (f *fakeIncidentStore) ResolveIncident(_ context.Context, arg pgstore.ResolveIncidentParams) error {
+	if f.resolveErr != nil {
+		return f.resolveErr
+	}
 	f.resolved = append(f.resolved, arg)
 	for i, inc := range f.incidents {
 		if inc.ID == arg.ID {
@@ -87,6 +101,9 @@ func (f *fakeIncidentStore) ResolveIncident(_ context.Context, arg pgstore.Resol
 }
 
 func (f *fakeIncidentStore) ListIncidentsByStatus(_ context.Context, arg pgstore.ListIncidentsByStatusParams) ([]pgstore.Incident, error) {
+	if f.listErr != nil {
+		return nil, f.listErr
+	}
 	var out []pgstore.Incident
 	for _, inc := range f.incidents {
 		if inc.Status == arg.Status {
@@ -207,5 +224,121 @@ func TestIncidentSlug(t *testing.T) {
 	want := "2026-04-18-openai-provider-down"
 	if got != want {
 		t.Errorf("slug: got %q, want %q", got, want)
+	}
+}
+
+func TestRunner_Run_CancelReturnsCtxErr(t *testing.T) {
+	reader := &fakeReader{}
+	store := &fakeIncidentStore{}
+	r := New(reader, store, 10*time.Millisecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- r.Run(ctx) }()
+
+	// Let at least one tick fire, then cancel.
+	time.Sleep(30 * time.Millisecond)
+	cancel()
+
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Run returned %v, want context.Canceled", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Run did not return after context cancel")
+	}
+}
+
+func TestRunner_ReadError_5m_AbortsRunOnce(t *testing.T) {
+	errRead := errors.New("influx timeout")
+	reader := &fakeReader{err: errRead}
+	store := &fakeIncidentStore{}
+	r := New(reader, store, time.Hour)
+	r.runOnce(context.Background())
+
+	// runOnce should return early without creating any incidents.
+	if len(store.created) != 0 {
+		t.Errorf("expected 0 incidents on read error, got %d", len(store.created))
+	}
+}
+
+func TestRunner_EnsureIncident_StoreGetError(t *testing.T) {
+	// GetOngoingByProviderAndRule returns a non-ErrNoRows error → no incident created.
+	reader := &fakeReader{
+		stats5m: []ProbeStats{{ProviderID: "openai", Total: 10, Errors: 6}},
+	}
+	store := &fakeIncidentStore{getErr: errors.New("db connection lost")}
+	r := New(reader, store, time.Hour)
+	r.runOnce(context.Background())
+
+	if len(store.created) != 0 {
+		t.Errorf("expected 0 incidents when GetOngoing errors, got %d", len(store.created))
+	}
+}
+
+func TestRunner_EnsureIncident_CreateError(t *testing.T) {
+	// CreateIncident fails → no entry in store.created.
+	reader := &fakeReader{
+		stats5m: []ProbeStats{{ProviderID: "openai", Total: 10, Errors: 6}},
+	}
+	store := &fakeIncidentStore{createErr: errors.New("unique violation")}
+	r := New(reader, store, time.Hour)
+	r.runOnce(context.Background())
+
+	if len(store.created) != 0 {
+		t.Errorf("expected 0 recorded creates when CreateIncident errors, got %d", len(store.created))
+	}
+}
+
+func TestRunner_ResolveStale_ListError(t *testing.T) {
+	reader := &fakeReader{}
+	store := &fakeIncidentStore{listErr: errors.New("db timeout")}
+	r := New(reader, store, time.Hour)
+	r.runOnce(context.Background()) // must not panic
+
+	if len(store.resolved) != 0 {
+		t.Errorf("expected 0 resolutions when list errors, got %d", len(store.resolved))
+	}
+}
+
+func TestRunner_ResolveStale_ResolveError(t *testing.T) {
+	stale := pgstore.Incident{
+		ID:              uuid.New(),
+		ProviderID:      "openai",
+		Status:          "ongoing",
+		DetectionMethod: "auto",
+		DetectionRule:   pgtype.Text{String: RuleProviderDown, Valid: true},
+	}
+	reader := &fakeReader{}
+	store := &fakeIncidentStore{
+		incidents:  []pgstore.Incident{stale},
+		resolveErr: errors.New("write failed"),
+	}
+	r := New(reader, store, time.Hour)
+	r.runOnce(context.Background()) // must not panic
+
+	// resolveErr causes continue — no entries in store.resolved.
+	if len(store.resolved) != 0 {
+		t.Errorf("expected 0 resolved on error, got %d", len(store.resolved))
+	}
+}
+
+func TestIncidentTitle_AllRules(t *testing.T) {
+	cases := []struct {
+		rule string
+		want string
+	}{
+		{RuleProviderDown, "openai is experiencing major disruption"},
+		{RuleElevatedErrors, "openai elevated errors detected"},
+		{RuleLatencyDegradation, "openai latency degradation detected"},
+		{RuleRegionalOutage, "openai regional outage detected"},
+		{"custom_rule", "openai custom_rule"},
+	}
+	for _, tc := range cases {
+		got := incidentTitle("openai", tc.rule)
+		if got != tc.want {
+			t.Errorf("incidentTitle(%q): got %q, want %q", tc.rule, got, tc.want)
+		}
 	}
 }
