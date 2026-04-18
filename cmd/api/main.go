@@ -1,10 +1,83 @@
 // Command api serves the public read API for llmstatus.io.
 //
-// Scaffolded by LLMS-001. Implementation lives in internal/api.
+// Required environment variables:
+//
+//	DATABASE_URL  Postgres DSN (pgx connection string)
+//
+// Optional:
+//
+//	API_ADDR  Listen address (default ":8081")
 package main
 
-import "fmt"
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/llmstatus/llmstatus/internal/api"
+	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
+)
 
 func main() {
-	fmt.Println("llmstatus api (scaffold)")
+	dbURL := requireEnv("DATABASE_URL")
+	addr := envOr("API_ADDR", ":8081")
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+
+	pool, err := pgxpool.New(ctx, dbURL)
+	if err != nil {
+		slog.Error("api: cannot connect to postgres", "err", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	store := pgstore.New(pool)
+	srv := &http.Server{
+		Addr:         addr,
+		Handler:      api.New(store),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	go func() {
+		slog.Info("api: listening", "addr", addr)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("api: server error", "err", err)
+			os.Exit(1)
+		}
+	}()
+
+	<-ctx.Done()
+	slog.Info("api: shutting down")
+
+	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutCtx); err != nil {
+		slog.Error("api: shutdown error", "err", err)
+	}
+}
+
+func requireEnv(key string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		slog.Error("api: required environment variable not set", "key", key)
+		os.Exit(1)
+	}
+	return v
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

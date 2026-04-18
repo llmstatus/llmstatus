@@ -60,6 +60,22 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-010)
+- `internal/api/` — public read API using Go 1.22+ `net/http.ServeMux`
+  with method+path patterns (no external router dependency)
+- Endpoints: `GET /v1/providers`, `GET /v1/providers/{id}`,
+  `GET /v1/incidents`, `GET /v1/incidents/{id}`, `GET /healthz`
+- Provider status derived from the incidents table: critical ongoing →
+  `down`, major/minor ongoing → `degraded`, no ongoing → `operational`
+- `GET /v1/incidents/{id}` accepts both UUID and slug
+- Response envelope: `{"data": ..., "meta": {"generated_at": "...", "cache_ttl_s": 30}}`
+- `coalesceSlice` ensures all array fields serialize as `[]`, never JSON `null`
+- `Store` interface (subset of `pgstore.Querier`) keeps handlers decoupled
+  from the DB layer and fully testable with a fake store
+- `cmd/api/main.go` — server with graceful 5s shutdown; config via
+  `DATABASE_URL`, `API_ADDR`
+- 14 unit tests covering list, filter, get-by-uuid/slug, not-found, 405
+
 ### Added (LLMS-004)
 - `internal/store/influx/writer.go` — `Writer` interface + `lineWriter` implementation
   using the InfluxDB v2 line-protocol HTTP write endpoint (compatible with InfluxDB 3);
