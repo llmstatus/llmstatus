@@ -69,6 +69,24 @@ func (r *Runner) runOnce(ctx context.Context) {
 
 	detections := EvaluateRules(stats5m, stats10m)
 
+	// Rule 6.3 — latency degradation.
+	latency5m, err := r.reader.LatencyByProvider(ctx, 5*time.Minute)
+	if err != nil {
+		slog.Warn("detector: read latency 5m stats", "err", err)
+	}
+	latency24h, err := r.reader.LatencyByProvider(ctx, 24*time.Hour)
+	if err != nil {
+		slog.Warn("detector: read latency 24h stats", "err", err)
+	}
+	detections = append(detections, EvaluateLatencyRule(latency5m, latency24h)...)
+
+	// Rule 6.4 — regional outage.
+	regional5m, err := r.reader.RegionalErrorRateByProvider(ctx, 5*time.Minute)
+	if err != nil {
+		slog.Warn("detector: read regional stats", "err", err)
+	}
+	detections = append(detections, EvaluateRegionalRule(regional5m, stats5m)...)
+
 	for _, d := range detections {
 		r.ensureIncident(ctx, d)
 	}
@@ -174,6 +192,10 @@ func incidentTitle(providerID, rule string) string {
 		return providerID + " is experiencing major disruption"
 	case RuleElevatedErrors:
 		return providerID + " elevated errors detected"
+	case RuleLatencyDegradation:
+		return providerID + " latency degradation detected"
+	case RuleRegionalOutage:
+		return providerID + " regional outage detected"
 	default:
 		return providerID + " " + rule
 	}

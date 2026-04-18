@@ -294,6 +294,13 @@ provider's endpoints. A slowdown in intermediate ISP infrastructure would
 be reflected in our latency data, even if the provider itself is healthy.
 We cannot distinguish these cases perfectly.
 
+### 8.8 Latency degradation baseline (V1 simplification)
+Rule 6.3 (Degraded Latency) compares p95 latency against a **24-hour rolling
+baseline** rather than the same-hour 7-day median specified in §6. This
+simplification is used in V1 because the 7-day same-hour baseline requires a
+more complex query. The simplified baseline may fire more frequently during
+off-peak hours when normal latency is lower. This will be corrected in v1.1.
+
 ---
 
 ## 9. What's Coming (Planned)
