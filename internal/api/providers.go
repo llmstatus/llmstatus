@@ -10,12 +10,14 @@ import (
 // ---- response types ---------------------------------------------------------
 
 type providerSummary struct {
-	ID               string  `json:"id"`
-	Name             string  `json:"name"`
-	Category         string  `json:"category"`
-	Region           string  `json:"region"`
-	CurrentStatus    string  `json:"current_status"`
-	ActiveIncidentID *string `json:"active_incident_id,omitempty"`
+	ID               string   `json:"id"`
+	Name             string   `json:"name"`
+	Category         string   `json:"category"`
+	Region           string   `json:"region"`
+	CurrentStatus    string   `json:"current_status"`
+	ActiveIncidentID *string  `json:"active_incident_id,omitempty"`
+	Uptime24h        *float64 `json:"uptime_24h,omitempty"`
+	P95Ms            *float64 `json:"p95_ms,omitempty"`
 }
 
 type modelSummary struct {
@@ -70,10 +72,26 @@ func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Fetch live stats (optional; nil liveStats → fields omitted).
+	liveByProvider := make(map[string][2]float64) // [uptime24h, p95_ms]
+	if s.liveStats != nil {
+		if stats, err := s.liveStats.AllProviderLiveStats(r.Context()); err == nil {
+			for _, st := range stats {
+				liveByProvider[st.ProviderID] = [2]float64{st.Uptime24h, st.P95Ms}
+			}
+		}
+		// Live stats failure is non-fatal: summaries still return without fields.
+	}
+
 	summaries := make([]providerSummary, 0, len(providers))
 	for _, p := range providers {
-		s := toProviderSummary(p, incidentByProvider)
-		summaries = append(summaries, s)
+		ps := toProviderSummary(p, incidentByProvider)
+		if live, ok := liveByProvider[p.ID]; ok {
+			u, p95 := live[0], live[1]
+			ps.Uptime24h = &u
+			ps.P95Ms = &p95
+		}
+		summaries = append(summaries, ps)
 	}
 
 	writeEnvelope(w, summaries)

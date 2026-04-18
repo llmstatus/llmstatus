@@ -10,6 +10,13 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-026)
+- `ProviderLiveStat` type + `LiveStatsReader` interface in `internal/store/influx` — one SQL query returns 24h uptime + p95 latency for all providers
+- `influxHistoryReader.postQuery` private helper extracted from `ProviderHistory` — eliminates HTTP boilerplate duplication across both query methods
+- `WithLiveStatsReader` functional option on API `Server` — optional; summaries still return without uptime/p95 fields when not wired
+- `/v1/providers` response now includes `uptime_24h` (0–1) and `p95_ms` fields when live stats available, omitted otherwise
+- `ProviderTable` now shows "Uptime 24h" and "p95" columns per brand spec §6.2; values formatted as `99.9%` / `450ms` / `1.2s`; `—` when data unavailable
+
 ### Fixed (LLMS-025)
 - `internal/detector` coverage raised from 79.7% → 89.3% (floor: 85%)
 - Added tests: `Run` context-cancel, `runOnce` 5m read error, `ensureIncident` store error + create error, `resolveStale` list error + resolve error, `incidentTitle` all rule branches
