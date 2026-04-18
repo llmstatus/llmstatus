@@ -60,6 +60,20 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-003)
+- `internal/probes/runner.go` — `Runner` schedules `ProbeLightInference` for
+  every active (provider, model) pair at a configurable interval; bounded
+  concurrency via semaphore + `sync.WaitGroup`; per-probe context deadline;
+  functional options `WithInterval`, `WithProbeTimeout`, `WithConcurrency`
+- `ResultSink` interface decouples the runner from ingest; `LogSink` is the
+  default implementation (`slog.Info` per result)
+- `cmd/prober/main.go` — production binary: loads active providers and models
+  from Postgres via `pgstore`, matches each against the adapter registry,
+  then drives a `Runner`; config via `REGION_ID`, `DATABASE_URL`,
+  `PROBE_INTERVAL`, `PROBE_TIMEOUT`, `PROBE_CONCURRENCY` env vars
+- 5 unit tests with `goleak.VerifyTestMain`, bounded-concurrency tracking via
+  `atomic.Int64`, and a fake adapter + collect sink
+
 ### Added (LLMS-007)
 - `store/migrations/embed.go` — `//go:embed *.sql` bakes all migration
   files into the binary; no runtime path dependency
