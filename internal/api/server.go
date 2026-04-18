@@ -35,11 +35,11 @@ func New(store Store, opts ...func(*Server)) *Server {
 		o(s)
 	}
 	s.registerRoutes()
+	inner := http.Handler(s.mux)
 	if s.limiter != nil {
-		s.handler = s.limiter.Middleware(s.mux)
-	} else {
-		s.handler = s.mux
+		inner = s.limiter.Middleware(inner)
 	}
+	s.handler = applyMiddleware(inner)
 	return s
 }
 

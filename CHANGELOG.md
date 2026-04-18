@@ -43,6 +43,10 @@ public APIs must add an entry under `## [Unreleased]`.
 - `gocyclo` CI step now ignores `_test.go` files; table-driven tests
   legitimately exceed the 10-complexity threshold
 
+### Added (LLMS-020)
+- Production middleware stack: **CORS** (`Access-Control-Allow-Origin: *`, OPTIONS preflight → 204), **request ID** (`X-Request-ID` — propagates incoming or generates UUID v4), and **structured access logging** (slog, skips `/healthz`)
+- Middleware applied to all routes including rate-limited responses; ordering: `accessLog → cors → requestID → [rateLimiter] → mux`
+
 ### Added (LLMS-019)
 - Detection rule 6.3 — **latency degradation** (`latency_degradation`, severity `minor`): fires when p95 `duration_ms` over the last 5 min exceeds 3× the p95 over the past 24 h
 - Detection rule 6.4 — **regional outage** (`regional_outage`, severity `minor`): fires when one `region_id` has >50% error rate over 5 min while the provider is not globally down
