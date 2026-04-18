@@ -20,11 +20,12 @@ var _ Store = (*pgstore.Queries)(nil)
 
 // Server wires handlers to a ServeMux and owns the store reference.
 type Server struct {
-	store   Store
-	history HistoryReader // optional; nil → GET /history returns 503
-	limiter *RateLimiter  // optional; nil → no rate limiting
-	mux     *http.ServeMux
-	handler http.Handler // mux optionally wrapped with limiter middleware
+	store     Store
+	history   HistoryReader   // optional; nil → GET /history returns 503
+	liveStats LiveStatsReader // optional; nil → uptime24h/p95_ms omitted
+	limiter   *RateLimiter    // optional; nil → no rate limiting
+	mux       *http.ServeMux
+	handler   http.Handler // mux optionally wrapped with limiter middleware
 }
 
 // New creates a Server and registers all routes. Pass functional options

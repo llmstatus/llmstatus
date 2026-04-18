@@ -15,6 +15,16 @@ const REGION_LABEL: Record<string, string> = {
   eu: "EU",
 };
 
+function formatUptime(u: number | undefined): string {
+  if (u === undefined) return "—";
+  return `${(u * 100).toFixed(1)}%`;
+}
+
+function formatP95(ms: number | undefined): string {
+  if (ms === undefined || ms === 0) return "—";
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms)}ms`;
+}
+
 export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
   if (providers.length === 0) {
     return (
@@ -32,6 +42,8 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
             <th className="px-4 py-3 text-left font-medium text-[var(--ink-300)]">Provider</th>
             <th className="px-4 py-3 text-left font-medium text-[var(--ink-300)]">Category</th>
             <th className="px-4 py-3 text-left font-medium text-[var(--ink-300)]">Region</th>
+            <th className="px-4 py-3 text-right font-medium text-[var(--ink-300)]">Uptime 24h</th>
+            <th className="px-4 py-3 text-right font-medium text-[var(--ink-300)]">p95</th>
             <th className="px-4 py-3 text-right font-medium text-[var(--ink-300)]">Status</th>
           </tr>
         </thead>
@@ -56,6 +68,12 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
               </td>
               <td className="px-4 py-3 text-[var(--ink-300)]">
                 {REGION_LABEL[p.region] ?? p.region}
+              </td>
+              <td className="px-4 py-3 text-right font-mono text-[var(--ink-200)]">
+                {formatUptime(p.uptime_24h)}
+              </td>
+              <td className="px-4 py-3 text-right font-mono text-[var(--ink-200)]">
+                {formatP95(p.p95_ms)}
               </td>
               <td className="px-4 py-3 text-right">
                 <StatusPill status={p.current_status} />

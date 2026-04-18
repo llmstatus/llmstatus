@@ -22,6 +22,8 @@ export interface ProviderSummary {
   region: string;
   current_status: ProviderStatus;
   active_incident_id?: string;
+  uptime_24h?: number; // 0–1; omitted when live stats unavailable
+  p95_ms?: number;     // p95 latency ms of successful probes; omitted when unavailable
 }
 
 export interface IncidentRef {

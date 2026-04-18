@@ -32,8 +32,9 @@ type HistoryReaderConfig struct {
 	Database string
 }
 
-// NewHistoryReader returns a HistoryReader that queries via POST /api/v3/query_sql.
-func NewHistoryReader(cfg HistoryReaderConfig, client *http.Client) HistoryReader {
+// NewHistoryReader returns an *influxHistoryReader that satisfies both
+// HistoryReader and LiveStatsReader.
+func NewHistoryReader(cfg HistoryReaderConfig, client *http.Client) *influxHistoryReader {
 	if client == nil {
 		client = &http.Client{Timeout: 15 * time.Second}
 	}
@@ -43,6 +44,17 @@ func NewHistoryReader(cfg HistoryReaderConfig, client *http.Client) HistoryReade
 type influxHistoryReader struct {
 	cfg    HistoryReaderConfig
 	client *http.Client
+}
+
+func (r *influxHistoryReader) postQuery(ctx context.Context, body []byte) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		r.cfg.Host+"/api/v3/query_sql", bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	req.Header.Set("Authorization", "Token "+r.cfg.Token)
+	req.Header.Set("Content-Type", "application/json")
+	return r.client.Do(req)
 }
 
 func (r *influxHistoryReader) ProviderHistory(
@@ -80,17 +92,9 @@ func (r *influxHistoryReader) ProviderHistory(
 		return nil, fmt.Errorf("influx history: marshal query: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		r.cfg.Host+"/api/v3/query_sql", bytes.NewReader(body))
+	resp, err := r.postQuery(ctx, body)
 	if err != nil {
-		return nil, fmt.Errorf("influx history: build request: %w", err)
-	}
-	req.Header.Set("Authorization", "Token "+r.cfg.Token)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := r.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("influx history: query: %w", err)
+		return nil, fmt.Errorf("influx history: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
