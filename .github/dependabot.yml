@@ -9,6 +9,7 @@ updates:
     labels:
       - dependencies
       - go
+      - no-changelog
     commit-message:
       prefix: "deps(go)"
     groups:
@@ -26,6 +27,7 @@ updates:
     labels:
       - dependencies
       - javascript
+      - no-changelog
     commit-message:
       prefix: "deps(web)"
     groups:
@@ -41,6 +43,7 @@ updates:
     labels:
       - dependencies
       - ci
+      - no-changelog
     commit-message:
       prefix: "deps(ci)"
 
@@ -51,5 +54,6 @@ updates:
     labels:
       - dependencies
       - docker
+      - no-changelog
     commit-message:
       prefix: "deps(docker)"
