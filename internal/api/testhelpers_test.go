@@ -8,8 +8,19 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/llmstatus/llmstatus/internal/store/influx"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
+
+// fakeLiveStatsReader implements api.LiveStatsReader for unit tests.
+type fakeLiveStatsReader struct {
+	stats []influx.ProviderLiveStat
+	err   error
+}
+
+func (f *fakeLiveStatsReader) AllProviderLiveStats(_ context.Context) ([]influx.ProviderLiveStat, error) {
+	return f.stats, f.err
+}
 
 // fakeStore implements api.Store for unit tests.
 type fakeStore struct {

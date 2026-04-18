@@ -60,6 +60,7 @@ func main() {
 		Addr: addr,
 		Handler: api.New(store,
 			api.WithHistoryReader(historyReader),
+			api.WithLiveStatsReader(historyReader),
 			api.WithRateLimiter(limiter),
 		),
 		ReadTimeout:  10 * time.Second,
