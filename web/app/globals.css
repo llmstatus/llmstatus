@@ -1,26 +1,63 @@
 @import "tailwindcss";
 
+/* Brand system — BRAND_SYSTEM.md §4 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Canvas */
+  --canvas-base:    #0A0E14;
+  --canvas-raised:  #0F141B;
+  --canvas-sunken:  #060A10;
+  --canvas-overlay: #151B24;
+
+  /* Ink */
+  --ink-100: #E8ECF1;
+  --ink-200: #C1C8D4;
+  --ink-300: #8B94A3;
+  --ink-400: #5A6472;
+  --ink-500: #3C4452;
+  --ink-600: #242B36;
+
+  /* Signals */
+  --signal-ok:       #5EEAD4;
+  --signal-ok-bg:    #0F3530;
+  --signal-warn:     #F59E0B;
+  --signal-warn-bg:  #3D2909;
+  --signal-down:     #F87171;
+  --signal-down-bg:  #3A1515;
+  --signal-amber:    #D97706;
+
+  /* Data-viz */
+  --viz-1: #5EEAD4;
+  --viz-2: #60A5FA;
+  --viz-3: #F59E0B;
+  --viz-4: #A78BFA;
+  --viz-5: #FB923C;
+  --viz-6: #34D399;
+  --viz-7: #F472B6;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas-base:    var(--canvas-base);
+  --color-canvas-raised:  var(--canvas-raised);
+  --color-canvas-sunken:  var(--canvas-sunken);
+  --color-canvas-overlay: var(--canvas-overlay);
+  --color-ink-100: var(--ink-100);
+  --color-ink-200: var(--ink-200);
+  --color-ink-300: var(--ink-300);
+  --color-ink-400: var(--ink-400);
+  --color-ink-500: var(--ink-500);
+  --color-ink-600: var(--ink-600);
+  --color-signal-ok:      var(--signal-ok);
+  --color-signal-ok-bg:   var(--signal-ok-bg);
+  --color-signal-warn:    var(--signal-warn);
+  --color-signal-warn-bg: var(--signal-warn-bg);
+  --color-signal-down:    var(--signal-down);
+  --color-signal-down-bg: var(--signal-down-bg);
+  --color-signal-amber:   var(--signal-amber);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+html, body {
+  background-color: var(--canvas-base);
+  color: var(--ink-100);
 }

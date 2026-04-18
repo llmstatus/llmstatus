@@ -60,6 +60,24 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-011)
+- `web/app/globals.css` — replaced scaffold with brand system CSS variables
+  (`--canvas-*`, `--ink-*`, `--signal-*`, `--viz-*`) from BRAND_SYSTEM.md §4;
+  dark observatory theme, no light-mode media query
+- `web/app/layout.tsx` — updated with site-wide metadata title template
+  (`%s — LLM Status`) and description
+- `web/lib/api.ts` — typed server-side API client; `listProviders()` and
+  `listIncidents()` fetch from `API_URL` env var with Next.js `next.revalidate`
+  cache; graceful null return on network failure
+- `web/components/StatusPill.tsx` — operational/degraded/down pill using brand
+  signal colors; server component
+- `web/components/ProviderTable.tsx` — provider list table with alternating row
+  backgrounds; server component
+- `web/app/page.tsx` — homepage server component; fetches live provider status,
+  renders summary banner and `ProviderTable`; `revalidate = 30`; degrades
+  gracefully when the API is unreachable
+- `next build` produces a static pre-render with 30 s ISR, zero TypeScript errors
+
 ### Added (LLMS-009)
 - `internal/detector/` — event-detection subsystem with three layers:
   - `reader.go` — `ProbeReader` interface + `InfluxReader` that queries
