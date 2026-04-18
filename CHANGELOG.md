@@ -43,6 +43,12 @@ public APIs must add an entry under `## [Unreleased]`.
 - `gocyclo` CI step now ignores `_test.go` files; table-driven tests
   legitimately exceed the 10-complexity threshold
 
+### Added (LLMS-017)
+- `GET /feed.xml` — global RSS 2.0 feed of all incidents (last 50, all providers)
+- `GET /v1/providers/{id}/feed.xml` — per-provider RSS 2.0 feed; returns HTTP 404 for unknown provider IDs
+- Feed items include provider name, severity, status, start time, and a permalink GUID
+- `Cache-Control: max-age=60`; `X-Forwarded-Proto` honoured for absolute link URLs
+
 ### Added (LLMS-016)
 - `GET /badge/{provider_id}.svg` — shields.io-compatible flat SVG badge showing provider status
 - Colors: operational → green (`#4CAF50`), degraded → amber (`#FF9800`), down → red (`#F44336`), unknown → gray (`#9E9E9E`)
