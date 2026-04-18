@@ -20,13 +20,18 @@ var _ Store = (*pgstore.Queries)(nil)
 
 // Server wires handlers to a ServeMux and owns the store reference.
 type Server struct {
-	store Store
-	mux   *http.ServeMux
+	store   Store
+	history HistoryReader // optional; nil → GET /history returns 503
+	mux     *http.ServeMux
 }
 
-// New creates a Server and registers all routes.
-func New(store Store) *Server {
+// New creates a Server and registers all routes. Pass functional options
+// (e.g. WithHistoryReader) to enable optional capabilities.
+func New(store Store, opts ...func(*Server)) *Server {
 	s := &Server{store: store, mux: http.NewServeMux()}
+	for _, o := range opts {
+		o(s)
+	}
 	s.registerRoutes()
 	return s
 }
@@ -39,6 +44,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /v1/providers", s.listProviders)
 	s.mux.HandleFunc("GET /v1/providers/{id}", s.getProvider)
+	s.mux.HandleFunc("GET /v1/providers/{id}/history", s.getProviderHistory)
 	s.mux.HandleFunc("GET /v1/incidents", s.listIncidents)
 	s.mux.HandleFunc("GET /v1/incidents/{id}", s.getIncident)
 }
