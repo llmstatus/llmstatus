@@ -29,9 +29,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   try {
     const inc = await getIncident(slug);
+    const title = incidentTitle(inc);
+    const description = inc.description ?? inc.title;
     return {
-      title: incidentTitle(inc),
-      description: inc.description ?? inc.title,
+      title,
+      description,
+      openGraph: { title, description },
     };
   } catch {
     return { title: "Incident not found" };

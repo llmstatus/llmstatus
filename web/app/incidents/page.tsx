@@ -8,6 +8,10 @@ export const revalidate = 30;
 export const metadata: Metadata = {
   title: "Incidents",
   description: "All detected incidents across AI API providers, past and present.",
+  openGraph: {
+    title: "Incidents | llmstatus.io",
+    description: "All detected incidents across AI API providers, past and present.",
+  },
 };
 
 export default async function IncidentsPage() {

@@ -7,13 +7,24 @@ import { SiteFooter } from "@/components/SiteFooter";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const DESCRIPTION =
+  "Independent real-time uptime and latency monitoring for AI API providers. " +
+  "Measured from 7 global locations. Not scraped from official status pages.";
+
 export const metadata: Metadata = {
   title: {
-    default: "LLM Status — Real-time AI API monitoring",
-    template: "%s — LLM Status",
+    default: "llmstatus.io — AI API Status Monitor",
+    template: "%s | llmstatus.io",
   },
-  description:
-    "Independent real-time uptime and latency monitoring for AI API providers. Live data, not scraped status pages.",
+  description: DESCRIPTION,
+  openGraph: {
+    siteName: "llmstatus.io",
+    type: "website",
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: "summary",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

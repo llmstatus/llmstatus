@@ -39,12 +39,12 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
-            <th className="px-4 py-3 text-left font-medium text-[var(--ink-300)]">Provider</th>
-            <th className="px-4 py-3 text-left font-medium text-[var(--ink-300)]">Category</th>
-            <th className="px-4 py-3 text-left font-medium text-[var(--ink-300)]">Region</th>
-            <th className="px-4 py-3 text-right font-medium text-[var(--ink-300)]">Uptime 24h</th>
-            <th className="px-4 py-3 text-right font-medium text-[var(--ink-300)]">p95</th>
-            <th className="px-4 py-3 text-right font-medium text-[var(--ink-300)]">Status</th>
+            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">Provider</th>
+            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">Category</th>
+            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">Region</th>
+            <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">Uptime 24h</th>
+            <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">p95</th>
+            <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">Status</th>
           </tr>
         </thead>
         <tbody>
