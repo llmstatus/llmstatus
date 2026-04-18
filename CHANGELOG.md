@@ -59,3 +59,8 @@ public APIs must add an entry under `## [Unreleased]`.
   `LLMS_OPENAI_API_KEY` + `LLMS_REGION_ID` are set
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
+
+### Added (auto-merge helpers)
+- `scripts/merge-pr.sh` — approve + merge a PR end-to-end without
+  manual intervention
+- `scripts/merge-open-deps.sh` — sweep every open dependabot PR
