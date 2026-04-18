@@ -57,9 +57,15 @@ func main() {
 		os.Exit(0)
 	}
 
+	var sink probes.ResultSink = probes.LogSink{}
+	if ingestURL := os.Getenv("INGEST_URL"); ingestURL != "" {
+		sink = probes.NewHTTPSink(ingestURL)
+		slog.Info("prober: using HTTP sink", "url", ingestURL)
+	}
+
 	r := probes.New(
 		configs,
-		probes.LogSink{},
+		sink,
 		regionID,
 		probes.WithInterval(interval),
 		probes.WithProbeTimeout(timeout),
