@@ -10,6 +10,11 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-023)
+- `HistoryBucket.P95Ms` field — InfluxDB SQL now selects `approx_percentile_cont(0.95)` for successful probes alongside existing uptime data
+- `LatencyBar` component — 30-day per-day p95 bar chart, color-coded by threshold (≤500ms green, ≤2000ms amber, >2000ms red), gray stubs for days with no probe data; shows median p95 summary
+- Provider detail page: `LatencyBar` section rendered below `UptimeSparkline` when latency data is available
+
 ### Added (LLMS-022)
 - `ProbeTimestamp` client component — relative "X ago" display, auto-refreshes every 10 s (brand spec §6.4); used on `IncidentCard` and incident detail page header
 - `IncidentCard` now shows `ProbeTimestamp` instead of static `formatDate` for started time

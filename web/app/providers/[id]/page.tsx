@@ -7,6 +7,7 @@ import { StatusPill } from "@/components/StatusPill";
 import { IncidentCard } from "@/components/IncidentCard";
 import { ModelList } from "@/components/ModelList";
 import { UptimeSparkline } from "@/components/UptimeSparkline";
+import { LatencyBar } from "@/components/LatencyBar";
 
 export const revalidate = 60;
 
@@ -119,6 +120,17 @@ export default async function ProviderPage({ params }: Props) {
             </h2>
             <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4">
               <UptimeSparkline buckets={history} days={30} />
+            </div>
+          </section>
+        )}
+
+        {history !== null && history.some((b) => b.p95_ms > 0) && (
+          <section className="mb-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+              Latency (p95)
+            </h2>
+            <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4">
+              <LatencyBar buckets={history} days={30} />
             </div>
           </section>
         )}
