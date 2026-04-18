@@ -69,13 +69,40 @@ taxonomy has changed at least twice.
 
 ## anthropic
 
-### 529 overloaded errors
-**First observed**: (to confirm with real probe)
-**What happens**: Anthropic returns HTTP 529 with `{"type": "overloaded_error"}`
-when capacity is constrained. This is not documented in the standard HTTP
-status code set (529 is non-standard) and is specific to Anthropic.
-**How we handle it**: Classify as error type `model_overloaded`, not `5xx`.
-**References**: Observed during Claude 3.5 launch weekend, 2024-10.
+### Auth: `x-api-key` header, not `Authorization: Bearer`
+**First observed**: LLMS-008, 2026-04-18
+**What happens**: Anthropic authentication uses the header `x-api-key: <key>`
+instead of the OAuth2-style `Authorization: Bearer <key>` used by OpenAI and
+most other providers.
+**How we handle it**: `buildLightRequest` in `anthropic.go` sets `x-api-key`
+explicitly. An incorrect `Authorization` header is silently ignored by the API.
+**References**: `internal/probes/adapters/anthropic.go:buildLightRequest`
+
+### `anthropic-version` header is required on every request
+**First observed**: LLMS-008, 2026-04-18
+**What happens**: Requests without the `anthropic-version` header are rejected
+with a 400. The minimum accepted value is `2023-06-01`; we pin to this.
+**How we handle it**: Set unconditionally in `buildLightRequest`.
+**References**: https://docs.anthropic.com/en/api/versioning
+
+### HTTP 529 = overloaded (non-standard)
+**First observed**: Reported from Claude 3.5 launch weekend 2024-10; added
+to fixtures LLMS-008, 2026-04-18
+**What happens**: Anthropic returns HTTP 529 with
+`{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}`
+when capacity is constrained. HTTP 529 is not an IANA-registered status code.
+**How we handle it**: `classifyAnthropicStatus` treats 529 the same as 5xx
+(`ErrorClassServer5xx`). We do not use a separate `overloaded` class to
+keep the taxonomy stable (see METHODOLOGY.md §5.4).
+**References**: `internal/probes/adapters/anthropic.go:classifyAnthropicStatus`
+
+### Usage fields differ from OpenAI convention
+**First observed**: LLMS-008, 2026-04-18
+**What happens**: Anthropic response bodies use `input_tokens`/`output_tokens`
+(inside a `usage` object) instead of OpenAI's `prompt_tokens`/`completion_tokens`.
+**How we handle it**: `anthropicMessagesResponse.Usage` maps to the correct
+fields. `ProbeResult.TokensIn`/`TokensOut` are populated accordingly.
+**References**: `internal/probes/adapters/anthropic.go:anthropicMessagesResponse`
 
 ---
 
