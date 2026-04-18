@@ -10,6 +10,11 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-029)
+- `web/app/not-found.tsx` — branded 404 page (amber "404" label, dark canvas, "Back to status" link) replacing Next.js default white page
+- `web/app/robots.ts` — serves `/robots.txt`: allow all crawlers, points to sitemap; respects `NEXT_PUBLIC_SITE_URL` env var
+- `web/app/sitemap.ts` — serves `/sitemap.xml`: static routes (`/`, `/incidents`) + dynamic routes for every active provider and recent incident; revalidates hourly; falls back gracefully when API is unreachable
+
 ### Added (LLMS-028)
 - Homepage hero section: tagline + subhead verbatim from BRAND_SYSTEM.md §7.1; optional faint grid background per §6.5
 - `layout.tsx` base metadata: corrected site name to `llmstatus.io`, added `openGraph.siteName`, `twitter.card`
