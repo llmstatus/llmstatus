@@ -23,9 +23,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         : provider.current_status === "down"
         ? "experiencing an outage"
         : "degraded";
+    const description = `${provider.name} API is currently ${statusLabel}. Real-time uptime monitoring from llmstatus.io.`;
     return {
       title: `Is ${provider.name} API down?`,
-      description: `${provider.name} API is currently ${statusLabel}. Real-time uptime monitoring from llmstatus.io.`,
+      description,
+      openGraph: { title: `${provider.name} API Status`, description },
     };
   } catch {
     return { title: "Provider not found" };

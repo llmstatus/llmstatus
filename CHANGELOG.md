@@ -10,6 +10,15 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-028)
+- Homepage hero section: tagline + subhead verbatim from BRAND_SYSTEM.md §7.1; optional faint grid background per §6.5
+- `layout.tsx` base metadata: corrected site name to `llmstatus.io`, added `openGraph.siteName`, `twitter.card`
+- `page.tsx` exports named `metadata` with OG title + description
+- `providers/[id]/page.tsx` `generateMetadata` now includes `openGraph` with provider-specific title + description
+- `incidents/[slug]/page.tsx` `generateMetadata` now includes `openGraph` with incident title + description
+- `incidents/page.tsx` now includes `openGraph` metadata
+- `ProviderTable` table headers updated to all-caps 11px with 0.08em tracking per brand spec §6.2
+
 ### Fixed (LLMS-027)
 - `cmd/api/main.go` now passes `historyReader` to both `WithHistoryReader` and `WithLiveStatsReader`; previously `uptime_24h`/`p95_ms` would never appear in production despite the pipeline being complete
 - Added `TestListProviders_WithLiveStats` and `TestListProviders_LiveStatsNil_OmitsFields` to confirm field presence/absence

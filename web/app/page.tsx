@@ -1,7 +1,21 @@
+import type { Metadata } from "next";
 import { listProviders } from "@/lib/api";
 import { ProviderTable } from "@/components/ProviderTable";
 
 export const revalidate = 30;
+
+export const metadata: Metadata = {
+  title: "AI API Status Monitor",
+  description:
+    "Independent real-time monitoring for the AI infrastructure. " +
+    "Measured from 7 global locations. Not scraped from official status pages.",
+  openGraph: {
+    title: "llmstatus.io — AI API Status Monitor",
+    description:
+      "Independent real-time monitoring for the AI infrastructure. " +
+      "Measured from 7 global locations. Not scraped from official status pages.",
+  },
+};
 
 export default async function HomePage() {
   const providers = await listProviders().catch(() => null);
@@ -31,11 +45,33 @@ export default async function HomePage() {
       : "text-[var(--signal-warn)]";
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-[var(--ink-100)] mb-1">
-          AI API Status
+    <main className="flex-1 mx-auto w-full max-w-4xl px-6">
+      {/* Hero — brand spec §7.1 + optional grid background §6.5 */}
+      <div
+        className="py-14 mb-2"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px)," +
+            "linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px)",
+          backgroundSize: "8px 8px",
+        }}
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+          llmstatus.io
+        </p>
+        <h1 className="text-3xl font-semibold text-[var(--ink-100)] leading-tight mb-3">
+          Independent real-time monitoring
+          <br />
+          for the AI infrastructure.
         </h1>
+        <p className="text-sm text-[var(--ink-400)] leading-relaxed">
+          Measured from 7 global locations.
+          <br />
+          Not scraped from official status pages.
+        </p>
+      </div>
+
+      <div className="mb-6">
         <p className={`text-sm font-medium ${summaryColor}`}>{summaryText}</p>
       </div>
 
