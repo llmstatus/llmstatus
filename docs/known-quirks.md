@@ -32,17 +32,38 @@ is fixed AND you have verified it against their live API.
 
 ## openai
 
-### (placeholder — add real quirks as they surface)
+### HTTP 200 responses can carry an `error` object
+**First observed**: LLMS-002 scaffolding, 2026-04-18
+**What happens**: The OpenAI API occasionally returns a well-formed
+`application/json` body with HTTP 200 whose top-level object is an
+`{"error": {...}}` envelope rather than a `chat.completion` response.
+A naive `status < 300` check will wrongly mark such responses as
+successful.
+**How we handle it**: `classifyOpenAIResponse` (see
+`internal/probes/adapters/openai.go`) requires the decoded body to
+match the `chat.completion` shape (`choices` + `usage`). Bodies that
+decode but lack that shape fall through to `ErrorClassMalformedBody`.
+**References**: OpenAI Discuss threads 2024-Q4 report sporadic 200+error
+behaviour during transient routing issues.
 
-The OpenAI adapter is the first implemented. Fill this section as real
-probe data reveals quirks.
+### Authentication surface: `401` can carry varied `code` strings
+**First observed**: 2026-04-18 (fixtures)
+**What happens**: An invalid key returns HTTP 401 with
+`error.code` ∈ `{"invalid_api_key", "missing_api_key",
+"mismatched_organization", ...}`. We should classify all 401/403 as
+`ErrorClassAuth` without relying on the code string, because the code
+taxonomy has changed at least twice.
+**How we handle it**: `classifyOpenAIStatus` treats 401 and 403 as
+`auth` regardless of body content.
+**References**: `internal/probes/adapters/openai.go:classifyOpenAIStatus`
 
-Known suspects to investigate:
-- Rate limit headers (`x-ratelimit-*`) may not appear on all endpoints
-- o1/o3 models have different `max_tokens` semantics (use `max_completion_tokens`)
-- Some models stream differently (different SSE `data:` formatting)
-- Organization and project headers sometimes required, sometimes not
-- Model deprecation timelines frequently change
+### Suspects not yet confirmed (fill in as real probe data arrives)
+- Rate limit headers (`x-ratelimit-remaining-requests` vs
+  `x-ratelimit-remaining-tokens`) may be absent on some endpoints.
+- o1/o3 models use `max_completion_tokens`, not `max_tokens`.
+- Organization and project headers are sometimes required.
+- Streaming (`data: [DONE]`) formatting differs between legacy and new
+  models.
 
 ---
 
