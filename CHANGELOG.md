@@ -60,6 +60,15 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-007)
+- `store/migrations/embed.go` — `//go:embed *.sql` bakes all migration
+  files into the binary; no runtime path dependency
+- `cmd/migrate` — production-ready migration runner using
+  `golang-migrate/v4` with `iofs` source and `pgx/v5` driver; commands:
+  `up`, `down [N]`, `version`, `status`, `force N`; DB URL from
+  `DATABASE_URL` env or `-db` flag; uses `pgx5://` scheme
+- Dependencies: `github.com/golang-migrate/migrate/v4 v4.19.1`
+
 ### Added (LLMS-006)
 - `pkg/testutil/postgres.go` — `NewPostgres(t)` spins up a Postgres 17
   container via testcontainers-go, applies all `store/migrations/*.sql`
