@@ -59,6 +59,7 @@ func main() {
 	srv := &http.Server{
 		Addr: addr,
 		Handler: api.New(store,
+			api.WithPinger(pool),
 			api.WithHistoryReader(historyReader),
 			api.WithLiveStatsReader(historyReader),
 			api.WithRateLimiter(limiter),

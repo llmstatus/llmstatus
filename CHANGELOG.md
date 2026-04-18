@@ -10,6 +10,12 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-031)
+- `GET /v1/status` — aggregate system status endpoint: worst-case status across all active providers (`"operational"` / `"degraded"` / `"down"`) plus breakdown counts; wrapped in standard envelope
+- `Pinger` interface + `WithPinger` functional option on `Server` — when wired, `/healthz` pings the DB and returns 503 if unreachable; without it, behaviour is unchanged (always 200)
+- `cmd/api/main.go` wires `WithPinger(pool)` so production health checks reflect actual DB state
+- 7 new tests: `GetStatus` (all-operational, one-down, one-degraded, empty) + `Healthz` (no pinger, pinger OK, pinger fail)
+
 ### Added (LLMS-030)
 - `web/app/error.tsx` — client-component error boundary: branded dark page with amber "Error" label, digest-aware message, and secondary "Try again" button that calls Next.js `reset()`
 - `web/app/loading.tsx` — server-component loading skeleton: `animate-pulse` blocks mirroring the hero + table layout; shown during client-side navigation suspense
