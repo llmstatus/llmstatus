@@ -5,7 +5,15 @@ interface ApiEnvelope<T> {
   meta: { generated_at: string; cache_ttl_s: number };
 }
 
+export class ApiNotFoundError extends Error {
+  constructor(path: string) {
+    super(`Not found: ${path}`);
+    this.name = "ApiNotFoundError";
+  }
+}
+
 export type ProviderStatus = "operational" | "degraded" | "down";
+export type Severity = "minor" | "major" | "critical";
 
 export interface ProviderSummary {
   id: string;
@@ -16,11 +24,34 @@ export interface ProviderSummary {
   active_incident_id?: string;
 }
 
+export interface IncidentRef {
+  id: string;
+  slug: string;
+  severity: Severity;
+  title: string;
+  status: string;
+  started_at: string;
+}
+
+export interface ModelSummary {
+  model_id: string;
+  display_name: string;
+  model_type: string;
+  active: boolean;
+}
+
+export interface ProviderDetail extends ProviderSummary {
+  status_page_url?: string;
+  documentation_url?: string;
+  models: ModelSummary[];
+  active_incidents: IncidentRef[];
+}
+
 export interface IncidentSummary {
   id: string;
   slug: string;
   provider_id: string;
-  severity: "minor" | "major" | "critical";
+  severity: Severity;
   title: string;
   status: "ongoing" | "monitoring" | "resolved";
   started_at: string;
@@ -32,15 +63,18 @@ async function apiFetch<T>(path: string, revalidate: number): Promise<T> {
     next: { revalidate },
     headers: { Accept: "application/json" },
   });
-  if (!res.ok) {
-    throw new Error(`API ${path} returned ${res.status}`);
-  }
+  if (res.status === 404) throw new ApiNotFoundError(path);
+  if (!res.ok) throw new Error(`API ${path} returned ${res.status}`);
   const envelope: ApiEnvelope<T> = await res.json();
   return envelope.data;
 }
 
 export function listProviders(): Promise<ProviderSummary[]> {
   return apiFetch<ProviderSummary[]>("/v1/providers", 30);
+}
+
+export function getProvider(id: string): Promise<ProviderDetail> {
+  return apiFetch<ProviderDetail>(`/v1/providers/${encodeURIComponent(id)}`, 60);
 }
 
 export function listIncidents(status = "ongoing"): Promise<IncidentSummary[]> {

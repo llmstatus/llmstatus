@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ProviderSummary } from "@/lib/api";
 import { StatusPill } from "./StatusPill";
 
@@ -42,7 +43,14 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
                 idx % 2 === 0 ? "bg-[var(--canvas-raised)]" : "bg-[var(--canvas-base)]"
               }`}
             >
-              <td className="px-4 py-3 font-medium text-[var(--ink-100)]">{p.name}</td>
+              <td className="px-4 py-3 font-medium text-[var(--ink-100)]">
+                <Link
+                  href={`/providers/${p.id}`}
+                  className="hover:text-[var(--signal-ok)] transition-colors"
+                >
+                  {p.name}
+                </Link>
+              </td>
               <td className="px-4 py-3 text-[var(--ink-300)]">
                 {CATEGORY_LABEL[p.category] ?? p.category}
               </td>

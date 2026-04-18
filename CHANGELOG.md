@@ -60,6 +60,21 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-012)
+- `web/app/providers/[id]/page.tsx` — provider detail page; server component,
+  ISR 60s; `generateMetadata` produces `Is {Provider} API down?` title + data-driven
+  description; calls `notFound()` on `ApiNotFoundError` (HTTP 404), re-throws
+  other errors so Next.js retries ISR
+- `web/components/IncidentCard.tsx` — card showing severity, title, and UTC
+  started_at timestamp for active incidents
+- `web/components/ModelList.tsx` — table of active monitored models with
+  model ID (monospace) and type
+- `web/lib/api.ts` — added `ApiNotFoundError` class, `ProviderDetail`,
+  `IncidentRef`, `ModelSummary` types; `getProvider(id)` function; `apiFetch`
+  now throws `ApiNotFoundError` on HTTP 404
+- `web/components/ProviderTable.tsx` — provider name cells now link to
+  `/providers/{id}`
+
 ### Added (LLMS-011)
 - `web/app/globals.css` — replaced scaffold with brand system CSS variables
   (`--canvas-*`, `--ink-*`, `--signal-*`, `--viz-*`) from BRAND_SYSTEM.md §4;
