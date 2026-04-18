@@ -11,12 +11,13 @@ import (
 	"time"
 )
 
-// HistoryBucket holds aggregated probe counts for one time bucket.
+// HistoryBucket holds aggregated probe stats for one time bucket.
 type HistoryBucket struct {
 	Timestamp time.Time `json:"timestamp"`
 	Total     int64     `json:"total"`
 	Errors    int64     `json:"errors"`
 	Uptime    float64   `json:"uptime"` // 1 - error_rate; 1.0 when Total == 0
+	P95Ms     float64   `json:"p95_ms"` // p95 duration of successful probes; 0 when no successful probes
 }
 
 // HistoryReader queries InfluxDB 3 for per-provider time-bucketed history.
@@ -57,7 +58,9 @@ func (r *influxHistoryReader) ProviderHistory(
 	sql := fmt.Sprintf(
 		`SELECT date_bin(INTERVAL '%d seconds', time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,
 		        COUNT(*) AS total,
-		        COUNT(*) FILTER (WHERE success = false) AS errors
+		        COUNT(*) FILTER (WHERE success = false) AS errors,
+		        COALESCE(approx_percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms)
+		                 FILTER (WHERE success = true AND duration_ms IS NOT NULL), 0) AS p95_ms
 		 FROM probes
 		 WHERE time >= now() - INTERVAL '%d seconds'
 		   AND provider_id = '%s'
@@ -100,6 +103,7 @@ func (r *influxHistoryReader) ProviderHistory(
 		Bucket string  `json:"bucket"`
 		Total  float64 `json:"total"`
 		Errors float64 `json:"errors"`
+		P95Ms  float64 `json:"p95_ms"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
 		return nil, fmt.Errorf("influx history: decode: %w", err)
@@ -126,6 +130,7 @@ func (r *influxHistoryReader) ProviderHistory(
 			Total:     total,
 			Errors:    errors,
 			Uptime:    uptime,
+			P95Ms:     row.P95Ms,
 		})
 	}
 	return buckets, nil

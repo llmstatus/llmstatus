@@ -88,7 +88,8 @@ export interface HistoryBucket {
   timestamp: string;
   total: number;
   errors: number;
-  uptime: number; // 0–1
+  uptime: number;  // 0–1
+  p95_ms: number;  // p95 duration of successful probes in ms; 0 when no successful probes
 }
 
 export type HistoryWindow = "24h" | "7d" | "30d";

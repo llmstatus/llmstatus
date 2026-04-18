@@ -15,8 +15,8 @@ func TestHistoryReader_Success(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`[
-			{"bucket":"2026-04-17T00:00:00Z","total":1440,"errors":14},
-			{"bucket":"2026-04-18T00:00:00Z","total":720,"errors":0}
+			{"bucket":"2026-04-17T00:00:00Z","total":1440,"errors":14,"p95_ms":680.5},
+			{"bucket":"2026-04-18T00:00:00Z","total":720,"errors":0,"p95_ms":0}
 		]`))
 	}))
 	t.Cleanup(srv.Close)
@@ -41,10 +41,16 @@ func TestHistoryReader_Success(t *testing.T) {
 	if b0.Uptime < wantUptime-0.001 || b0.Uptime > wantUptime+0.001 {
 		t.Errorf("bucket 0 uptime: got %f, want ~%f", b0.Uptime, wantUptime)
 	}
+	if b0.P95Ms != 680.5 {
+		t.Errorf("bucket 0 P95Ms: got %f, want 680.5", b0.P95Ms)
+	}
 
 	b1 := buckets[1]
 	if b1.Uptime != 1.0 {
 		t.Errorf("bucket 1 uptime: got %f, want 1.0 (no errors)", b1.Uptime)
+	}
+	if b1.P95Ms != 0 {
+		t.Errorf("bucket 1 P95Ms: got %f, want 0 (no successful probes)", b1.P95Ms)
 	}
 }
 
