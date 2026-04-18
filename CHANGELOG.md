@@ -10,6 +10,10 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-030)
+- `web/app/error.tsx` — client-component error boundary: branded dark page with amber "Error" label, digest-aware message, and secondary "Try again" button that calls Next.js `reset()`
+- `web/app/loading.tsx` — server-component loading skeleton: `animate-pulse` blocks mirroring the hero + table layout; shown during client-side navigation suspense
+
 ### Added (LLMS-029)
 - `web/app/not-found.tsx` — branded 404 page (amber "404" label, dark canvas, "Back to status" link) replacing Next.js default white page
 - `web/app/robots.ts` — serves `/robots.txt`: allow all crawlers, points to sitemap; respects `NEXT_PUBLIC_SITE_URL` env var
