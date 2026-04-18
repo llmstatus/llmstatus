@@ -7,6 +7,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -18,14 +19,25 @@ import (
 // compile-time check: pgstore.Queries satisfies Store.
 var _ Store = (*pgstore.Queries)(nil)
 
+// Pinger is satisfied by *pgxpool.Pool; used by /healthz.
+type Pinger interface {
+	Ping(ctx context.Context) error
+}
+
 // Server wires handlers to a ServeMux and owns the store reference.
 type Server struct {
 	store     Store
 	history   HistoryReader   // optional; nil → GET /history returns 503
 	liveStats LiveStatsReader // optional; nil → uptime24h/p95_ms omitted
+	pinger    Pinger          // optional; nil → /healthz always 200
 	limiter   *RateLimiter    // optional; nil → no rate limiting
 	mux       *http.ServeMux
 	handler   http.Handler // mux optionally wrapped with limiter middleware
+}
+
+// WithPinger enables a real DB liveness check in /healthz.
+func WithPinger(p Pinger) func(*Server) {
+	return func(s *Server) { s.pinger = p }
 }
 
 // New creates a Server and registers all routes. Pass functional options
@@ -50,6 +62,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
+	s.mux.HandleFunc("GET /v1/status", s.getStatus)
 	s.mux.HandleFunc("GET /v1/providers", s.listProviders)
 	s.mux.HandleFunc("GET /v1/providers/{id}", s.getProvider)
 	s.mux.HandleFunc("GET /v1/providers/{id}/history", s.getProviderHistory)
@@ -60,7 +73,13 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /v1/providers/{id}/feed.xml", s.getProviderFeed)
 }
 
-func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
+	if s.pinger != nil {
+		if err := s.pinger.Ping(r.Context()); err != nil {
+			writeError(w, http.StatusServiceUnavailable, "database unavailable")
+			return
+		}
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
