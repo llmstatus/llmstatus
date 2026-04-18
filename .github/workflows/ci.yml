@@ -18,7 +18,7 @@ jobs:
     name: Go — lint, test, coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.x"
@@ -59,7 +59,7 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
@@ -100,7 +100,7 @@ jobs:
         ports:
           - 8086:8086
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.x"
@@ -125,7 +125,7 @@ jobs:
       BASE_REF: ${{ github.base_ref }}
       PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Verify CHANGELOG.md changed (or PR labeled no-changelog)
