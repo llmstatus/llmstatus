@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { IncidentRef, Severity } from "@/lib/api";
+import { ProbeTimestamp } from "./ProbeTimestamp";
 
 const SEVERITY_STYLE: Record<Severity, { label: string; color: string }> = {
   critical: { label: "Critical", color: "text-[var(--signal-down)]" },
@@ -7,6 +8,7 @@ const SEVERITY_STYLE: Record<Severity, { label: string; color: string }> = {
   minor:    { label: "Minor",    color: "text-[var(--ink-300)]" },
 };
 
+// Kept for incident detail page Row component which needs a static string.
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
     month: "short",
@@ -35,9 +37,9 @@ export function IncidentCard({ incident, href }: Props) {
           {label}
         </span>
       </div>
-      <p className="mt-1 text-xs text-[var(--ink-400)]">
-        Started {formatDate(incident.started_at)}
-      </p>
+      <div className="mt-1">
+        <ProbeTimestamp iso={incident.started_at} prefix="Started" />
+      </div>
     </>
   );
 
