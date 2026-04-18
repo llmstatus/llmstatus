@@ -54,6 +54,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /v1/providers/{id}/history", s.getProviderHistory)
 	s.mux.HandleFunc("GET /v1/incidents", s.listIncidents)
 	s.mux.HandleFunc("GET /v1/incidents/{id}", s.getIncident)
+	s.mux.HandleFunc("GET /badge/{id}", s.getBadge)
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {

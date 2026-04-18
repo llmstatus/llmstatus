@@ -43,6 +43,12 @@ public APIs must add an entry under `## [Unreleased]`.
 - `gocyclo` CI step now ignores `_test.go` files; table-driven tests
   legitimately exceed the 10-complexity threshold
 
+### Added (LLMS-016)
+- `GET /badge/{provider_id}.svg` — shields.io-compatible flat SVG badge showing provider status
+- Colors: operational → green (`#4CAF50`), degraded → amber (`#FF9800`), down → red (`#F44336`), unknown → gray (`#9E9E9E`)
+- Unknown provider IDs return a gray "unknown" badge (not a JSON error) for badge-consumer friendliness
+- XSS-safe: provider names are HTML-escaped before embedding in SVG
+
 ### Added (LLMS-015)
 - Per-IP fixed-window rate limiting on the public API (`internal/api/RateLimiter`)
 - `WithRateLimiter` functional option on `api.New()`; default 60 req/min configurable via `API_RATE_LIMIT` env var
