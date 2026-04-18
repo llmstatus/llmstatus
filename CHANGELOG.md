@@ -10,6 +10,15 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-024)
+- `SiteHeader` server component: logo link + nav (`Providers` / `Incidents`) with active-page highlighting via `NavLink` client component (`usePathname`)
+- `SiteFooter` server component: standard footer copy, rendered once in root `layout.tsx`
+- `NavLink` client component: highlights the active route using `usePathname()`
+
+### Changed (LLMS-024)
+- Root `layout.tsx` now renders `SiteHeader` and `SiteFooter` — all 4 pages stripped of duplicated header/footer markup
+- `ProviderTable` rows now have `hover:bg-[var(--canvas-overlay)]` per brand spec §6.2
+
 ### Added (LLMS-023)
 - `HistoryBucket.P95Ms` field — InfluxDB SQL now selects `approx_percentile_cont(0.95)` for successful probes alongside existing uptime data
 - `LatencyBar` component — 30-day per-day p95 bar chart, color-coded by threshold (≤500ms green, ≤2000ms amber, >2000ms red), gray stubs for days with no probe data; shows median p95 summary
