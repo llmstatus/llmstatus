@@ -1,30 +1,32 @@
-# llmstatus.io — local development environment
+# llmstatus.io — local development environment (Go + Next.js stack)
 #
-# This compose file runs the full stack locally:
-# - TimescaleDB (PostgreSQL + time-series extension)
-# - Redis (API cache)
-# - Ingestion API (receives probe results)
-# - Detector (runs incident detection rules)
-# - Public API (read-only data API)
-# - Web (Next.js frontend)
-#
-# Usage:
-#   docker compose up -d             # start everything
-#   docker compose logs -f ingest    # tail a specific service
-#   docker compose down -v           # stop and wipe data
+# Services:
+#   db       — PostgreSQL 17 (relational state: providers, incidents)
+#   influx   — InfluxDB 3 Core (time-series probe samples)
+#   migrate  — one-shot migration runner; exits 0 when done
+#   ingest   — probe result ingestion API  (:8080)
+#   detector — incident detection rule runner
+#   api      — public read API             (:8081)
+#   web      — Next.js frontend            (:3000)
+#   prober   — local probe runner (dev only; production uses 7 remote nodes)
 #
 # First-time setup:
-#   cp .env.example .env
-#   # fill in at least DATABASE_URL, REDIS_URL, and one provider API key
-#   docker compose up -d db redis
-#   docker compose exec db psql -U llmstatus -f /migrations/001_init.sql
+#   cp .env.example .env          # fill in provider API keys
+#   docker compose up -d db influx
+#   docker compose run --rm migrate
 #   docker compose up -d
-
-version: "3.9"
+#
+# Usage:
+#   docker compose up -d            # start everything
+#   docker compose logs -f api      # tail a service
+#   docker compose down -v          # stop and wipe volumes
 
 services:
+
+  # ── data stores ────────────────────────────────────────────────────────────
+
   db:
-    image: timescale/timescaledb:latest-pg15
+    image: postgres:17-alpine
     container_name: llmstatus-db
     restart: unless-stopped
     environment:
@@ -33,107 +35,160 @@ services:
       POSTGRES_DB: llmstatus
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./db/migrations:/migrations:ro
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "llmstatus"]
+      test: ["CMD-SHELL", "pg_isready -U llmstatus"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: llmstatus-redis
+  influx:
+    image: influxdb:3-core
+    container_name: llmstatus-influx
     restart: unless-stopped
+    environment:
+      INFLUXDB3_NODE_IDENTIFIER_PREFIX: local-dev
+    volumes:
+      - influx_data:/var/lib/influxdb3
     ports:
-      - "6379:6379"
+      - "8086:8086"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8086/health || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+
+  # ── one-shot migration runner ───────────────────────────────────────────────
+
+  migrate:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.golang
+      args:
+        CMD: migrate
+    container_name: llmstatus-migrate
+    environment:
+      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ── Go services ────────────────────────────────────────────────────────────
 
   ingest:
     build:
       context: .
-      dockerfile: ops/Dockerfile.python
+      dockerfile: deploy/docker/Dockerfile.golang
+      args:
+        CMD: ingest
     container_name: llmstatus-ingest
-    command: uvicorn ingest.main:app --host 0.0.0.0 --port 8000
     restart: unless-stopped
-    env_file: .env
+    environment:
+      INFLUX_HOST: http://influx:8086
+      INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
+      INFLUX_DATABASE: ${INFLUX_DATABASE:-llmstatus}
+      INGEST_ADDR: ":8080"
     depends_on:
-      db:
+      influx:
         condition: service_healthy
     ports:
-      - "8000:8000"
-    volumes:
-      - ./:/app:cached
+      - "8080:8080"
 
   detector:
     build:
       context: .
-      dockerfile: ops/Dockerfile.python
+      dockerfile: deploy/docker/Dockerfile.golang
+      args:
+        CMD: detector
     container_name: llmstatus-detector
-    command: python -m detector.runner
     restart: unless-stopped
-    env_file: .env
+    environment:
+      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      INFLUX_HOST: http://influx:8086
+      INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
+      INFLUX_DATABASE: ${INFLUX_DATABASE:-llmstatus}
+      DETECTOR_INTERVAL: ${DETECTOR_INTERVAL:-60s}
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./:/app:cached
+      influx:
+        condition: service_healthy
 
   api:
     build:
       context: .
-      dockerfile: ops/Dockerfile.python
+      dockerfile: deploy/docker/Dockerfile.golang
+      args:
+        CMD: api
     container_name: llmstatus-api
-    command: uvicorn api.main:app --host 0.0.0.0 --port 8001
     restart: unless-stopped
-    env_file: .env
+    environment:
+      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      INFLUX_HOST: http://influx:8086
+      INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
+      INFLUX_DATABASE: ${INFLUX_DATABASE:-llmstatus}
+      API_ADDR: ":8081"
+      API_RATE_LIMIT: ${API_RATE_LIMIT:-60}
     depends_on:
       db:
         condition: service_healthy
-      redis:
+      influx:
         condition: service_healthy
     ports:
-      - "8001:8001"
-    volumes:
-      - ./:/app:cached
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── frontend ───────────────────────────────────────────────────────────────
 
   web:
     build:
-      context: ./web
-      dockerfile: ../ops/Dockerfile.web
+      context: .
+      dockerfile: deploy/docker/Dockerfile.web
     container_name: llmstatus-web
     restart: unless-stopped
-    env_file: .env
+    environment:
+      API_URL: http://api:8081
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "3000:3000"
-    volumes:
-      - ./web:/app:cached
-      - /app/node_modules
-      - /app/.next
 
-  # Local probe runner — for development.
-  # In production, probes run on 7 separate geographic nodes.
-  probe-local:
+  # ── local probe runner (dev only) ──────────────────────────────────────────
+
+  prober:
     build:
       context: .
-      dockerfile: ops/Dockerfile.python
-    container_name: llmstatus-probe-local
-    command: python -m probes.runner
+      dockerfile: deploy/docker/Dockerfile.golang
+      args:
+        CMD: prober
+    container_name: llmstatus-prober
     restart: unless-stopped
-    env_file: .env
     environment:
-      NODE_REGION: local-dev
+      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      REGION_ID: ${REGION_ID:-local-dev}
+      PROBE_INTERVAL: ${PROBE_INTERVAL:-60s}
+      PROBE_TIMEOUT: ${PROBE_TIMEOUT:-30s}
+      PROBE_CONCURRENCY: ${PROBE_CONCURRENCY:-4}
+      INGEST_URL: http://ingest:8080
+    env_file:
+      - path: .env
+        required: false
     depends_on:
-      - ingest
-    volumes:
-      - ./:/app:cached
+      db:
+        condition: service_healthy
+      ingest:
+        condition: service_started
+    profiles:
+      - prober
 
 volumes:
   db_data:
+  influx_data:

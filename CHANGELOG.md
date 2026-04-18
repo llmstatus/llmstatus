@@ -10,6 +10,13 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Fixed (LLMS-032)
+- `docker-compose.yml` rewritten for Go + Next.js stack; removes all Python/uvicorn references which no longer exist
+- `deploy/docker/Dockerfile.golang` — single parameterized multi-stage Go build (`--build-arg CMD=<api|ingest|detector|prober|migrate>`); runtime image is `alpine:3.21` with only `ca-certificates` + `tzdata`
+- `deploy/docker/Dockerfile.web` — multi-stage Next.js build using `output: "standalone"`; copies only `.next/standalone` for minimal image
+- `web/next.config.ts` — adds `output: "standalone"` required by `Dockerfile.web`
+- `.env.example` — documents all required and optional env vars with dev-safe defaults
+
 ### Added (LLMS-031)
 - `GET /v1/status` — aggregate system status endpoint: worst-case status across all active providers (`"operational"` / `"degraded"` / `"down"`) plus breakdown counts; wrapped in standard envelope
 - `Pinger` interface + `WithPinger` functional option on `Server` — when wired, `/healthz` pings the DB and returns 503 if unreachable; without it, behaviour is unchanged (always 200)

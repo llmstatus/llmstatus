@@ -1,0 +1,26 @@
+# Multi-stage Go build. Pass --build-arg CMD=<name> to select which
+# cmd/<name>/main.go binary to compile (e.g. api, ingest, detector, prober).
+ARG CMD=api
+
+# ---- builder ----------------------------------------------------------------
+FROM golang:1.26-alpine AS builder
+ARG CMD
+
+WORKDIR /src
+
+# Cache module downloads separately from source compilation.
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /bin/service ./cmd/${CMD}
+
+# ---- runtime ----------------------------------------------------------------
+FROM alpine:3.21 AS runtime
+
+# TLS root certs for outbound HTTPS (provider API calls).
+RUN apk add --no-cache ca-certificates tzdata
+
+COPY --from=builder /bin/service /bin/service
+
+ENTRYPOINT ["/bin/service"]
