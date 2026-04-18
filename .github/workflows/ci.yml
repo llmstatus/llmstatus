@@ -36,7 +36,9 @@ jobs:
       - name: gocyclo (complexity gate)
         run: |
           go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
-          gocyclo -over 10 ./cmd ./internal ./pkg | tee /tmp/cyclo.txt
+          # Skip test files: table-driven tests legitimately exceed 10
+          # from many `if got != want` assertions.
+          gocyclo -over 10 -ignore '_test\.go$' ./cmd ./internal ./pkg | tee /tmp/cyclo.txt
           test ! -s /tmp/cyclo.txt
 
       - name: Test with race detector

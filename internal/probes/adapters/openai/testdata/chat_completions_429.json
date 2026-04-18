@@ -1,0 +1,7 @@
+{
+  "error": {
+    "message": "Rate limit reached for gpt-4o-mini in organization org-TESTFIXTURE on requests per minute. Please try again in 1.2s.",
+    "type": "requests",
+    "code": "rate_limit_exceeded"
+  }
+}

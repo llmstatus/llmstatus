@@ -40,3 +40,22 @@ public APIs must add an entry under `## [Unreleased]`.
   `flatted` JS package) are not linted, vetted, or tested
 - The coverage gate no-ops when no test files exist yet, instead of
   failing during the scaffold phase
+- `gocyclo` CI step now ignores `_test.go` files; table-driven tests
+  legitimately exceed the 10-complexity threshold
+
+### Added (LLMS-002)
+- `internal/httpclient/` — shared HTTP client with default 30s timeout,
+  `User-Agent: llmstatus.io/<version>`, per-request `X-Request-ID`, and
+  context-aware retry for idempotent methods only
+- `internal/probes/adapters/openai.go` — first real adapter
+  implementing `ProbeLightInference`; other probe methods return
+  `ErrNotSupported` pending LLMS-003
+- Recorded fixtures at `internal/probes/adapters/openai/testdata/`
+  covering success, 401 auth, 429 rate-limit, 500 server error, and a
+  malformed (HTML) body
+- Live registration behind the `livekeys` build tag: adapter code
+  compiles and is testable without a real API key, but the prober only
+  fires real calls when built with `-tags livekeys` and
+  `LLMS_OPENAI_API_KEY` + `LLMS_REGION_ID` are set
+- `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
+  envelope, variable 401 codes)

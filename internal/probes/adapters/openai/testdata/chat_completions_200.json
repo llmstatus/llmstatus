@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-TESTFIXTURE0001",
+  "object": "chat.completion",
+  "created": 1776000000,
+  "model": "gpt-4o-mini-2024-07-18",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "pong"
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 8,
+    "completion_tokens": 1,
+    "total_tokens": 9
+  }
+}
