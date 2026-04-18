@@ -1,0 +1,41 @@
+import type { MetadataRoute } from "next";
+import { listProviders, listIncidents } from "@/lib/api";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://llmstatus.io";
+
+export const revalidate = 3600; // rebuild hourly
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date();
+
+  const staticRoutes: MetadataRoute.Sitemap = [
+    { url: SITE_URL, lastModified: now, changeFrequency: "always", priority: 1 },
+    { url: `${SITE_URL}/incidents`, lastModified: now, changeFrequency: "always", priority: 0.9 },
+  ];
+
+  const providerRoutes: MetadataRoute.Sitemap = await listProviders()
+    .then((providers) =>
+      providers.map((p) => ({
+        url: `${SITE_URL}/providers/${p.id}`,
+        lastModified: now,
+        changeFrequency: "always" as const,
+        priority: 0.8,
+      }))
+    )
+    .catch(() => []);
+
+  const incidentRoutes: MetadataRoute.Sitemap = await listIncidents("all", 200)
+    .then((incidents) =>
+      incidents.map((inc) => ({
+        url: `${SITE_URL}/incidents/${inc.slug}`,
+        lastModified: new Date(inc.resolved_at ?? inc.started_at),
+        changeFrequency: (inc.status === "ongoing" ? "always" : "never") as
+          | "always"
+          | "never",
+        priority: inc.status === "ongoing" ? 0.7 : 0.5,
+      }))
+    )
+    .catch(() => []);
+
+  return [...staticRoutes, ...providerRoutes, ...incidentRoutes];
+}
