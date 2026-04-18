@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -41,7 +42,7 @@ func (s *Server) listIncidents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	limit := parseIntParam(q.Get("limit"), 20, 1, 100)
-	offset := parseIntParam(q.Get("offset"), 0, 0, 1<<31)
+	offset := parseIntParam(q.Get("offset"), 0, 0, math.MaxInt32)
 
 	var (
 		incidents []pgstore.Incident
@@ -51,13 +52,13 @@ func (s *Server) listIncidents(w http.ResponseWriter, r *http.Request) {
 	if status != "" {
 		incidents, err = s.store.ListIncidentsByStatus(r.Context(), pgstore.ListIncidentsByStatusParams{
 			Status: status,
-			Limit:  int32(limit),
-			Offset: int32(offset),
+			Limit:  limit,
+			Offset: offset,
 		})
 	} else {
 		incidents, err = s.store.ListIncidents(r.Context(), pgstore.ListIncidentsParams{
-			Limit:  int32(limit),
-			Offset: int32(offset),
+			Limit:  limit,
+			Offset: offset,
 		})
 	}
 	if err != nil {
@@ -123,16 +124,16 @@ func toIncidentResponses(incidents []pgstore.Incident) []incidentResponse {
 	return coalesceSlice(out)
 }
 
-func parseIntParam(v string, def, min, max int) int {
+func parseIntParam(v string, def, min, max int32) int32 {
 	if v == "" {
 		return def
 	}
-	n, err := strconv.Atoi(v)
-	if err != nil || n < min {
+	n, err := strconv.ParseInt(v, 10, 32)
+	if err != nil || n < int64(min) {
 		return min
 	}
-	if n > max {
+	if n > int64(max) {
 		return max
 	}
-	return n
+	return int32(n)
 }
