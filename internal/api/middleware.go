@@ -88,11 +88,14 @@ func (r *statusRecorder) WriteHeader(code int) {
 }
 
 // applyMiddleware wraps handler with the production middleware stack.
-// Execution order (outer-to-inner): accessLog → cors → requestID → handler.
+// Execution order (outer-to-inner): accessLog → requestID → cors → handler.
+// requestID runs before cors so that X-Request-ID is set on every response,
+// including CORS preflight (OPTIONS) 204 responses that short-circuit before
+// reaching the handler.
 func applyMiddleware(handler http.Handler) http.Handler {
 	return accessLogMiddleware(
-		corsMiddleware(
-			requestIDMiddleware(handler),
+		requestIDMiddleware(
+			corsMiddleware(handler),
 		),
 	)
 }
