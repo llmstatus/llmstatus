@@ -89,6 +89,10 @@ func TestCORS_Preflight(t *testing.T) {
 	if got := rr.Header().Get("Access-Control-Max-Age"); got == "" {
 		t.Error("Access-Control-Max-Age header missing")
 	}
+	// X-Request-ID must be present even on preflight (requestID runs before cors).
+	if got := rr.Header().Get("X-Request-ID"); got == "" {
+		t.Error("X-Request-ID header missing on preflight response")
+	}
 	// Preflight should not forward to the actual handler.
 	if rr.Body.Len() != 0 {
 		t.Errorf("preflight response body should be empty, got %d bytes", rr.Body.Len())

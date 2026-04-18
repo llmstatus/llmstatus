@@ -10,6 +10,10 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Fixed (LLMS-020)
+- Corrected middleware stack order to `accessLog → requestID → cors → handler` so that X-Request-ID is present on every response, including CORS preflight (OPTIONS) 204 responses that previously short-circuited before `requestIDMiddleware` ran
+- Added `TestCORS_Preflight` assertion: `X-Request-ID` header must be non-empty on preflight responses
+
 ### Added (LLMS-026)
 - `ProviderLiveStat` type + `LiveStatsReader` interface in `internal/store/influx` — one SQL query returns 24h uptime + p95 latency for all providers
 - `influxHistoryReader.postQuery` private helper extracted from `ProviderHistory` — eliminates HTTP boilerplate duplication across both query methods
