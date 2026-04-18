@@ -60,6 +60,22 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-004)
+- `internal/store/influx/writer.go` — `Writer` interface + `lineWriter` implementation
+  using the InfluxDB v2 line-protocol HTTP write endpoint (compatible with InfluxDB 3);
+  no extra dependencies — uses `net/http` only
+- `internal/ingest/handler.go` — `Handler` serving `POST /v1/probe`; validates
+  `provider_id`, `model`, `probe_type`, `region_id`, `started_at`; writes via
+  `influx.Writer`; returns 204/400/405/500
+- `cmd/ingest/main.go` — HTTP server with graceful shutdown; config from
+  `INFLUX_HOST`, `INFLUX_TOKEN`, `INFLUX_DATABASE`, `INGEST_ADDR`; exposes
+  `/healthz` for load-balancer health checks
+- `internal/probes/httpsink.go` — `HTTPSink` implements `ResultSink` by POSTing
+  JSON to the ingest URL; `cmd/prober` uses it when `INGEST_URL` is set, falls
+  back to `LogSink`
+- 13 new unit tests across `internal/store/influx`, `internal/ingest`, and
+  `internal/probes` (HTTPSink)
+
 ### Added (LLMS-008)
 - `internal/probes/adapters/anthropic.go` — second real adapter implementing
   `ProbeLightInference` for `api.anthropic.com/v1/messages`; handles HTTP 529
