@@ -2,10 +2,11 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { getProvider, ApiNotFoundError } from "@/lib/api";
+import { getProvider, getProviderHistory, ApiNotFoundError } from "@/lib/api";
 import { StatusPill } from "@/components/StatusPill";
 import { IncidentCard } from "@/components/IncidentCard";
 import { ModelList } from "@/components/ModelList";
+import { UptimeSparkline } from "@/components/UptimeSparkline";
 
 export const revalidate = 60;
 
@@ -40,6 +41,9 @@ export default async function ProviderPage({ params }: Props) {
     if (e instanceof ApiNotFoundError) notFound();
     throw e;
   }
+
+  // History fetch is best-effort — sparkline is hidden if unavailable.
+  const history = await getProviderHistory(id, "30d").catch(() => null);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -103,6 +107,18 @@ export default async function ProviderPage({ params }: Props) {
               {provider.active_incidents.map((inc) => (
                 <IncidentCard key={inc.id} incident={inc} href={`/incidents/${inc.slug}`} />
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Uptime sparkline */}
+        {history !== null && (
+          <section className="mb-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+              Uptime History
+            </h2>
+            <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4">
+              <UptimeSparkline buckets={history} days={30} />
             </div>
           </section>
         )}

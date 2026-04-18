@@ -84,6 +84,22 @@ export function getProvider(id: string): Promise<ProviderDetail> {
   return apiFetch<ProviderDetail>(`/v1/providers/${encodeURIComponent(id)}`, 60);
 }
 
+export interface HistoryBucket {
+  timestamp: string;
+  total: number;
+  errors: number;
+  uptime: number; // 0–1
+}
+
+export type HistoryWindow = "24h" | "7d" | "30d";
+
+export function getProviderHistory(id: string, window: HistoryWindow = "30d"): Promise<HistoryBucket[]> {
+  return apiFetch<HistoryBucket[]>(
+    `/v1/providers/${encodeURIComponent(id)}/history?window=${window}`,
+    300, // 5-min revalidate — history data changes slowly
+  );
+}
+
 export function listIncidents(status = "all", limit = 50): Promise<IncidentDetail[]> {
   return apiFetch<IncidentDetail[]>(`/v1/incidents?status=${status}&limit=${limit}`, 30);
 }

@@ -60,6 +60,28 @@ public APIs must add an entry under `## [Unreleased]`.
 - `docs/known-quirks.md` — first entries for OpenAI (HTTP 200 + error
   envelope, variable 401 codes)
 
+### Added (LLMS-014 + LLMS-018)
+- `internal/store/influx/history_reader.go` — `HistoryReader` interface +
+  `influxHistoryReader` implementation; queries InfluxDB 3 via
+  `POST /api/v3/query_sql` using `date_bin()` for time-bucketed aggregation;
+  sanitises `provider_id` to prevent SQL injection; 5 unit tests
+- `internal/api/history.go` — `GET /v1/providers/{id}/history?window=24h|7d|30d`
+  handler; `WithHistoryReader` functional option keeps `api.New(store)` backward-
+  compatible; returns 503 when reader not configured; 4 handler tests
+- `internal/api/server.go` — added optional `history HistoryReader` field;
+  `New()` now accepts variadic `func(*Server)` options; new route registered
+- `cmd/api/main.go` — wires `influx.NewHistoryReader` via `WithHistoryReader`;
+  three new required env vars: `INFLUX_HOST`, `INFLUX_TOKEN`, `INFLUX_DATABASE`
+- `web/lib/api.ts` — `HistoryBucket` type; `getProviderHistory(id, window)` with
+  300s revalidate (history changes slowly)
+- `web/components/UptimeSparkline.tsx` — 30-bar daily uptime chart; CSS-only,
+  no animation library; bar color maps uptime: ≥99% → `--signal-ok`,
+  ≥95% → `--signal-warn`, else → `--signal-down`; empty slots shown as
+  `--ink-600` stubs; summary line shows mean uptime %
+- `web/app/providers/[id]/page.tsx` — fetches 30d history alongside provider
+  data (best-effort: sparkline hidden on fetch failure); renders `UptimeSparkline`
+  in an "Uptime History" section above the model list
+
 ### Added (LLMS-013)
 - `web/app/incidents/page.tsx` — incidents list (all statuses, limit 50); ISR 30s;
   graceful API-error fallback; empty-state message

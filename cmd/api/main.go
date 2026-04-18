@@ -2,7 +2,10 @@
 //
 // Required environment variables:
 //
-//	DATABASE_URL  Postgres DSN (pgx connection string)
+//	DATABASE_URL      Postgres DSN (pgx connection string)
+//	INFLUX_HOST       InfluxDB 3 base URL
+//	INFLUX_TOKEN      InfluxDB auth token
+//	INFLUX_DATABASE   InfluxDB database / bucket name
 //
 // Optional:
 //
@@ -22,11 +25,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/llmstatus/llmstatus/internal/api"
+	"github.com/llmstatus/llmstatus/internal/store/influx"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
 
 func main() {
 	dbURL := requireEnv("DATABASE_URL")
+	influxHost := requireEnv("INFLUX_HOST")
+	influxToken := requireEnv("INFLUX_TOKEN")
+	influxDB := requireEnv("INFLUX_DATABASE")
 	addr := envOr("API_ADDR", ":8081")
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
@@ -40,9 +47,15 @@ func main() {
 	defer pool.Close()
 
 	store := pgstore.New(pool)
+	historyReader := influx.NewHistoryReader(influx.HistoryReaderConfig{
+		Host:     influxHost,
+		Token:    influxToken,
+		Database: influxDB,
+	}, nil)
+
 	srv := &http.Server{
 		Addr:         addr,
-		Handler:      api.New(store),
+		Handler:      api.New(store, api.WithHistoryReader(historyReader)),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
