@@ -101,7 +101,7 @@ export default async function ProviderPage({ params }: Props) {
             </h2>
             <div className="flex flex-col gap-2">
               {provider.active_incidents.map((inc) => (
-                <IncidentCard key={inc.id} incident={inc} />
+                <IncidentCard key={inc.id} incident={inc} href={`/incidents/${inc.slug}`} />
               ))}
             </div>
           </section>
