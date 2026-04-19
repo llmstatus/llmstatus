@@ -7,9 +7,12 @@ export function SiteHeader() {
       <div className="mx-auto max-w-4xl flex items-center justify-between">
         <Link
           href="/"
-          className="font-mono text-sm font-semibold tracking-widest text-[var(--signal-amber)] uppercase hover:opacity-80 transition-opacity"
+          className="font-mono text-sm font-medium hover:opacity-80 transition-opacity"
+          aria-label="llmstatus home"
         >
-          llmstatus.io
+          <span className="text-[var(--signal-amber)]">[</span>
+          <span className="text-[var(--ink-100)] mx-1.5">llmstatus</span>
+          <span className="text-[var(--signal-amber)]">]</span>
         </Link>
         <nav className="flex items-center gap-6" aria-label="Site navigation">
           <NavLink href="/providers">Providers</NavLink>

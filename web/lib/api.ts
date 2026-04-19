@@ -15,6 +15,14 @@ export class ApiNotFoundError extends Error {
 export type ProviderStatus = "operational" | "degraded" | "down";
 export type Severity = "minor" | "major" | "critical";
 
+export interface ModelStat {
+  model_id: string;
+  display_name: string;
+  uptime_24h: number;   // 0–1
+  p95_ms: number;       // p95 latency ms; 0 when no data
+  sparkline: number[];  // 60 avg_ms values; 0 = no data for that bucket
+}
+
 export interface ProviderSummary {
   id: string;
   name: string;
@@ -22,8 +30,9 @@ export interface ProviderSummary {
   region: string;
   current_status: ProviderStatus;
   active_incident_id?: string;
-  uptime_24h?: number; // 0–1; omitted when live stats unavailable
-  p95_ms?: number;     // p95 latency ms of successful probes; omitted when unavailable
+  uptime_24h?: number;    // 0–1; omitted when live stats unavailable
+  p95_ms?: number;        // p95 latency ms; omitted when unavailable
+  model_stats: ModelStat[]; // always present; empty when no probe data
 }
 
 export interface IncidentRef {

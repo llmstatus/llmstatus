@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listProviders, listIncidents } from "@/lib/api";
-import { ProviderTable } from "@/components/ProviderTable";
+import { ProviderCard } from "@/components/ProviderCard";
 import { IncidentCard } from "@/components/IncidentCard";
 
 export const revalidate = 30;
@@ -111,7 +111,24 @@ export default async function HomePage() {
       )}
 
       {providers !== null ? (
-        <ProviderTable providers={providers} />
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+              Providers
+            </h2>
+            <Link
+              href="/providers"
+              className="text-xs text-[var(--ink-400)] hover:text-[var(--ink-200)] transition-colors"
+            >
+              All providers →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {providers.map((p) => (
+              <ProviderCard key={p.id} provider={p} />
+            ))}
+          </div>
+        </section>
       ) : (
         <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-6 py-10 text-center">
           <p className="text-sm text-[var(--ink-400)]">

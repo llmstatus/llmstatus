@@ -7,7 +7,7 @@
 #
 # FIXED HOST PORTS (do not change — chosen to avoid conflicts on this host):
 #   db       — PostgreSQL 17        host:15432 → container:5432
-#   influx   — InfluxDB 3 Core      host:18086 → container:8086
+#   influx   — InfluxDB 3 Core      host:18086 → container:8181
 #   ingest   — probe ingest API     host:18080 → container:8080
 #   api      — public read API      host:18081 → container:8081
 #
@@ -53,14 +53,15 @@ services:
     image: influxdb:3-core
     container_name: llmstatus-influx
     restart: unless-stopped
+    command: serve --without-auth   # dev only; prod uses token auth
     environment:
       INFLUXDB3_NODE_IDENTIFIER_PREFIX: local-dev
     volumes:
       - influx_data:/var/lib/influxdb3
     ports:
-      - "18086:8086"
+      - "18086:8181"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8086/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8181/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -75,7 +76,7 @@ services:
         CMD: migrate
     container_name: llmstatus-migrate
     environment:
-      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      DATABASE_URL: pgx5://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
     depends_on:
       db:
         condition: service_healthy
@@ -92,7 +93,7 @@ services:
     container_name: llmstatus-ingest
     restart: unless-stopped
     environment:
-      INFLUX_HOST: http://influx:8086
+      INFLUX_HOST: http://influx:8181
       INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
       INFLUX_DATABASE: ${INFLUX_DATABASE:-llmstatus}
       INGEST_ADDR: ":8080"
@@ -112,7 +113,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
-      INFLUX_HOST: http://influx:8086
+      INFLUX_HOST: http://influx:8181
       INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
       INFLUX_DATABASE: ${INFLUX_DATABASE:-llmstatus}
       DETECTOR_INTERVAL: ${DETECTOR_INTERVAL:-60s}
@@ -132,7 +133,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
-      INFLUX_HOST: http://influx:8086
+      INFLUX_HOST: http://influx:8181
       INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
       INFLUX_DATABASE: ${INFLUX_DATABASE:-llmstatus}
       API_ADDR: ":8081"
