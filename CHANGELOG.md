@@ -10,6 +10,9 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-043)
+- Incident detail pages now have edge-rendered OG images (1200×630): incident title, severity color, provider ID, and status pill on dark background; graceful fallback when API unavailable
+
 ### Added (LLMS-042)
 - Provider table columns are now sortable: click Name, Uptime 24h, P95, or Status to cycle asc → desc → default
 - Default sort: worst status first (down → degraded → operational), then alphabetical within each group
