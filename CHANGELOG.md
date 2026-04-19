@@ -10,6 +10,11 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-037)
+- `/api` documentation page — fully static, lists all public endpoints (status, providers, history, incidents, badges, RSS) with curl examples, response envelope format, rate limit headers, and error format
+- "API" link added to SiteHeader nav
+- `/api` added to sitemap
+
 ### Added (LLMS-036)
 - `/providers` page — dedicated provider list page with filter chips for status (all / operational / degraded / down) and category (all / official / aggregator / CN official); filters combine with AND logic
 - `ProvidersClient` client component — owns filter state, renders result count and filtered `ProviderTable`
