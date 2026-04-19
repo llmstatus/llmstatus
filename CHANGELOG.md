@@ -10,6 +10,11 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-035)
+- `GET /badge/{id}.svg?style=detailed` — badge variant that appends live 24h uptime percentage when `LiveStatsReader` is wired (e.g. `operational · 99.9%`); falls back to simple format when live stats are unavailable
+- `/badges` page now shows both Simple and Detailed preview images side-by-side, with embed snippets for each style
+- 3 new badge tests: `DetailedStyle_WithUptime`, `DetailedStyle_NoLiveStats_FallsBack`, `UnknownStyle_FallsBack`
+
 ### Added (LLMS-034)
 - RSS discovery: `<link rel="alternate" type="application/rss+xml">` added to root `layout.tsx` (global feed) and to provider detail `generateMetadata` (per-provider feed) — satisfies ROADMAP §8.3 requirement
 - `web/app/api/feed/route.ts` — Next.js proxy for global feed (`/api/feed` → Go API `/feed.xml`)

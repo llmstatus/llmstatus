@@ -39,7 +39,21 @@ func (s *Server) getBadge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status, _ := deriveStatus(p.ID, incMap)
-	writeBadge(w, p.Name, status, statusColor(status))
+	message := status
+
+	// ?style=detailed appends live uptime when available.
+	if r.URL.Query().Get("style") == "detailed" && s.liveStats != nil {
+		if stats, err := s.liveStats.AllProviderLiveStats(r.Context()); err == nil {
+			for _, st := range stats {
+				if st.ProviderID == id && st.Uptime24h >= 0 {
+					message = fmt.Sprintf("%s · %.1f%%", status, st.Uptime24h*100)
+					break
+				}
+			}
+		}
+	}
+
+	writeBadge(w, p.Name, message, statusColor(status))
 }
 
 func writeBadge(w http.ResponseWriter, label, message, color string) {
