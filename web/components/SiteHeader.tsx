@@ -14,6 +14,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-6" aria-label="Site navigation">
           <NavLink href="/providers">Providers</NavLink>
           <NavLink href="/incidents">Incidents</NavLink>
+          <NavLink href="/compare">Compare</NavLink>
           <NavLink href="/badges">Badges</NavLink>
           <NavLink href="/api">API</NavLink>
         </nav>
