@@ -10,6 +10,11 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-042)
+- Provider table columns are now sortable: click Name, Uptime 24h, P95, or Status to cycle asc → desc → default
+- Default sort: worst status first (down → degraded → operational), then alphabetical within each group
+- Active sort column shows ▲/▼ indicator; unsorted columns show a muted ↕
+
 ### Added (LLMS-041)
 - `/incidents` page now has filter chips: status (All / Ongoing / Resolved) and a provider dropdown; filters combine with AND logic
 - Result count shown; empty-state message when no incidents match
