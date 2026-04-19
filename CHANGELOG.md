@@ -10,6 +10,12 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-039)
+- `/compare` page — side-by-side provider comparison: current status, 24h uptime %, p95 latency, active incident count, category, region, and 30-day uptime sparklines for both providers
+- `CompareSelector` client component — two dropdowns that push URL params on change, so the Server Component page re-fetches data for the selected pair
+- "Compare" nav link added to SiteHeader
+- `/compare` added to sitemap
+
 ### Added (LLMS-038)
 - Provider detail pages now emit Schema.org `Service` JSON-LD for SEO (includes provider name, service type, status-page URL when present)
 - Incident detail pages now emit Schema.org `Event` JSON-LD (startDate, endDate if resolved, eventStatus)
