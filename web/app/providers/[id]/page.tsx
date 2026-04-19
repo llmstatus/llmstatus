@@ -53,8 +53,21 @@ export default async function ProviderPage({ params }: Props) {
   // History fetch is best-effort — charts are hidden if unavailable.
   const history = await getProviderHistory(id, "30d").catch(() => null);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: `${provider.name} API`,
+    serviceType: "AI API",
+    ...(provider.status_page_url ? { url: provider.status_page_url } : {}),
+    provider: { "@type": "Organization", name: provider.name },
+    serviceOutput: "Text / AI inference",
+  };
+
   return (
     <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
+      {/* React 19 renders <script> children without HTML-escaping and auto-escapes
+          </script> sequences, so plain JSON.stringify is safe here. */}
+      <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       {/* Breadcrumb */}
       <nav className="mb-6 text-xs text-[var(--ink-400)]">
         <Link href="/" className="hover:text-[var(--ink-200)] transition-colors">

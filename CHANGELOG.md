@@ -10,6 +10,12 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-038)
+- Provider detail pages now emit Schema.org `Service` JSON-LD for SEO (includes provider name, service type, status-page URL when present)
+- Incident detail pages now emit Schema.org `Event` JSON-LD (startDate, endDate if resolved, eventStatus)
+- All JSON-LD uses the React 19 native `<script>` children pattern — React 19 auto-escapes `</script>` sequences, no manual sanitization needed
+- `providers/[id]` OG image (`opengraph-image.tsx`) — edge-rendered 1200×630 PNG showing provider name and live status pill on dark background; auto-served by Next.js convention
+
 ### Added (LLMS-037)
 - `/api` documentation page — fully static, lists all public endpoints (status, providers, history, incidents, badges, RSS) with curl examples, response envelope format, rate limit headers, and error format
 - "API" link added to SiteHeader nav

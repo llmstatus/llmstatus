@@ -20,11 +20,6 @@ function incidentTitle(inc: IncidentDetail): string {
   return `${inc.provider_id} incident on ${date}: ${inc.title}`;
 }
 
-// Escape < so that </script> can never appear inside a <script> tag.
-function safeJsonLd(obj: unknown): string {
-  return JSON.stringify(obj).replace(/</g, "\\u003c");
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   try {
@@ -82,11 +77,9 @@ export default async function IncidentPage({ params }: Props) {
 
   return (
     <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
-      {/* eslint-disable-next-line react/no-danger -- safeJsonLd escapes </ to prevent script injection */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
-      />
+      <script type="application/ld+json">
+        {JSON.stringify(jsonLd)}
+      </script>
 
       {/* Breadcrumb */}
       <nav className="mb-6 text-xs text-[var(--ink-400)]">
