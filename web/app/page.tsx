@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { listProviders } from "@/lib/api";
+import Link from "next/link";
+import { listProviders, listIncidents } from "@/lib/api";
 import { ProviderTable } from "@/components/ProviderTable";
+import { IncidentCard } from "@/components/IncidentCard";
 
 export const revalidate = 30;
 
@@ -18,7 +20,18 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const providers = await listProviders().catch(() => null);
+  const [providerResult, incidentResult] = await Promise.allSettled([
+    listProviders(),
+    listIncidents("all", 10),
+  ]);
+
+  const providers = providerResult.status === "fulfilled" ? providerResult.value : null;
+  const allIncidents = incidentResult.status === "fulfilled" ? incidentResult.value : [];
+
+  // Ongoing/monitoring incidents first, then resolved; cap at 5.
+  const recentIncidents = [...allIncidents]
+    .sort((a, b) => (a.status === "resolved" ? 1 : 0) - (b.status === "resolved" ? 1 : 0))
+    .slice(0, 5);
 
   const allOk =
     providers !== null &&
@@ -74,6 +87,28 @@ export default async function HomePage() {
       <div className="mb-6">
         <p className={`text-sm font-medium ${summaryColor}`}>{summaryText}</p>
       </div>
+
+      {/* Recent incidents — shown only when data exists */}
+      {recentIncidents.length > 0 && (
+        <section className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+              Recent Incidents
+            </h2>
+            <Link
+              href="/incidents"
+              className="text-xs text-[var(--ink-400)] hover:text-[var(--ink-200)] transition-colors"
+            >
+              All incidents →
+            </Link>
+          </div>
+          <div className="flex flex-col gap-2">
+            {recentIncidents.map((inc) => (
+              <IncidentCard key={inc.id} incident={inc} href={`/incidents/${inc.slug}`} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {providers !== null ? (
         <ProviderTable providers={providers} />

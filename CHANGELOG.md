@@ -10,6 +10,11 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-040)
+- Homepage now shows a "Recent Incidents" section (up to 5, ongoing/monitoring first) above the provider table; hidden when no incidents exist
+- Incidents are fetched in parallel with providers via `Promise.allSettled` — no added latency, each fails independently
+- "All incidents →" link to /incidents included in section header
+
 ### Added (LLMS-039)
 - `/compare` page — side-by-side provider comparison: current status, 24h uptime %, p95 latency, active incident count, category, region, and 30-day uptime sparklines for both providers
 - `CompareSelector` client component — two dropdowns that push URL params on change, so the Server Component page re-fetches data for the selected pair
