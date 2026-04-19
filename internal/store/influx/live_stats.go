@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"time"
 )
@@ -231,15 +232,20 @@ func (r *influxHistoryReader) AllModelSparklines(ctx context.Context) (map[strin
 	return out, nil
 }
 
-// ProviderRegionStats returns 24 h uptime + p95 per probe region for one provider.
+// ProviderRegionStats returns 24 h stats per probe region for one provider.
+// Uptime is the worst-performing model's uptime in each region; p95 is the
+// highest p95 across models. This ensures a single persistently-failing model
+// surfaces as regional degradation rather than being diluted by healthier models.
 func (r *influxHistoryReader) ProviderRegionStats(ctx context.Context, providerID string) ([]RegionLiveStat, error) {
 	if strings.ContainsAny(providerID, "'\";\\") {
 		return nil, fmt.Errorf("influx: invalid provider_id %q", providerID)
 	}
 
+	// Group by (region_id, model) so Go can fold to worst-per-region.
 	sql := fmt.Sprintf(
 		`SELECT
 		    region_id,
+		    model,
 		    COUNT(*) AS total,
 		    COUNT(*) FILTER (WHERE success = false) AS errors,
 		    COALESCE(approx_percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms)
@@ -247,8 +253,8 @@ func (r *influxHistoryReader) ProviderRegionStats(ctx context.Context, providerI
 		FROM probes
 		WHERE time >= now() - INTERVAL '86400 seconds'
 		  AND provider_id = '%s'
-		GROUP BY region_id
-		ORDER BY region_id`,
+		GROUP BY region_id, model
+		ORDER BY region_id, model`,
 		providerID,
 	)
 
@@ -270,6 +276,7 @@ func (r *influxHistoryReader) ProviderRegionStats(ctx context.Context, providerI
 
 	var rows []struct {
 		RegionID string  `json:"region_id"`
+		Model    string  `json:"model"`
 		Total    float64 `json:"total"`
 		Errors   float64 `json:"errors"`
 		P95Ms    float64 `json:"p95_ms"`
@@ -278,18 +285,41 @@ func (r *influxHistoryReader) ProviderRegionStats(ctx context.Context, providerI
 		return nil, fmt.Errorf("influx region stats: decode: %w", err)
 	}
 
-	out := make([]RegionLiveStat, 0, len(rows))
+	// Fold to worst uptime + max p95 per region.
+	type agg struct {
+		uptime float64
+		p95    float64
+	}
+	byRegion := make(map[string]agg)
 	for _, row := range rows {
 		uptime := 1.0
 		if row.Total > 0 {
 			uptime = 1.0 - row.Errors/row.Total
 		}
+		cur, seen := byRegion[row.RegionID]
+		if !seen {
+			byRegion[row.RegionID] = agg{uptime: uptime, p95: row.P95Ms}
+		} else {
+			if uptime < cur.uptime {
+				cur.uptime = uptime
+			}
+			if row.P95Ms > cur.p95 {
+				cur.p95 = row.P95Ms
+			}
+			byRegion[row.RegionID] = cur
+		}
+	}
+
+	out := make([]RegionLiveStat, 0, len(byRegion))
+	for regionID, a := range byRegion {
 		out = append(out, RegionLiveStat{
-			RegionID:  row.RegionID,
-			Uptime24h: uptime,
-			P95Ms:     row.P95Ms,
+			RegionID:  regionID,
+			Uptime24h: a.uptime,
+			P95Ms:     a.p95,
 		})
 	}
+	// Sort by region_id for deterministic ordering.
+	sort.Slice(out, func(i, j int) bool { return out[i].RegionID < out[j].RegionID })
 	return out, nil
 }
 
