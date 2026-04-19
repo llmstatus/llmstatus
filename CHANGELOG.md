@@ -10,6 +10,11 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-041)
+- `/incidents` page now has filter chips: status (All / Ongoing / Resolved) and a provider dropdown; filters combine with AND logic
+- Result count shown; empty-state message when no incidents match
+- Fetch limit raised from 50 → 200 so client-side filtering has full dataset; server page remains static with 30s revalidate
+
 ### Added (LLMS-040)
 - Homepage now shows a "Recent Incidents" section (up to 5, ongoing/monitoring first) above the provider table; hidden when no incidents exist
 - Incidents are fetched in parallel with providers via `Promise.allSettled` — no added latency, each fails independently
