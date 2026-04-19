@@ -10,6 +10,14 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-045)
+- Fixed host port assignments for all dev services (avoid conflicts on this host): db→15432, influx→18086, ingest→18080, api→18081, Next.js dev→13000
+- `web/.env.local.example` added — copy to `web/.env.local` before running `npm run dev`
+- Docker `web` service moved to `web-docker` profile; default dev workflow uses `npm run dev` outside Docker
+- `/about` page — who we are, why we built it, independence statement, contact
+- `/methodology` page — probe types, 7 global locations, all 4 detection rules with triggers, data retention, known limitations
+- Footer now links to /about and /methodology on every page
+
 ### Added (LLMS-044)
 - Homepage OG image (`/opengraph-image`) — edge-rendered brand card: site name, headline, tagline, and "20+ AI providers tracked" badge; no live data fetch (avoids stale-status problem on social shares)
 

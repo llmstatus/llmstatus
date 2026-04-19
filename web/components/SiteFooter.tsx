@@ -12,13 +12,11 @@ export function SiteFooter({ message = DEFAULT_MESSAGE }: Props) {
     <footer className="border-t border-[var(--ink-600)] px-6 py-4">
       <div className="mx-auto max-w-4xl flex items-center justify-between text-xs text-[var(--ink-400)]">
         <span>{message}</span>
-        <Link
-          href="/api/feed"
-          className="hover:text-[var(--ink-200)] transition-colors"
-          aria-label="RSS feed"
-        >
-          RSS
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/about" className="hover:text-[var(--ink-200)] transition-colors">About</Link>
+          <Link href="/methodology" className="hover:text-[var(--ink-200)] transition-colors">Methodology</Link>
+          <Link href="/api/feed" className="hover:text-[var(--ink-200)] transition-colors" aria-label="RSS feed">RSS</Link>
+        </div>
       </div>
     </footer>
   );
