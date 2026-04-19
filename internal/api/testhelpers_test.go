@@ -22,6 +22,18 @@ func (f *fakeLiveStatsReader) AllProviderLiveStats(_ context.Context) ([]influx.
 	return f.stats, f.err
 }
 
+func (f *fakeLiveStatsReader) AllModelLiveStats(_ context.Context) ([]influx.ModelLiveStat, error) {
+	return nil, nil
+}
+
+func (f *fakeLiveStatsReader) AllModelSparklines(_ context.Context) (map[string][]float64, error) {
+	return nil, nil
+}
+
+func (f *fakeLiveStatsReader) ProviderRegionStats(_ context.Context, _ string) ([]influx.RegionLiveStat, error) {
+	return nil, nil
+}
+
 // fakeStore implements api.Store for unit tests.
 type fakeStore struct {
 	providers []pgstore.Provider

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 )
 
@@ -29,6 +30,13 @@ type ModelLiveStat struct {
 	P95Ms      float64 // p95 duration of successful probes; 0 when none
 }
 
+// RegionLiveStat holds current 24 h aggregate stats for one probe region.
+type RegionLiveStat struct {
+	RegionID  string
+	Uptime24h float64 // 0–1; 1.0 when Total == 0
+	P95Ms     float64 // p95 duration of successful probes; 0 when no successful probes
+}
+
 // LiveStatsReader fetches current aggregate stats for every active provider
 // and model in a single InfluxDB round-trip each.
 type LiveStatsReader interface {
@@ -38,6 +46,8 @@ type LiveStatsReader interface {
 	// AllModelSparklines returns 60-bucket avg latency (ms) per provider+model.
 	// Key: "provider_id:model". Value: slice of length 60; 0 means no data.
 	AllModelSparklines(ctx context.Context) (map[string][]float64, error)
+	// ProviderRegionStats returns 24 h uptime + p95 grouped by region for one provider.
+	ProviderRegionStats(ctx context.Context, providerID string) ([]RegionLiveStat, error)
 }
 
 // compile-time check: *influxHistoryReader satisfies LiveStatsReader.
@@ -217,6 +227,68 @@ func (r *influxHistoryReader) AllModelSparklines(ctx context.Context) (map[strin
 		if row.AvgMs != nil {
 			out[key][idx] = *row.AvgMs
 		}
+	}
+	return out, nil
+}
+
+// ProviderRegionStats returns 24 h uptime + p95 per probe region for one provider.
+func (r *influxHistoryReader) ProviderRegionStats(ctx context.Context, providerID string) ([]RegionLiveStat, error) {
+	if strings.ContainsAny(providerID, "'\";\\") {
+		return nil, fmt.Errorf("influx: invalid provider_id %q", providerID)
+	}
+
+	sql := fmt.Sprintf(
+		`SELECT
+		    region_id,
+		    COUNT(*) AS total,
+		    COUNT(*) FILTER (WHERE success = false) AS errors,
+		    COALESCE(approx_percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms)
+		             FILTER (WHERE success = true AND duration_ms IS NOT NULL), 0) AS p95_ms
+		FROM probes
+		WHERE time >= now() - INTERVAL '86400 seconds'
+		  AND provider_id = '%s'
+		GROUP BY region_id
+		ORDER BY region_id`,
+		providerID,
+	)
+
+	body, err := json.Marshal(map[string]string{"q": sql, "db": r.cfg.Database, "format": "json"})
+	if err != nil {
+		return nil, fmt.Errorf("influx region stats: marshal: %w", err)
+	}
+
+	resp, err := r.postQuery(ctx, body)
+	if err != nil {
+		return nil, fmt.Errorf("influx region stats: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("influx region stats: status %d: %s", resp.StatusCode, detail)
+	}
+
+	var rows []struct {
+		RegionID string  `json:"region_id"`
+		Total    float64 `json:"total"`
+		Errors   float64 `json:"errors"`
+		P95Ms    float64 `json:"p95_ms"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
+		return nil, fmt.Errorf("influx region stats: decode: %w", err)
+	}
+
+	out := make([]RegionLiveStat, 0, len(rows))
+	for _, row := range rows {
+		uptime := 1.0
+		if row.Total > 0 {
+			uptime = 1.0 - row.Errors/row.Total
+		}
+		out = append(out, RegionLiveStat{
+			RegionID:  row.RegionID,
+			Uptime24h: uptime,
+			P95Ms:     row.P95Ms,
+		})
 	}
 	return out, nil
 }
