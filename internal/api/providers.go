@@ -9,15 +9,24 @@ import (
 
 // ---- response types ---------------------------------------------------------
 
+type modelStat struct {
+	ModelID     string    `json:"model_id"`
+	DisplayName string    `json:"display_name"`
+	Uptime24h   float64   `json:"uptime_24h"`
+	P95Ms       float64   `json:"p95_ms"`
+	Sparkline   []float64 `json:"sparkline"` // 60 avg_ms values; 0 = no data
+}
+
 type providerSummary struct {
-	ID               string   `json:"id"`
-	Name             string   `json:"name"`
-	Category         string   `json:"category"`
-	Region           string   `json:"region"`
-	CurrentStatus    string   `json:"current_status"`
-	ActiveIncidentID *string  `json:"active_incident_id,omitempty"`
-	Uptime24h        *float64 `json:"uptime_24h,omitempty"`
-	P95Ms            *float64 `json:"p95_ms,omitempty"`
+	ID               string      `json:"id"`
+	Name             string      `json:"name"`
+	Category         string      `json:"category"`
+	Region           string      `json:"region"`
+	CurrentStatus    string      `json:"current_status"`
+	ActiveIncidentID *string     `json:"active_incident_id,omitempty"`
+	Uptime24h        *float64    `json:"uptime_24h,omitempty"`
+	P95Ms            *float64    `json:"p95_ms,omitempty"`
+	ModelStats       []modelStat `json:"model_stats"`
 }
 
 type modelSummary struct {
@@ -63,7 +72,6 @@ func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build a map from provider_id → highest-severity ongoing incident.
 	incidentByProvider := make(map[string]pgstore.Incident)
 	for _, inc := range ongoing {
 		existing, seen := incidentByProvider[inc.ProviderID]
@@ -72,15 +80,35 @@ func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Fetch live stats (optional; nil liveStats → fields omitted).
-	liveByProvider := make(map[string][2]float64) // [uptime24h, p95_ms]
+	// Fetch models for each provider (N ≈ 7; 30 s cache makes this acceptable).
+	modelsByProvider := make(map[string][]pgstore.Model)
+	for _, p := range providers {
+		if models, err := s.store.ListModelsByProvider(r.Context(), p.ID); err == nil {
+			modelsByProvider[p.ID] = models
+		}
+	}
+
+	// Fetch all InfluxDB stats in parallel (three queries, all non-fatal).
+	var (
+		liveByProvider = make(map[string][2]float64)       // provider_id → [uptime, p95]
+		modelLiveStats = make(map[string][2]float64)       // "pid:model" → [uptime, p95]
+		sparklines     = make(map[string][]float64)        // "pid:model" → [60]float64
+	)
 	if s.liveStats != nil {
-		if stats, err := s.liveStats.AllProviderLiveStats(r.Context()); err == nil {
+		ctx := r.Context()
+		if stats, err := s.liveStats.AllProviderLiveStats(ctx); err == nil {
 			for _, st := range stats {
 				liveByProvider[st.ProviderID] = [2]float64{st.Uptime24h, st.P95Ms}
 			}
 		}
-		// Live stats failure is non-fatal: summaries still return without fields.
+		if mstats, err := s.liveStats.AllModelLiveStats(ctx); err == nil {
+			for _, ms := range mstats {
+				modelLiveStats[ms.ProviderID+":"+ms.Model] = [2]float64{ms.Uptime24h, ms.P95Ms}
+			}
+		}
+		if sl, err := s.liveStats.AllModelSparklines(ctx); err == nil {
+			sparklines = sl
+		}
 	}
 
 	summaries := make([]providerSummary, 0, len(providers))
@@ -91,10 +119,39 @@ func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
 			ps.Uptime24h = &u
 			ps.P95Ms = &p95
 		}
+		ps.ModelStats = buildModelStats(p.ID, modelsByProvider[p.ID], modelLiveStats, sparklines)
 		summaries = append(summaries, ps)
 	}
 
 	writeEnvelope(w, summaries)
+}
+
+func buildModelStats(
+	providerID string,
+	models []pgstore.Model,
+	liveStats map[string][2]float64,
+	sparklines map[string][]float64,
+) []modelStat {
+	out := make([]modelStat, 0, len(models))
+	for _, m := range models {
+		if !m.Active {
+			continue
+		}
+		key := providerID + ":" + m.ModelID
+		live := liveStats[key]
+		sl := sparklines[key]
+		if sl == nil {
+			sl = make([]float64, 60)
+		}
+		out = append(out, modelStat{
+			ModelID:     m.ModelID,
+			DisplayName: m.DisplayName,
+			Uptime24h:   live[0],
+			P95Ms:       live[1],
+			Sparkline:   sl,
+		})
+	}
+	return coalesceSlice(out)
 }
 
 func (s *Server) getProvider(w http.ResponseWriter, r *http.Request) {

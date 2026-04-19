@@ -115,13 +115,9 @@ func (r *influxHistoryReader) ProviderHistory(
 
 	buckets := make([]HistoryBucket, 0, len(rows))
 	for _, row := range rows {
-		ts, err := time.Parse(time.RFC3339Nano, row.Bucket)
+		ts, err := parseInfluxTime(row.Bucket)
 		if err != nil {
-			// Try without nanoseconds.
-			ts, err = time.Parse("2006-01-02T15:04:05Z", row.Bucket)
-			if err != nil {
-				continue
-			}
+			continue
 		}
 		total := int64(row.Total)
 		errors := int64(row.Errors)

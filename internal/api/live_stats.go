@@ -9,6 +9,8 @@ import (
 // LiveStatsReader is the subset of influx.LiveStatsReader used by the API.
 type LiveStatsReader interface {
 	AllProviderLiveStats(ctx context.Context) ([]influx.ProviderLiveStat, error)
+	AllModelLiveStats(ctx context.Context) ([]influx.ModelLiveStat, error)
+	AllModelSparklines(ctx context.Context) (map[string][]float64, error)
 }
 
 // compile-time check: influx.LiveStatsReader satisfies LiveStatsReader.
