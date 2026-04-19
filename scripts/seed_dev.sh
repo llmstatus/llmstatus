@@ -98,7 +98,7 @@ docker exec llmstatus-db psql -U llmstatus llmstatus -f /tmp/seed_dev.sql
 echo "==> PostgreSQL seeded."
 
 # ── InfluxDB ──────────────────────────────────────────────────────────────────
-echo "==> Generating InfluxDB probe data (48 h × 11 provider/model pairs) …"
+echo "==> Generating InfluxDB probe data (48 h × 12 provider/model pairs × 4 regions) …"
 
 INFLUX_HOST="$INFLUX_HOST" INFLUX_DB="$INFLUX_DB" python3 - <<'PYEOF'
 import urllib.request
@@ -127,7 +127,15 @@ PROVIDERS = [
     ("groq",      "llama-3.1-8b-instant",          0.992,  120,  35),
 ]
 
-REGION      = "local-dev"
+# (region_id, latency_multiplier, error_rate_penalty)
+# latency_multiplier: >1 means slower; error_penalty: fraction added to error probability
+REGIONS = [
+    ("us-east-1",      1.0,  0.000),
+    ("eu-west-1",      1.25, 0.003),
+    ("ap-southeast-1", 1.75, 0.005),
+    ("ap-northeast-1", 1.45, 0.004),
+]
+
 PROBE_TYPE  = "chat_basic"
 INTERVAL_S  = 300         # 5-min samples
 WINDOW_S    = 48 * 3600   # 48 h of history
@@ -147,19 +155,22 @@ ANTHRO_LATENCY_E = now_ns - int(19 * 3600 * 1e9)
 def esc(s):
     return s.replace(",", r"\,").replace(" ", r"\ ").replace("=", r"\=")
 
-def make_line(pid, model, ts, sr, p50, sd):
-    _sr, _p50, _sd = sr, p50, sd
+def make_line(pid, model, region_id, lat_mult, err_penalty, ts, sr, p50, sd):
+    _sr  = max(0.0, sr - err_penalty)
+    _p50 = int(p50 * lat_mult)
+    _sd  = int(sd  * lat_mult)
+
     if pid == "openai" and model == "gpt-4o" and OPENAI_OUTAGE_S <= ts <= OPENAI_OUTAGE_E:
         _sr, _p50, _sd = 0.15, 800, 300
     if pid == "anthropic" and "sonnet" in model and ANTHRO_LATENCY_S <= ts <= ANTHRO_LATENCY_E:
-        _sr, _p50, _sd = 0.90, 9000, 2000
+        _sr, _p50, _sd = 0.90, int(9000 * lat_mult), int(2000 * lat_mult)
 
     ok = random.random() < _sr
     dur    = max(50,  int(random.gauss(_p50, _sd)))  if ok else max(100, int(random.gauss(_p50 * 1.5, _sd * 2)))
     status = 200                                       if ok else random.choices([429, 500, 503], weights=[3, 4, 3])[0]
     ecls   = ""                                        if ok else ("rate_limit" if status == 429 else "server_error")
 
-    tags = f"provider_id={esc(pid)},model={esc(model)},probe_type={PROBE_TYPE},region_id={REGION}"
+    tags = f"provider_id={esc(pid)},model={esc(model)},probe_type={PROBE_TYPE},region_id={esc(region_id)}"
     if ecls:
         tags += f",error_class={ecls}"
 
@@ -186,10 +197,11 @@ for step in range(steps):
     ts = now_ns - (steps - step) * INTERVAL_S * 1_000_000_000
     ts += random.randint(-30_000_000_000, 30_000_000_000)
     for (pid, model, sr, p50, sd) in PROVIDERS:
-        buf.append(make_line(pid, model, ts, sr, p50, sd))
-        if len(buf) >= BATCH_LINES:
-            flush(); buf.clear()
-            print(f"  flushed {total} points …")
+        for (region_id, lat_mult, err_penalty) in REGIONS:
+            buf.append(make_line(pid, model, region_id, lat_mult, err_penalty, ts, sr, p50, sd))
+            if len(buf) >= BATCH_LINES:
+                flush(); buf.clear()
+                print(f"  flushed {total} points …")
 
 if buf:
     flush()
@@ -201,4 +213,4 @@ echo ""
 echo "==> Dev seed complete."
 echo "    Providers : openai, anthropic, google, mistral (degraded), cohere, together, groq"
 echo "    Incidents : 1 ongoing (mistral), 2 resolved (openai, anthropic)"
-echo "    Probe data: 48 h × 11 provider/model pairs, 5-min intervals"
+echo "    Probe data: 48 h × 12 provider/model pairs × 4 regions, 5-min intervals"

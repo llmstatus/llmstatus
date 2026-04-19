@@ -32,7 +32,7 @@ export interface ProviderSummary {
   active_incident_id?: string;
   uptime_24h?: number;    // 0–1; omitted when live stats unavailable
   p95_ms?: number;        // p95 latency ms; omitted when unavailable
-  model_stats: ModelStat[]; // always present; empty when no probe data
+  model_stats?: ModelStat[];
 }
 
 export interface IncidentRef {
@@ -51,11 +51,18 @@ export interface ModelSummary {
   active: boolean;
 }
 
+export interface RegionStat {
+  region_id: string;
+  uptime_24h: number; // 0–1
+  p95_ms: number;     // p95 latency ms; 0 when no data
+}
+
 export interface ProviderDetail extends ProviderSummary {
   status_page_url?: string;
   documentation_url?: string;
   models: ModelSummary[];
   active_incidents: IncidentRef[];
+  region_stats?: RegionStat[];
 }
 
 export type IncidentStatus = "ongoing" | "monitoring" | "resolved";

@@ -29,6 +29,12 @@ type providerSummary struct {
 	ModelStats       []modelStat `json:"model_stats"`
 }
 
+type regionStat struct {
+	RegionID  string  `json:"region_id"`
+	Uptime24h float64 `json:"uptime_24h"` // 0–1
+	P95Ms     float64 `json:"p95_ms"`
+}
+
 type modelSummary struct {
 	ModelID     string `json:"model_id"`
 	DisplayName string `json:"display_name"`
@@ -47,10 +53,11 @@ type incidentRef struct {
 
 type providerDetail struct {
 	providerSummary
-	StatusPageURL    *string       `json:"status_page_url,omitempty"`
-	DocumentationURL *string       `json:"documentation_url,omitempty"`
+	StatusPageURL    *string        `json:"status_page_url,omitempty"`
+	DocumentationURL *string        `json:"documentation_url,omitempty"`
 	Models           []modelSummary `json:"models"`
 	ActiveIncidents  []incidentRef  `json:"active_incidents"`
+	RegionStats      []regionStat   `json:"region_stats"` // 24 h stats per probe region
 }
 
 // ---- handlers ---------------------------------------------------------------
@@ -191,12 +198,47 @@ func (s *Server) getProvider(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Fetch model live stats (non-fatal if InfluxDB is unavailable).
+	var (
+		modelLiveStats = make(map[string][2]float64)
+		sparklines     = make(map[string][]float64)
+	)
+	if s.liveStats != nil {
+		ctx := r.Context()
+		if mstats, err := s.liveStats.AllModelLiveStats(ctx); err == nil {
+			for _, ms := range mstats {
+				modelLiveStats[ms.ProviderID+":"+ms.Model] = [2]float64{ms.Uptime24h, ms.P95Ms}
+			}
+		}
+		if sl, err := s.liveStats.AllModelSparklines(ctx); err == nil {
+			sparklines = sl
+		}
+	}
+
+	var regionStats []regionStat
+	if s.liveStats != nil {
+		if rs, err := s.liveStats.ProviderRegionStats(r.Context(), id); err == nil {
+			regionStats = make([]regionStat, 0, len(rs))
+			for _, reg := range rs {
+				regionStats = append(regionStats, regionStat{
+					RegionID:  reg.RegionID,
+					Uptime24h: reg.Uptime24h,
+					P95Ms:     reg.P95Ms,
+				})
+			}
+		}
+	}
+
+	ps := toProviderSummary(p, incMap)
+	ps.ModelStats = buildModelStats(id, models, modelLiveStats, sparklines)
+
 	detail := providerDetail{
-		providerSummary:  toProviderSummary(p, incMap),
+		providerSummary:  ps,
 		StatusPageURL:    textVal(p.StatusPageUrl),
 		DocumentationURL: textVal(p.DocumentationUrl),
 		Models:           toModelSummaries(models),
 		ActiveIncidents:  toIncidentRefs(activeIncs),
+		RegionStats:      coalesceSlice(regionStats),
 	}
 
 	writeEnvelope(w, detail)

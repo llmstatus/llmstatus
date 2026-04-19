@@ -11,6 +11,7 @@ type LiveStatsReader interface {
 	AllProviderLiveStats(ctx context.Context) ([]influx.ProviderLiveStat, error)
 	AllModelLiveStats(ctx context.Context) ([]influx.ModelLiveStat, error)
 	AllModelSparklines(ctx context.Context) (map[string][]float64, error)
+	ProviderRegionStats(ctx context.Context, providerID string) ([]influx.RegionLiveStat, error)
 }
 
 // compile-time check: influx.LiveStatsReader satisfies LiveStatsReader.

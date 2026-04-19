@@ -2,6 +2,7 @@ interface Props {
   data: number[];   // 60 avg_ms values; 0 means no data
   width?: number;
   height?: number;
+  className?: string; // applied to the <svg> element; use "w-full" to fill container
 }
 
 // buildPath converts 60 avg_ms values into an SVG path string.
@@ -30,7 +31,7 @@ function buildPath(data: number[], w: number, h: number): string {
   return d;
 }
 
-export function LatencySparkline({ data, width = 88, height = 28 }: Props) {
+export function LatencySparkline({ data, width = 88, height = 28, className }: Props) {
   const d = buildPath(data, width, height);
   if (!d) {
     return <span className="text-[10px] text-[var(--ink-500)]">no data</span>;
@@ -38,9 +39,11 @@ export function LatencySparkline({ data, width = 88, height = 28 }: Props) {
 
   return (
     <svg
-      width={width}
+      width={className ? undefined : width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      className={className}
       aria-hidden="true"
     >
       <path
