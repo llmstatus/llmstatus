@@ -10,6 +10,13 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-034)
+- RSS discovery: `<link rel="alternate" type="application/rss+xml">` added to root `layout.tsx` (global feed) and to provider detail `generateMetadata` (per-provider feed) — satisfies ROADMAP §8.3 requirement
+- `web/app/api/feed/route.ts` — Next.js proxy for global feed (`/api/feed` → Go API `/feed.xml`)
+- `web/app/api/feed/[id]/route.ts` — Next.js proxy for per-provider feed (`/api/feed/{id}` → Go API `/v1/providers/{id}/feed.xml`)
+- RSS link added to `SiteFooter` and to provider detail page subtitle row
+- Provider detail page now shows "RSS" link alongside "Status page ↗"
+
 ### Added (LLMS-033)
 - `/badges` page — live badge preview + Markdown / HTML / URL embed snippets for every monitored provider; linked from site nav
 - `CopyButton` client component — clipboard copy with 1.8s "Copied" confirmation

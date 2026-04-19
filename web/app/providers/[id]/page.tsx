@@ -28,6 +28,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `Is ${provider.name} API down?`,
       description,
       openGraph: { title: `${provider.name} API Status`, description },
+      alternates: {
+        types: {
+          "application/rss+xml": `/api/feed/${id}`,
+        },
+      },
     };
   } catch {
     return { title: "Provider not found" };
@@ -80,6 +85,13 @@ export default async function ProviderPage({ params }: Props) {
                 </a>
               </>
             )}
+            {" · "}
+            <Link
+              href={`/api/feed/${id}`}
+              className="hover:text-[var(--ink-200)] transition-colors"
+            >
+              RSS
+            </Link>
           </p>
         </div>
         <StatusPill status={provider.current_status} />
