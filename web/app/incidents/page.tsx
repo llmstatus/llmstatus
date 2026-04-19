@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { listIncidents } from "@/lib/api";
-import { IncidentCard } from "@/components/IncidentCard";
+import { IncidentsClient } from "@/components/IncidentsClient";
 
 export const revalidate = 30;
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function IncidentsPage() {
-  const incidents = await listIncidents("all", 50).catch(() => null);
+  const incidents = await listIncidents("all", 200).catch(() => null);
 
   return (
     <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
@@ -37,15 +37,7 @@ export default async function IncidentsPage() {
           No incidents recorded yet.
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {incidents.map((inc) => (
-            <IncidentCard
-              key={inc.id}
-              incident={inc}
-              href={`/incidents/${inc.slug}`}
-            />
-          ))}
-        </div>
+        <IncidentsClient incidents={incidents} />
       )}
     </main>
   );
