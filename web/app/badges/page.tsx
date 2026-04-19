@@ -21,37 +21,67 @@ const SITE_URL =
 
 // Public badge URL — in production nginx proxies /badge/* to the Go API.
 // In dev the Next.js proxy route at /api/badge/{id} is used for preview.
-function publicBadgeUrl(providerId: string) {
-  return `${SITE_URL}/badge/${providerId}.svg`;
+function publicBadgeUrl(providerId: string, style?: "simple" | "detailed") {
+  const base = `${SITE_URL}/badge/${providerId}.svg`;
+  return style === "detailed" ? `${base}?style=detailed` : base;
 }
 
-function previewBadgeUrl(providerId: string) {
-  return `/api/badge/${providerId}`;
+function previewBadgeUrl(providerId: string, style?: "simple" | "detailed") {
+  const base = `/api/badge/${providerId}`;
+  return style === "detailed" ? `${base}?style=detailed` : base;
 }
+
+type BadgeStyle = "simple" | "detailed";
 
 function BadgeRow({ name, id }: { name: string; id: string }) {
-  const url = publicBadgeUrl(id);
-  const markdown = `[![${name} status](${url})](${SITE_URL}/providers/${id})`;
-  const html = `<a href="${SITE_URL}/providers/${id}"><img src="${url}" alt="${name} status" /></a>`;
+  const styles: { key: BadgeStyle; label: string }[] = [
+    { key: "simple", label: "Simple" },
+    { key: "detailed", label: "Detailed" },
+  ];
 
   return (
     <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--ink-600)]">
-        <span className="text-sm font-semibold text-[var(--ink-100)]">{name}</span>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={previewBadgeUrl(id)}
-          alt={`${name} status badge`}
-          height={20}
-          className="h-5"
-        />
+      {/* Provider header + badge previews */}
+      <div className="px-4 py-3 border-b border-[var(--ink-600)]">
+        <span className="text-sm font-semibold text-[var(--ink-100)] block mb-3">{name}</span>
+        <div className="flex items-center gap-4 flex-wrap">
+          {styles.map(({ key, label }) => (
+            <div key={key} className="flex flex-col gap-1.5 items-start">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+                {label}
+              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewBadgeUrl(id, key)}
+                alt={`${name} ${label} status badge`}
+                height={20}
+                className="h-5"
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="divide-y divide-[var(--ink-600)]">
-        <CodeSnippet label="Markdown" code={markdown} />
-        <CodeSnippet label="HTML" code={html} />
-        <CodeSnippet label="URL" code={url} />
-      </div>
+      {/* Embed snippets — one section per style */}
+      {styles.map(({ key, label }) => {
+        const url = publicBadgeUrl(id, key);
+        const markdown = `[![${name} status](${url})](${SITE_URL}/providers/${id})`;
+        const html = `<a href="${SITE_URL}/providers/${id}"><img src="${url}" alt="${name} status" /></a>`;
+        return (
+          <div key={key} className="border-t border-[var(--ink-600)]">
+            <div className="px-4 py-2 bg-[var(--canvas-sunken)]">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-300)]">
+                {label} style
+              </span>
+            </div>
+            <div className="divide-y divide-[var(--ink-600)]">
+              <CodeSnippet label="Markdown" code={markdown} />
+              <CodeSnippet label="HTML" code={html} />
+              <CodeSnippet label="URL" code={url} />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

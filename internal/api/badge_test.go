@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/llmstatus/llmstatus/internal/api"
+	"github.com/llmstatus/llmstatus/internal/store/influx"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
 
@@ -142,6 +143,72 @@ func TestGetBadge_SVGStructure(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("SVG missing %q", want)
 		}
+	}
+}
+
+func TestGetBadge_DetailedStyle_WithUptime(t *testing.T) {
+	store := &fakeStore{
+		providers: []pgstore.Provider{fixtureProvider("openai", "OpenAI")},
+	}
+	ls := &fakeLiveStatsReader{
+		stats: []influx.ProviderLiveStat{
+			{ProviderID: "openai", Uptime24h: 0.9987, P95Ms: 450},
+		},
+	}
+	srv := api.New(store, api.WithLiveStatsReader(ls))
+
+	req := httptest.NewRequest(http.MethodGet, "/badge/openai.svg?style=detailed", nil)
+	rr := httptest.NewRecorder()
+	srv.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status=%d want 200", rr.Code)
+	}
+	body := rr.Body.String()
+	if !strings.Contains(body, "99.9%") {
+		t.Errorf("detailed badge should contain uptime percentage, got: %s", body[:min(200, len(body))])
+	}
+	if !strings.Contains(body, "operational") {
+		t.Error("detailed badge missing status word")
+	}
+}
+
+func TestGetBadge_DetailedStyle_NoLiveStats_FallsBack(t *testing.T) {
+	store := &fakeStore{
+		providers: []pgstore.Provider{fixtureProvider("openai", "OpenAI")},
+	}
+	// No live stats reader wired — should fall back to simple format.
+	srv := api.New(store)
+
+	req := httptest.NewRequest(http.MethodGet, "/badge/openai.svg?style=detailed", nil)
+	rr := httptest.NewRecorder()
+	srv.ServeHTTP(rr, req)
+
+	body := rr.Body.String()
+	if strings.Contains(body, "%") {
+		t.Error("fallback badge should not contain a percentage")
+	}
+	if !strings.Contains(body, "operational") {
+		t.Error("fallback badge missing status")
+	}
+}
+
+func TestGetBadge_UnknownStyle_FallsBack(t *testing.T) {
+	store := &fakeStore{
+		providers: []pgstore.Provider{fixtureProvider("openai", "OpenAI")},
+	}
+	srv := api.New(store)
+
+	req := httptest.NewRequest(http.MethodGet, "/badge/openai.svg?style=whatever", nil)
+	rr := httptest.NewRecorder()
+	srv.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status=%d want 200", rr.Code)
+	}
+	body := rr.Body.String()
+	if !strings.Contains(body, "operational") {
+		t.Error("badge with unknown style should show simple operational status")
 	}
 }
 
