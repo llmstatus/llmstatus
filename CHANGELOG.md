@@ -10,6 +10,12 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-036)
+- `/providers` page — dedicated provider list page with filter chips for status (all / operational / degraded / down) and category (all / official / aggregator / CN official); filters combine with AND logic
+- `ProvidersClient` client component — owns filter state, renders result count and filtered `ProviderTable`
+- SiteHeader "Providers" nav link now points to `/providers` (previously pointed to `/`)
+- `/providers` added to sitemap with `changeFrequency: "always"`, priority 0.95
+
 ### Added (LLMS-035)
 - `GET /badge/{id}.svg?style=detailed` — badge variant that appends live 24h uptime percentage when `LiveStatsReader` is wired (e.g. `operational · 99.9%`); falls back to simple format when live stats are unavailable
 - `/badges` page now shows both Simple and Detailed preview images side-by-side, with embed snippets for each style
