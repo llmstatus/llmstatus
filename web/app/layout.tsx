@@ -25,6 +25,11 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
   },
+  alternates: {
+    types: {
+      "application/rss+xml": "/api/feed",
+    },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
