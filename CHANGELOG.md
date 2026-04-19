@@ -10,6 +10,9 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added (LLMS-044)
+- Homepage OG image (`/opengraph-image`) — edge-rendered brand card: site name, headline, tagline, and "20+ AI providers tracked" badge; no live data fetch (avoids stale-status problem on social shares)
+
 ### Added (LLMS-043)
 - Incident detail pages now have edge-rendered OG images (1200×630): incident title, severity color, provider ID, and status pill on dark background; graceful fallback when API unavailable
 
