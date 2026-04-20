@@ -1,0 +1,12 @@
+{
+  "id": "fake-id",
+  "finish_reason": "COMPLETE",
+  "message": {
+    "role": "assistant",
+    "content": [{"type": "text", "text": "pong"}]
+  },
+  "usage": {
+    "billed_units": {"input_tokens": 5, "output_tokens": 1},
+    "tokens": {"input_tokens": 5, "output_tokens": 1}
+  }
+}
