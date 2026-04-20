@@ -431,6 +431,35 @@ func (q *Queries) GetUserByOAuth(ctx context.Context, arg GetUserByOAuthParams) 
 	return i, err
 }
 
+const isAlertSent = `-- name: IsAlertSent :one
+SELECT EXISTS(
+    SELECT 1 FROM alert_log
+    WHERE subscription_id = $1
+      AND incident_id      = $2
+      AND channel          = $3
+      AND event            = $4
+) AS sent
+`
+
+type IsAlertSentParams struct {
+	SubscriptionID int64     `json:"subscription_id"`
+	IncidentID     uuid.UUID `json:"incident_id"`
+	Channel        string    `json:"channel"`
+	Event          string    `json:"event"`
+}
+
+func (q *Queries) IsAlertSent(ctx context.Context, arg IsAlertSentParams) (bool, error) {
+	row := q.db.QueryRow(ctx, isAlertSent,
+		arg.SubscriptionID,
+		arg.IncidentID,
+		arg.Channel,
+		arg.Event,
+	)
+	var sent bool
+	err := row.Scan(&sent)
+	return sent, err
+}
+
 const listActiveProviders = `-- name: ListActiveProviders :many
 SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config FROM providers
 WHERE active = TRUE
@@ -620,6 +649,50 @@ func (q *Queries) ListIncidentsByStatus(ctx context.Context, arg ListIncidentsBy
 	return items, nil
 }
 
+const listIncidentsUpdatedSince = `-- name: ListIncidentsUpdatedSince :many
+SELECT id, slug, provider_id, severity, title, description, status, affected_models, affected_regions, started_at, resolved_at, detection_method, detection_rule, metrics_snapshot, human_reviewed, created_at, updated_at FROM incidents
+WHERE updated_at > $1
+ORDER BY updated_at
+`
+
+func (q *Queries) ListIncidentsUpdatedSince(ctx context.Context, updatedAt pgtype.Timestamptz) ([]Incident, error) {
+	rows, err := q.db.Query(ctx, listIncidentsUpdatedSince, updatedAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Incident{}
+	for rows.Next() {
+		var i Incident
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.ProviderID,
+			&i.Severity,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.AffectedModels,
+			&i.AffectedRegions,
+			&i.StartedAt,
+			&i.ResolvedAt,
+			&i.DetectionMethod,
+			&i.DetectionRule,
+			&i.MetricsSnapshot,
+			&i.HumanReviewed,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listModelsByProvider = `-- name: ListModelsByProvider :many
 SELECT id, provider_id, model_id, display_name, model_type, active FROM models
 WHERE provider_id = $1
@@ -744,30 +817,80 @@ func (q *Queries) ListSubscriptionsByUser(ctx context.Context, userID int64) ([]
 	return items, nil
 }
 
-const logAlert = `-- name: LogAlert :one
-INSERT INTO alert_log (subscription_id, incident_id, channel)
-VALUES ($1, $2, $3)
-ON CONFLICT (subscription_id, incident_id, channel) DO UPDATE SET sent_at = alert_log.sent_at
-RETURNING id, subscription_id, incident_id, channel, sent_at
+const listSubscriptionsForProvider = `-- name: ListSubscriptionsForProvider :many
+SELECT s.id, s.user_id, s.provider_id, s.min_severity, s.email_alerts, s.email_digest, s.webhook_url, s.created_at, u.email AS user_email, p.name AS provider_name
+FROM subscriptions s
+JOIN users u ON u.id = s.user_id
+JOIN providers p ON p.id = s.provider_id
+WHERE s.provider_id = $1
+ORDER BY s.id
+`
+
+type ListSubscriptionsForProviderRow struct {
+	ID           int64              `json:"id"`
+	UserID       int64              `json:"user_id"`
+	ProviderID   string             `json:"provider_id"`
+	MinSeverity  string             `json:"min_severity"`
+	EmailAlerts  bool               `json:"email_alerts"`
+	EmailDigest  bool               `json:"email_digest"`
+	WebhookUrl   pgtype.Text        `json:"webhook_url"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UserEmail    string             `json:"user_email"`
+	ProviderName string             `json:"provider_name"`
+}
+
+func (q *Queries) ListSubscriptionsForProvider(ctx context.Context, providerID string) ([]ListSubscriptionsForProviderRow, error) {
+	rows, err := q.db.Query(ctx, listSubscriptionsForProvider, providerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSubscriptionsForProviderRow{}
+	for rows.Next() {
+		var i ListSubscriptionsForProviderRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ProviderID,
+			&i.MinSeverity,
+			&i.EmailAlerts,
+			&i.EmailDigest,
+			&i.WebhookUrl,
+			&i.CreatedAt,
+			&i.UserEmail,
+			&i.ProviderName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const logAlert = `-- name: LogAlert :exec
+INSERT INTO alert_log (subscription_id, incident_id, channel, event)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (subscription_id, incident_id, channel, event) DO NOTHING
 `
 
 type LogAlertParams struct {
 	SubscriptionID int64     `json:"subscription_id"`
 	IncidentID     uuid.UUID `json:"incident_id"`
 	Channel        string    `json:"channel"`
+	Event          string    `json:"event"`
 }
 
-func (q *Queries) LogAlert(ctx context.Context, arg LogAlertParams) (AlertLog, error) {
-	row := q.db.QueryRow(ctx, logAlert, arg.SubscriptionID, arg.IncidentID, arg.Channel)
-	var i AlertLog
-	err := row.Scan(
-		&i.ID,
-		&i.SubscriptionID,
-		&i.IncidentID,
-		&i.Channel,
-		&i.SentAt,
+func (q *Queries) LogAlert(ctx context.Context, arg LogAlertParams) error {
+	_, err := q.db.Exec(ctx, logAlert,
+		arg.SubscriptionID,
+		arg.IncidentID,
+		arg.Channel,
+		arg.Event,
 	)
-	return i, err
+	return err
 }
 
 const markUserVerified = `-- name: MarkUserVerified :exec

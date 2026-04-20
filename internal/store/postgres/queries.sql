@@ -216,8 +216,29 @@ RETURNING *;
 -- name: DeleteSubscription :exec
 DELETE FROM subscriptions WHERE id = $1 AND user_id = $2;
 
--- name: LogAlert :one
-INSERT INTO alert_log (subscription_id, incident_id, channel)
-VALUES ($1, $2, $3)
-ON CONFLICT (subscription_id, incident_id, channel) DO UPDATE SET sent_at = alert_log.sent_at
-RETURNING *;
+-- name: ListIncidentsUpdatedSince :many
+SELECT * FROM incidents
+WHERE updated_at > $1
+ORDER BY updated_at;
+
+-- name: ListSubscriptionsForProvider :many
+SELECT s.*, u.email AS user_email, p.name AS provider_name
+FROM subscriptions s
+JOIN users u ON u.id = s.user_id
+JOIN providers p ON p.id = s.provider_id
+WHERE s.provider_id = $1
+ORDER BY s.id;
+
+-- name: IsAlertSent :one
+SELECT EXISTS(
+    SELECT 1 FROM alert_log
+    WHERE subscription_id = $1
+      AND incident_id      = $2
+      AND channel          = $3
+      AND event            = $4
+) AS sent;
+
+-- name: LogAlert :exec
+INSERT INTO alert_log (subscription_id, incident_id, channel, event)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (subscription_id, incident_id, channel, event) DO NOTHING;

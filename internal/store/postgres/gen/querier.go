@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -36,17 +37,20 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	GetUserByOAuth(ctx context.Context, arg GetUserByOAuthParams) (User, error)
+	IsAlertSent(ctx context.Context, arg IsAlertSentParams) (bool, error)
 	ListActiveProviders(ctx context.Context) ([]Provider, error)
 	ListIncidents(ctx context.Context, arg ListIncidentsParams) ([]Incident, error)
 	ListIncidentsByProvider(ctx context.Context, arg ListIncidentsByProviderParams) ([]Incident, error)
 	ListIncidentsByStatus(ctx context.Context, arg ListIncidentsByStatusParams) ([]Incident, error)
+	ListIncidentsUpdatedSince(ctx context.Context, updatedAt pgtype.Timestamptz) ([]Incident, error)
 	ListModelsByProvider(ctx context.Context, providerID string) ([]Model, error)
 	ListProviders(ctx context.Context) ([]Provider, error)
 	// ============================================================
 	// subscriptions (LLMS-050)
 	// ============================================================
 	ListSubscriptionsByUser(ctx context.Context, userID int64) ([]ListSubscriptionsByUserRow, error)
-	LogAlert(ctx context.Context, arg LogAlertParams) (AlertLog, error)
+	ListSubscriptionsForProvider(ctx context.Context, providerID string) ([]ListSubscriptionsForProviderRow, error)
+	LogAlert(ctx context.Context, arg LogAlertParams) error
 	MarkUserVerified(ctx context.Context, id int64) error
 	ResolveIncident(ctx context.Context, arg ResolveIncidentParams) error
 	SetIncidentDescription(ctx context.Context, arg SetIncidentDescriptionParams) error

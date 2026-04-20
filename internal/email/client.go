@@ -11,17 +11,34 @@ import (
 
 const resendAPI = "https://api.resend.com/emails"
 
+// Sender is the interface satisfied by *Client; useful for test mocking.
+type Sender interface {
+	Send(ctx context.Context, msg Message) error
+}
+
 type Client struct {
-	apiKey string
-	from   string
-	http   *http.Client
+	apiKey  string
+	from    string
+	baseURL string
+	http    *http.Client
 }
 
 func New(apiKey, from string) *Client {
 	return &Client{
-		apiKey: apiKey,
-		from:   from,
-		http:   &http.Client{Timeout: 10 * time.Second},
+		apiKey:  apiKey,
+		from:    from,
+		baseURL: resendAPI,
+		http:    &http.Client{Timeout: 10 * time.Second},
+	}
+}
+
+// NewWithBaseURL creates a Client pointing at a custom URL (for tests).
+func NewWithBaseURL(baseURL, apiKey, from string) *Client {
+	return &Client{
+		apiKey:  apiKey,
+		from:    from,
+		baseURL: baseURL,
+		http:    &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
@@ -44,7 +61,7 @@ func (c *Client) Send(ctx context.Context, msg Message) error {
 	if err != nil {
 		return fmt.Errorf("email: marshal payload: %w", err)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, resendAPI, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("email: build request: %w", err)
 	}
