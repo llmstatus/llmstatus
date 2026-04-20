@@ -18,6 +18,8 @@ type Querier interface {
 	// ============================================================
 	CreateIncident(ctx context.Context, arg CreateIncidentParams) (Incident, error)
 	CreateOTPToken(ctx context.Context, arg CreateOTPTokenParams) (OtpToken, error)
+	CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (Subscription, error)
+	DeleteSubscription(ctx context.Context, arg DeleteSubscriptionParams) error
 	GetIncidentByID(ctx context.Context, id uuid.UUID) (Incident, error)
 	GetIncidentBySlug(ctx context.Context, slug string) (Incident, error)
 	// ============================================================
@@ -30,6 +32,7 @@ type Querier interface {
 	// providers
 	// ============================================================
 	GetProvider(ctx context.Context, id string) (Provider, error)
+	GetSubscription(ctx context.Context, id int64) (Subscription, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	GetUserByOAuth(ctx context.Context, arg GetUserByOAuthParams) (User, error)
@@ -39,11 +42,17 @@ type Querier interface {
 	ListIncidentsByStatus(ctx context.Context, arg ListIncidentsByStatusParams) ([]Incident, error)
 	ListModelsByProvider(ctx context.Context, providerID string) ([]Model, error)
 	ListProviders(ctx context.Context) ([]Provider, error)
+	// ============================================================
+	// subscriptions (LLMS-050)
+	// ============================================================
+	ListSubscriptionsByUser(ctx context.Context, userID int64) ([]ListSubscriptionsByUserRow, error)
+	LogAlert(ctx context.Context, arg LogAlertParams) (AlertLog, error)
 	MarkUserVerified(ctx context.Context, id int64) error
 	ResolveIncident(ctx context.Context, arg ResolveIncidentParams) error
 	SetIncidentDescription(ctx context.Context, arg SetIncidentDescriptionParams) error
 	SetProviderActive(ctx context.Context, arg SetProviderActiveParams) error
 	UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentStatusParams) error
+	UpdateSubscription(ctx context.Context, arg UpdateSubscriptionParams) (Subscription, error)
 	UpdateUserSettings(ctx context.Context, arg UpdateUserSettingsParams) error
 	UpsertModel(ctx context.Context, arg UpsertModelParams) (Model, error)
 	UpsertOAuthAccount(ctx context.Context, arg UpsertOAuthAccountParams) (OauthAccount, error)
