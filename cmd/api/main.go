@@ -14,6 +14,7 @@
 //	RESEND_API_KEY         Resend email API key (required when JWT_SECRET set)
 //	EMAIL_FROM             Sender address (default "noreply@llmstatus.io")
 //	INTERNAL_SECRET        Shared secret for /auth/oauth/upsert (required when JWT_SECRET set)
+//	REDIS_URL              Redis DSN — enables per-email OTP rate limiting when set
 //	SITE_URL               Public site URL (default "https://llmstatus.io")
 //	GOOGLE_CLIENT_ID       Google OAuth client ID
 //	GOOGLE_CLIENT_SECRET   Google OAuth client secret
@@ -34,8 +35,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/redis/go-redis/v9"
+
 	"github.com/llmstatus/llmstatus/internal/api"
 	"github.com/llmstatus/llmstatus/internal/email"
+	"github.com/llmstatus/llmstatus/internal/otprl"
 	"github.com/llmstatus/llmstatus/internal/store/influx"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
@@ -80,6 +84,15 @@ func main() {
 			Email:          email.New(requireEnv("RESEND_API_KEY"), emailFrom),
 			JWTSecret:      jwtSecret,
 			InternalSecret: requireEnv("INTERNAL_SECRET"),
+		}
+		if redisURL := os.Getenv("REDIS_URL"); redisURL != "" {
+			opt, err := redis.ParseURL(redisURL)
+			if err != nil {
+				slog.Error("api: invalid REDIS_URL", "err", err)
+				os.Exit(1)
+			}
+			authCfg.OTPLimiter = otprl.NewRedis(redis.NewClient(opt))
+			slog.Info("api: OTP rate-limiting enabled")
 		}
 		opts = append(opts, api.WithAuth(authCfg))
 		slog.Info("api: auth enabled")
