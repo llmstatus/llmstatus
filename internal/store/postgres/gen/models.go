@@ -17,6 +17,7 @@ type AlertLog struct {
 	IncidentID     uuid.UUID          `json:"incident_id"`
 	Channel        string             `json:"channel"`
 	SentAt         pgtype.Timestamptz `json:"sent_at"`
+	Event          string             `json:"event"`
 }
 
 type Incident struct {
