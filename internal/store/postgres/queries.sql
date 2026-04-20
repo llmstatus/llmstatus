@@ -242,3 +242,40 @@ SELECT EXISTS(
 INSERT INTO alert_log (subscription_id, incident_id, channel, event)
 VALUES ($1, $2, $3, $4)
 ON CONFLICT (subscription_id, incident_id, channel, event) DO NOTHING;
+
+-- ============================================================
+-- digest (LLMS-052)
+-- ============================================================
+
+-- name: ListUsersForDigest :many
+-- Returns distinct users who have at least one email_digest=true subscription.
+SELECT DISTINCT u.*
+FROM users u
+JOIN subscriptions s ON s.user_id = u.id
+WHERE s.email_digest = TRUE;
+
+-- name: ListDigestSubscriptions :many
+-- Returns all digest-enabled subscriptions for a user with provider data.
+SELECT s.*, p.name AS provider_name
+FROM subscriptions s
+JOIN providers p ON p.id = s.provider_id
+WHERE s.user_id = $1 AND s.email_digest = TRUE
+ORDER BY p.name;
+
+-- name: ListRecentIncidentsByProvider :many
+-- Incidents opened or updated within the last 24 hours for a provider.
+SELECT * FROM incidents
+WHERE provider_id = $1
+  AND updated_at  > NOW() - INTERVAL '24 hours'
+ORDER BY started_at DESC;
+
+-- name: IsDigestSent :one
+SELECT EXISTS(
+    SELECT 1 FROM digest_log
+    WHERE user_id   = $1
+      AND sent_date = $2
+) AS sent;
+
+-- name: LogDigest :exec
+INSERT INTO digest_log (user_id, sent_date) VALUES ($1, $2)
+ON CONFLICT (user_id, sent_date) DO NOTHING;

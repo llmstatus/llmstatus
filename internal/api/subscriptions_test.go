@@ -103,6 +103,9 @@ func (f *fakeAuthStore) DeleteSubscription(_ context.Context, arg pgstore.Delete
 	}
 	return nil
 }
+func (f *fakeAuthStore) UpdateUserSettings(_ context.Context, _ pgstore.UpdateUserSettingsParams) error {
+	return nil
+}
 
 const testJWTSecret = "test-secret-12345"
 

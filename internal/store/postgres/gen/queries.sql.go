@@ -460,6 +460,26 @@ func (q *Queries) IsAlertSent(ctx context.Context, arg IsAlertSentParams) (bool,
 	return sent, err
 }
 
+const isDigestSent = `-- name: IsDigestSent :one
+SELECT EXISTS(
+    SELECT 1 FROM digest_log
+    WHERE user_id   = $1
+      AND sent_date = $2
+) AS sent
+`
+
+type IsDigestSentParams struct {
+	UserID   int64       `json:"user_id"`
+	SentDate pgtype.Date `json:"sent_date"`
+}
+
+func (q *Queries) IsDigestSent(ctx context.Context, arg IsDigestSentParams) (bool, error) {
+	row := q.db.QueryRow(ctx, isDigestSent, arg.UserID, arg.SentDate)
+	var sent bool
+	err := row.Scan(&sent)
+	return sent, err
+}
+
 const listActiveProviders = `-- name: ListActiveProviders :many
 SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config FROM providers
 WHERE active = TRUE
@@ -487,6 +507,57 @@ func (q *Queries) ListActiveProviders(ctx context.Context) ([]Provider, error) {
 			&i.AddedAt,
 			&i.Active,
 			&i.Config,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDigestSubscriptions = `-- name: ListDigestSubscriptions :many
+SELECT s.id, s.user_id, s.provider_id, s.min_severity, s.email_alerts, s.email_digest, s.webhook_url, s.created_at, p.name AS provider_name
+FROM subscriptions s
+JOIN providers p ON p.id = s.provider_id
+WHERE s.user_id = $1 AND s.email_digest = TRUE
+ORDER BY p.name
+`
+
+type ListDigestSubscriptionsRow struct {
+	ID           int64              `json:"id"`
+	UserID       int64              `json:"user_id"`
+	ProviderID   string             `json:"provider_id"`
+	MinSeverity  string             `json:"min_severity"`
+	EmailAlerts  bool               `json:"email_alerts"`
+	EmailDigest  bool               `json:"email_digest"`
+	WebhookUrl   pgtype.Text        `json:"webhook_url"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ProviderName string             `json:"provider_name"`
+}
+
+// Returns all digest-enabled subscriptions for a user with provider data.
+func (q *Queries) ListDigestSubscriptions(ctx context.Context, userID int64) ([]ListDigestSubscriptionsRow, error) {
+	rows, err := q.db.Query(ctx, listDigestSubscriptions, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDigestSubscriptionsRow{}
+	for rows.Next() {
+		var i ListDigestSubscriptionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ProviderID,
+			&i.MinSeverity,
+			&i.EmailAlerts,
+			&i.EmailDigest,
+			&i.WebhookUrl,
+			&i.CreatedAt,
+			&i.ProviderName,
 		); err != nil {
 			return nil, err
 		}
@@ -763,6 +834,52 @@ func (q *Queries) ListProviders(ctx context.Context) ([]Provider, error) {
 	return items, nil
 }
 
+const listRecentIncidentsByProvider = `-- name: ListRecentIncidentsByProvider :many
+SELECT id, slug, provider_id, severity, title, description, status, affected_models, affected_regions, started_at, resolved_at, detection_method, detection_rule, metrics_snapshot, human_reviewed, created_at, updated_at FROM incidents
+WHERE provider_id = $1
+  AND updated_at  > NOW() - INTERVAL '24 hours'
+ORDER BY started_at DESC
+`
+
+// Incidents opened or updated within the last 24 hours for a provider.
+func (q *Queries) ListRecentIncidentsByProvider(ctx context.Context, providerID string) ([]Incident, error) {
+	rows, err := q.db.Query(ctx, listRecentIncidentsByProvider, providerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Incident{}
+	for rows.Next() {
+		var i Incident
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.ProviderID,
+			&i.Severity,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.AffectedModels,
+			&i.AffectedRegions,
+			&i.StartedAt,
+			&i.ResolvedAt,
+			&i.DetectionMethod,
+			&i.DetectionRule,
+			&i.MetricsSnapshot,
+			&i.HumanReviewed,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSubscriptionsByUser = `-- name: ListSubscriptionsByUser :many
 
 SELECT s.id, s.user_id, s.provider_id, s.min_severity, s.email_alerts, s.email_digest, s.webhook_url, s.created_at, p.name AS provider_name
@@ -870,6 +987,45 @@ func (q *Queries) ListSubscriptionsForProvider(ctx context.Context, providerID s
 	return items, nil
 }
 
+const listUsersForDigest = `-- name: ListUsersForDigest :many
+
+SELECT DISTINCT u.id, u.email, u.digest_hour, u.timezone, u.created_at, u.verified_at
+FROM users u
+JOIN subscriptions s ON s.user_id = u.id
+WHERE s.email_digest = TRUE
+`
+
+// ============================================================
+// digest (LLMS-052)
+// ============================================================
+// Returns distinct users who have at least one email_digest=true subscription.
+func (q *Queries) ListUsersForDigest(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsersForDigest)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.DigestHour,
+			&i.Timezone,
+			&i.CreatedAt,
+			&i.VerifiedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const logAlert = `-- name: LogAlert :exec
 INSERT INTO alert_log (subscription_id, incident_id, channel, event)
 VALUES ($1, $2, $3, $4)
@@ -890,6 +1046,21 @@ func (q *Queries) LogAlert(ctx context.Context, arg LogAlertParams) error {
 		arg.Channel,
 		arg.Event,
 	)
+	return err
+}
+
+const logDigest = `-- name: LogDigest :exec
+INSERT INTO digest_log (user_id, sent_date) VALUES ($1, $2)
+ON CONFLICT (user_id, sent_date) DO NOTHING
+`
+
+type LogDigestParams struct {
+	UserID   int64       `json:"user_id"`
+	SentDate pgtype.Date `json:"sent_date"`
+}
+
+func (q *Queries) LogDigest(ctx context.Context, arg LogDigestParams) error {
+	_, err := q.db.Exec(ctx, logDigest, arg.UserID, arg.SentDate)
 	return err
 }
 

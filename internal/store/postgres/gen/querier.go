@@ -38,19 +38,30 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	GetUserByOAuth(ctx context.Context, arg GetUserByOAuthParams) (User, error)
 	IsAlertSent(ctx context.Context, arg IsAlertSentParams) (bool, error)
+	IsDigestSent(ctx context.Context, arg IsDigestSentParams) (bool, error)
 	ListActiveProviders(ctx context.Context) ([]Provider, error)
+	// Returns all digest-enabled subscriptions for a user with provider data.
+	ListDigestSubscriptions(ctx context.Context, userID int64) ([]ListDigestSubscriptionsRow, error)
 	ListIncidents(ctx context.Context, arg ListIncidentsParams) ([]Incident, error)
 	ListIncidentsByProvider(ctx context.Context, arg ListIncidentsByProviderParams) ([]Incident, error)
 	ListIncidentsByStatus(ctx context.Context, arg ListIncidentsByStatusParams) ([]Incident, error)
 	ListIncidentsUpdatedSince(ctx context.Context, updatedAt pgtype.Timestamptz) ([]Incident, error)
 	ListModelsByProvider(ctx context.Context, providerID string) ([]Model, error)
 	ListProviders(ctx context.Context) ([]Provider, error)
+	// Incidents opened or updated within the last 24 hours for a provider.
+	ListRecentIncidentsByProvider(ctx context.Context, providerID string) ([]Incident, error)
 	// ============================================================
 	// subscriptions (LLMS-050)
 	// ============================================================
 	ListSubscriptionsByUser(ctx context.Context, userID int64) ([]ListSubscriptionsByUserRow, error)
 	ListSubscriptionsForProvider(ctx context.Context, providerID string) ([]ListSubscriptionsForProviderRow, error)
+	// ============================================================
+	// digest (LLMS-052)
+	// ============================================================
+	// Returns distinct users who have at least one email_digest=true subscription.
+	ListUsersForDigest(ctx context.Context) ([]User, error)
 	LogAlert(ctx context.Context, arg LogAlertParams) error
+	LogDigest(ctx context.Context, arg LogDigestParams) error
 	MarkUserVerified(ctx context.Context, id int64) error
 	ResolveIncident(ctx context.Context, arg ResolveIncidentParams) error
 	SetIncidentDescription(ctx context.Context, arg SetIncidentDescriptionParams) error

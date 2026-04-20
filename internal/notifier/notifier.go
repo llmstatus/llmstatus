@@ -55,7 +55,10 @@ func New(cfg Config) *Notifier {
 }
 
 // Run blocks until ctx is cancelled, polling on cfg.Interval.
+// It also starts the hourly digest goroutine.
 func (n *Notifier) Run(ctx context.Context) {
+	go n.runDigest(ctx)
+
 	// Use a small lookback so events at tick boundaries aren't missed.
 	const lookback = 10 * time.Second
 	lastCheck := time.Now().UTC().Add(-lookback)

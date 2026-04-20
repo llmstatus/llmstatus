@@ -31,6 +31,8 @@ type AuthStore interface {
 	CreateSubscription(ctx context.Context, arg pgstore.CreateSubscriptionParams) (pgstore.Subscription, error)
 	UpdateSubscription(ctx context.Context, arg pgstore.UpdateSubscriptionParams) (pgstore.Subscription, error)
 	DeleteSubscription(ctx context.Context, arg pgstore.DeleteSubscriptionParams) error
+	// user settings
+	UpdateUserSettings(ctx context.Context, arg pgstore.UpdateUserSettingsParams) error
 }
 
 // AuthConfig holds dependencies for auth handlers.
