@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { NavLink } from "./NavLink";
+import { getSession } from "@/lib/session";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const session = await getSession().catch(() => null);
+
   return (
     <header className="border-b border-[var(--ink-600)] px-6 py-4">
       <div className="mx-auto max-w-4xl flex items-center justify-between">
@@ -20,6 +23,11 @@ export function SiteHeader() {
           <NavLink href="/compare">Compare</NavLink>
           <NavLink href="/badges">Badges</NavLink>
           <NavLink href="/api">API</NavLink>
+          {session ? (
+            <NavLink href="/account">Account</NavLink>
+          ) : (
+            <NavLink href="/login">Sign in</NavLink>
+          )}
         </nav>
       </div>
     </header>

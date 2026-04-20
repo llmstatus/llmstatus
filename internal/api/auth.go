@@ -1,0 +1,207 @@
+package api
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/llmstatus/llmstatus/internal/auth"
+	"github.com/llmstatus/llmstatus/internal/email"
+	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
+)
+
+const otpTTL = 10 * time.Minute
+
+// AuthStore is the subset of pgstore.Querier used by auth handlers.
+type AuthStore interface {
+	UpsertUser(ctx context.Context, e string) (pgstore.User, error)
+	GetUserByEmail(ctx context.Context, email string) (pgstore.User, error)
+	GetUserByID(ctx context.Context, id int64) (pgstore.User, error)
+	MarkUserVerified(ctx context.Context, id int64) error
+	CreateOTPToken(ctx context.Context, arg pgstore.CreateOTPTokenParams) (pgstore.OtpToken, error)
+	ConsumeOTPToken(ctx context.Context, arg pgstore.ConsumeOTPTokenParams) (pgstore.OtpToken, error)
+	UpsertOAuthAccount(ctx context.Context, arg pgstore.UpsertOAuthAccountParams) (pgstore.OauthAccount, error)
+}
+
+// AuthConfig holds dependencies for auth handlers.
+type AuthConfig struct {
+	Store     AuthStore
+	Email     *email.Client
+	JWTSecret string
+}
+
+// handleOTPSend handles POST /auth/otp/send
+// Body: {"email": "user@example.com"}
+// Creates user if not exists, sends 6-digit OTP via email.
+func (s *Server) handleOTPSend(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" {
+		writeError(w, http.StatusBadRequest, "email required")
+		return
+	}
+
+	user, err := s.auth.Store.UpsertUser(r.Context(), body.Email)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not create user")
+		return
+	}
+
+	plain, hash, err := auth.GenerateOTP()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not generate code")
+		return
+	}
+
+	if _, err := s.auth.Store.CreateOTPToken(r.Context(), pgstore.CreateOTPTokenParams{
+		UserID:    user.ID,
+		CodeHash:  hash,
+		ExpiresAt: mustTimestamptz(time.Now().Add(otpTTL)),
+	}); err != nil {
+		writeError(w, http.StatusInternalServerError, "could not store code")
+		return
+	}
+
+	if err := s.auth.Email.Send(r.Context(), email.Message{
+		To:      body.Email,
+		Subject: fmt.Sprintf("[llmstatus] Your sign-in code: %s", plain),
+		Text:    fmt.Sprintf("Your llmstatus.io sign-in code is: %s\n\nExpires in 10 minutes.", plain),
+		HTML:    otpEmailHTML(plain),
+	}); err != nil {
+		writeError(w, http.StatusInternalServerError, "could not send email")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// handleOTPVerify handles POST /auth/otp/verify
+// Body: {"email": "...", "code": "123456"}
+// Returns {"token": "<jwt>"} on success.
+func (s *Server) handleOTPVerify(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email string `json:"email"`
+		Code  string `json:"code"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" || body.Code == "" {
+		writeError(w, http.StatusBadRequest, "email and code required")
+		return
+	}
+
+	user, err := s.auth.Store.GetUserByEmail(r.Context(), body.Email)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "invalid code")
+		return
+	}
+
+	codeHash := auth.VerifyOTPHash(body.Code)
+	if _, err := s.auth.Store.ConsumeOTPToken(r.Context(), pgstore.ConsumeOTPTokenParams{
+		UserID:   user.ID,
+		CodeHash: codeHash,
+	}); err != nil {
+		writeError(w, http.StatusUnauthorized, "invalid or expired code")
+		return
+	}
+
+	_ = s.auth.Store.MarkUserVerified(r.Context(), user.ID)
+	s.writeToken(w, user)
+}
+
+// handleOAuthUpsert handles POST /auth/oauth/upsert (internal, called by Next.js)
+// Body: {"provider": "google"|"github", "sub": "...", "email": "..."}
+// Returns {"token": "<jwt>"} on success.
+func (s *Server) handleOAuthUpsert(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Provider string `json:"provider"`
+		Sub      string `json:"sub"`
+		Email    string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil ||
+		body.Provider == "" || body.Sub == "" || body.Email == "" {
+		writeError(w, http.StatusBadRequest, "provider, sub and email required")
+		return
+	}
+	if body.Provider != "google" && body.Provider != "github" {
+		writeError(w, http.StatusBadRequest, "invalid provider")
+		return
+	}
+
+	user, err := s.auth.Store.UpsertUser(r.Context(), body.Email)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not create user")
+		return
+	}
+	if _, err := s.auth.Store.UpsertOAuthAccount(r.Context(), pgstore.UpsertOAuthAccountParams{
+		UserID:   user.ID,
+		Provider: body.Provider,
+		Sub:      body.Sub,
+		Email:    body.Email,
+	}); err != nil {
+		writeError(w, http.StatusInternalServerError, "could not link account")
+		return
+	}
+	_ = s.auth.Store.MarkUserVerified(r.Context(), user.ID)
+	s.writeToken(w, user)
+}
+
+// handleMe handles GET /auth/me — returns user from Bearer token.
+func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
+	claims := s.requireAuth(w, r)
+	if claims == nil {
+		return
+	}
+	user, err := s.auth.Store.GetUserByID(r.Context(), claims.UserID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "user not found")
+		return
+	}
+	writeEnvelope(w, map[string]any{
+		"id":          user.ID,
+		"email":       user.Email,
+		"digest_hour": user.DigestHour,
+		"timezone":    user.Timezone,
+	})
+}
+
+// ---- helpers ------------------------------------------------------------
+
+func (s *Server) writeToken(w http.ResponseWriter, user pgstore.User) {
+	token, err := auth.SignJWT(user.ID, user.Email, s.auth.JWTSecret)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not issue token")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"token": token})
+}
+
+// requireAuth reads the Bearer token from Authorization header or llms_session cookie.
+func (s *Server) requireAuth(w http.ResponseWriter, r *http.Request) *auth.Claims {
+	var raw string
+	if cookie, err := r.Cookie(auth.CookieName); err == nil {
+		raw = cookie.Value
+	} else if h := r.Header.Get("Authorization"); len(h) > 7 {
+		raw = h[7:] // strip "Bearer "
+	}
+	if raw == "" {
+		writeError(w, http.StatusUnauthorized, "not authenticated")
+		return nil
+	}
+	claims, err := auth.ParseJWT(raw, s.auth.JWTSecret)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "invalid token")
+		return nil
+	}
+	return claims
+}
+
+func otpEmailHTML(code string) string {
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html><body style="font-family:monospace;background:#0d0d0d;color:#e0e0e0;padding:40px">
+<h2 style="color:#e0e0e0">[llmstatus] sign-in code</h2>
+<p style="font-size:32px;letter-spacing:8px;color:#f5a623;font-weight:bold">%s</p>
+<p style="color:#888">Expires in 10 minutes. If you didn't request this, ignore it.</p>
+</body></html>`, code)
+}

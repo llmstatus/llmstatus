@@ -11,10 +11,13 @@ import (
 )
 
 type Querier interface {
+	// Finds a valid (unused, unexpired) token for the user and marks it used.
+	ConsumeOTPToken(ctx context.Context, arg ConsumeOTPTokenParams) (OtpToken, error)
 	// ============================================================
 	// incidents
 	// ============================================================
 	CreateIncident(ctx context.Context, arg CreateIncidentParams) (Incident, error)
+	CreateOTPToken(ctx context.Context, arg CreateOTPTokenParams) (OtpToken, error)
 	GetIncidentByID(ctx context.Context, id uuid.UUID) (Incident, error)
 	GetIncidentBySlug(ctx context.Context, slug string) (Incident, error)
 	// ============================================================
@@ -27,18 +30,28 @@ type Querier interface {
 	// providers
 	// ============================================================
 	GetProvider(ctx context.Context, id string) (Provider, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
+	GetUserByID(ctx context.Context, id int64) (User, error)
+	GetUserByOAuth(ctx context.Context, arg GetUserByOAuthParams) (User, error)
 	ListActiveProviders(ctx context.Context) ([]Provider, error)
 	ListIncidents(ctx context.Context, arg ListIncidentsParams) ([]Incident, error)
 	ListIncidentsByProvider(ctx context.Context, arg ListIncidentsByProviderParams) ([]Incident, error)
 	ListIncidentsByStatus(ctx context.Context, arg ListIncidentsByStatusParams) ([]Incident, error)
 	ListModelsByProvider(ctx context.Context, providerID string) ([]Model, error)
 	ListProviders(ctx context.Context) ([]Provider, error)
+	MarkUserVerified(ctx context.Context, id int64) error
 	ResolveIncident(ctx context.Context, arg ResolveIncidentParams) error
 	SetIncidentDescription(ctx context.Context, arg SetIncidentDescriptionParams) error
 	SetProviderActive(ctx context.Context, arg SetProviderActiveParams) error
 	UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentStatusParams) error
+	UpdateUserSettings(ctx context.Context, arg UpdateUserSettingsParams) error
 	UpsertModel(ctx context.Context, arg UpsertModelParams) (Model, error)
+	UpsertOAuthAccount(ctx context.Context, arg UpsertOAuthAccountParams) (OauthAccount, error)
 	UpsertProvider(ctx context.Context, arg UpsertProviderParams) error
+	// ============================================================
+	// auth (LLMS-049)
+	// ============================================================
+	UpsertUser(ctx context.Context, email string) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)
