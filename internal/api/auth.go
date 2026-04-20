@@ -10,6 +10,7 @@ import (
 
 	"github.com/llmstatus/llmstatus/internal/auth"
 	"github.com/llmstatus/llmstatus/internal/email"
+	"github.com/llmstatus/llmstatus/internal/otprl"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
 
@@ -37,7 +38,8 @@ type AuthConfig struct {
 	Store          AuthStore
 	Email          *email.Client
 	JWTSecret      string
-	InternalSecret string // required for /auth/oauth/upsert; shared with Next.js via INTERNAL_SECRET env var
+	InternalSecret string        // required for /auth/oauth/upsert; shared with Next.js via INTERNAL_SECRET env var
+	OTPLimiter     otprl.Limiter // optional; nil disables per-email rate limiting
 }
 
 // handleOTPSend handles POST /auth/otp/send
@@ -50,6 +52,18 @@ func (s *Server) handleOTPSend(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" {
 		writeError(w, http.StatusBadRequest, "email required")
 		return
+	}
+
+	if s.auth.OTPLimiter != nil {
+		ok, retryAfter, err := s.auth.OTPLimiter.Allow(r.Context(), body.Email)
+		if err != nil {
+			slog.Warn("auth: otp rate-limit check failed", "err", err)
+			// fail open — don't block the user on a Redis outage
+		} else if !ok {
+			w.Header().Set("Retry-After", fmt.Sprintf("%.0f", retryAfter.Seconds()))
+			writeError(w, http.StatusTooManyRequests, "too many OTP requests, try again later")
+			return
+		}
 	}
 
 	user, err := s.auth.Store.UpsertUser(r.Context(), body.Email)
