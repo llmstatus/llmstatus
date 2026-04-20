@@ -15,7 +15,7 @@ import (
 
 const otpTTL = 10 * time.Minute
 
-// AuthStore is the subset of pgstore.Querier used by auth handlers.
+// AuthStore is the subset of pgstore.Querier used by auth and subscription handlers.
 type AuthStore interface {
 	UpsertUser(ctx context.Context, e string) (pgstore.User, error)
 	GetUserByEmail(ctx context.Context, email string) (pgstore.User, error)
@@ -24,6 +24,12 @@ type AuthStore interface {
 	CreateOTPToken(ctx context.Context, arg pgstore.CreateOTPTokenParams) (pgstore.OtpToken, error)
 	ConsumeOTPToken(ctx context.Context, arg pgstore.ConsumeOTPTokenParams) (pgstore.OtpToken, error)
 	UpsertOAuthAccount(ctx context.Context, arg pgstore.UpsertOAuthAccountParams) (pgstore.OauthAccount, error)
+	// subscriptions
+	ListSubscriptionsByUser(ctx context.Context, userID int64) ([]pgstore.ListSubscriptionsByUserRow, error)
+	GetSubscription(ctx context.Context, id int64) (pgstore.Subscription, error)
+	CreateSubscription(ctx context.Context, arg pgstore.CreateSubscriptionParams) (pgstore.Subscription, error)
+	UpdateSubscription(ctx context.Context, arg pgstore.UpdateSubscriptionParams) (pgstore.Subscription, error)
+	DeleteSubscription(ctx context.Context, arg pgstore.DeleteSubscriptionParams) error
 }
 
 // AuthConfig holds dependencies for auth handlers.

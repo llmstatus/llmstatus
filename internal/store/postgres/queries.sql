@@ -184,3 +184,40 @@ RETURNING *;
 SELECT u.* FROM users u
 JOIN oauth_accounts o ON o.user_id = u.id
 WHERE o.provider = $1 AND o.sub = $2;
+
+-- ============================================================
+-- subscriptions (LLMS-050)
+-- ============================================================
+
+-- name: ListSubscriptionsByUser :many
+SELECT s.*, p.name AS provider_name
+FROM subscriptions s
+JOIN providers p ON p.id = s.provider_id
+WHERE s.user_id = $1
+ORDER BY p.name;
+
+-- name: GetSubscription :one
+SELECT * FROM subscriptions WHERE id = $1;
+
+-- name: CreateSubscription :one
+INSERT INTO subscriptions (user_id, provider_id, min_severity, email_alerts, email_digest, webhook_url)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING *;
+
+-- name: UpdateSubscription :one
+UPDATE subscriptions
+SET min_severity = $3,
+    email_alerts = $4,
+    email_digest = $5,
+    webhook_url  = $6
+WHERE id = $1 AND user_id = $2
+RETURNING *;
+
+-- name: DeleteSubscription :exec
+DELETE FROM subscriptions WHERE id = $1 AND user_id = $2;
+
+-- name: LogAlert :one
+INSERT INTO alert_log (subscription_id, incident_id, channel)
+VALUES ($1, $2, $3)
+ON CONFLICT (subscription_id, incident_id, channel) DO UPDATE SET sent_at = alert_log.sent_at
+RETURNING *;

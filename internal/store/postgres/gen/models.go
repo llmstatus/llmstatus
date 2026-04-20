@@ -11,6 +11,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AlertLog struct {
+	ID             int64              `json:"id"`
+	SubscriptionID int64              `json:"subscription_id"`
+	IncidentID     uuid.UUID          `json:"incident_id"`
+	Channel        string             `json:"channel"`
+	SentAt         pgtype.Timestamptz `json:"sent_at"`
+}
+
 type Incident struct {
 	ID              uuid.UUID          `json:"id"`
 	Slug            string             `json:"slug"`
@@ -70,6 +78,17 @@ type Provider struct {
 	AddedAt          pgtype.Timestamptz `json:"added_at"`
 	Active           bool               `json:"active"`
 	Config           json.RawMessage    `json:"config"`
+}
+
+type Subscription struct {
+	ID          int64              `json:"id"`
+	UserID      int64              `json:"user_id"`
+	ProviderID  string             `json:"provider_id"`
+	MinSeverity string             `json:"min_severity"`
+	EmailAlerts bool               `json:"email_alerts"`
+	EmailDigest bool               `json:"email_digest"`
+	WebhookUrl  pgtype.Text        `json:"webhook_url"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
 type User struct {

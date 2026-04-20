@@ -144,6 +144,58 @@ func (q *Queries) CreateOTPToken(ctx context.Context, arg CreateOTPTokenParams) 
 	return i, err
 }
 
+const createSubscription = `-- name: CreateSubscription :one
+INSERT INTO subscriptions (user_id, provider_id, min_severity, email_alerts, email_digest, webhook_url)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, user_id, provider_id, min_severity, email_alerts, email_digest, webhook_url, created_at
+`
+
+type CreateSubscriptionParams struct {
+	UserID      int64       `json:"user_id"`
+	ProviderID  string      `json:"provider_id"`
+	MinSeverity string      `json:"min_severity"`
+	EmailAlerts bool        `json:"email_alerts"`
+	EmailDigest bool        `json:"email_digest"`
+	WebhookUrl  pgtype.Text `json:"webhook_url"`
+}
+
+func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (Subscription, error) {
+	row := q.db.QueryRow(ctx, createSubscription,
+		arg.UserID,
+		arg.ProviderID,
+		arg.MinSeverity,
+		arg.EmailAlerts,
+		arg.EmailDigest,
+		arg.WebhookUrl,
+	)
+	var i Subscription
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ProviderID,
+		&i.MinSeverity,
+		&i.EmailAlerts,
+		&i.EmailDigest,
+		&i.WebhookUrl,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const deleteSubscription = `-- name: DeleteSubscription :exec
+DELETE FROM subscriptions WHERE id = $1 AND user_id = $2
+`
+
+type DeleteSubscriptionParams struct {
+	ID     int64 `json:"id"`
+	UserID int64 `json:"user_id"`
+}
+
+func (q *Queries) DeleteSubscription(ctx context.Context, arg DeleteSubscriptionParams) error {
+	_, err := q.db.Exec(ctx, deleteSubscription, arg.ID, arg.UserID)
+	return err
+}
+
 const getIncidentByID = `-- name: GetIncidentByID :one
 SELECT id, slug, provider_id, severity, title, description, status, affected_models, affected_regions, started_at, resolved_at, detection_method, detection_rule, metrics_snapshot, human_reviewed, created_at, updated_at FROM incidents WHERE id = $1
 `
@@ -294,6 +346,26 @@ func (q *Queries) GetProvider(ctx context.Context, id string) (Provider, error) 
 		&i.AddedAt,
 		&i.Active,
 		&i.Config,
+	)
+	return i, err
+}
+
+const getSubscription = `-- name: GetSubscription :one
+SELECT id, user_id, provider_id, min_severity, email_alerts, email_digest, webhook_url, created_at FROM subscriptions WHERE id = $1
+`
+
+func (q *Queries) GetSubscription(ctx context.Context, id int64) (Subscription, error) {
+	row := q.db.QueryRow(ctx, getSubscription, id)
+	var i Subscription
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ProviderID,
+		&i.MinSeverity,
+		&i.EmailAlerts,
+		&i.EmailDigest,
+		&i.WebhookUrl,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -618,6 +690,86 @@ func (q *Queries) ListProviders(ctx context.Context) ([]Provider, error) {
 	return items, nil
 }
 
+const listSubscriptionsByUser = `-- name: ListSubscriptionsByUser :many
+
+SELECT s.id, s.user_id, s.provider_id, s.min_severity, s.email_alerts, s.email_digest, s.webhook_url, s.created_at, p.name AS provider_name
+FROM subscriptions s
+JOIN providers p ON p.id = s.provider_id
+WHERE s.user_id = $1
+ORDER BY p.name
+`
+
+type ListSubscriptionsByUserRow struct {
+	ID           int64              `json:"id"`
+	UserID       int64              `json:"user_id"`
+	ProviderID   string             `json:"provider_id"`
+	MinSeverity  string             `json:"min_severity"`
+	EmailAlerts  bool               `json:"email_alerts"`
+	EmailDigest  bool               `json:"email_digest"`
+	WebhookUrl   pgtype.Text        `json:"webhook_url"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ProviderName string             `json:"provider_name"`
+}
+
+// ============================================================
+// subscriptions (LLMS-050)
+// ============================================================
+func (q *Queries) ListSubscriptionsByUser(ctx context.Context, userID int64) ([]ListSubscriptionsByUserRow, error) {
+	rows, err := q.db.Query(ctx, listSubscriptionsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSubscriptionsByUserRow{}
+	for rows.Next() {
+		var i ListSubscriptionsByUserRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ProviderID,
+			&i.MinSeverity,
+			&i.EmailAlerts,
+			&i.EmailDigest,
+			&i.WebhookUrl,
+			&i.CreatedAt,
+			&i.ProviderName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const logAlert = `-- name: LogAlert :one
+INSERT INTO alert_log (subscription_id, incident_id, channel)
+VALUES ($1, $2, $3)
+ON CONFLICT (subscription_id, incident_id, channel) DO UPDATE SET sent_at = alert_log.sent_at
+RETURNING id, subscription_id, incident_id, channel, sent_at
+`
+
+type LogAlertParams struct {
+	SubscriptionID int64     `json:"subscription_id"`
+	IncidentID     uuid.UUID `json:"incident_id"`
+	Channel        string    `json:"channel"`
+}
+
+func (q *Queries) LogAlert(ctx context.Context, arg LogAlertParams) (AlertLog, error) {
+	row := q.db.QueryRow(ctx, logAlert, arg.SubscriptionID, arg.IncidentID, arg.Channel)
+	var i AlertLog
+	err := row.Scan(
+		&i.ID,
+		&i.SubscriptionID,
+		&i.IncidentID,
+		&i.Channel,
+		&i.SentAt,
+	)
+	return i, err
+}
+
 const markUserVerified = `-- name: MarkUserVerified :exec
 UPDATE users SET verified_at = NOW() WHERE id = $1 AND verified_at IS NULL
 `
@@ -693,6 +845,48 @@ type UpdateIncidentStatusParams struct {
 func (q *Queries) UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentStatusParams) error {
 	_, err := q.db.Exec(ctx, updateIncidentStatus, arg.ID, arg.Status)
 	return err
+}
+
+const updateSubscription = `-- name: UpdateSubscription :one
+UPDATE subscriptions
+SET min_severity = $3,
+    email_alerts = $4,
+    email_digest = $5,
+    webhook_url  = $6
+WHERE id = $1 AND user_id = $2
+RETURNING id, user_id, provider_id, min_severity, email_alerts, email_digest, webhook_url, created_at
+`
+
+type UpdateSubscriptionParams struct {
+	ID          int64       `json:"id"`
+	UserID      int64       `json:"user_id"`
+	MinSeverity string      `json:"min_severity"`
+	EmailAlerts bool        `json:"email_alerts"`
+	EmailDigest bool        `json:"email_digest"`
+	WebhookUrl  pgtype.Text `json:"webhook_url"`
+}
+
+func (q *Queries) UpdateSubscription(ctx context.Context, arg UpdateSubscriptionParams) (Subscription, error) {
+	row := q.db.QueryRow(ctx, updateSubscription,
+		arg.ID,
+		arg.UserID,
+		arg.MinSeverity,
+		arg.EmailAlerts,
+		arg.EmailDigest,
+		arg.WebhookUrl,
+	)
+	var i Subscription
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ProviderID,
+		&i.MinSeverity,
+		&i.EmailAlerts,
+		&i.EmailDigest,
+		&i.WebhookUrl,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const updateUserSettings = `-- name: UpdateUserSettings :exec

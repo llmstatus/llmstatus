@@ -83,6 +83,10 @@ func (s *Server) registerRoutes() {
 		s.mux.HandleFunc("POST /auth/otp/verify", s.handleOTPVerify)
 		s.mux.HandleFunc("POST /auth/oauth/upsert", s.handleOAuthUpsert)
 		s.mux.HandleFunc("GET /auth/me", s.handleMe)
+		s.mux.HandleFunc("GET /account/subscriptions", s.handleListSubscriptions)
+		s.mux.HandleFunc("POST /account/subscriptions", s.handleCreateSubscription)
+		s.mux.HandleFunc("PUT /account/subscriptions/{id}", s.handleUpdateSubscription)
+		s.mux.HandleFunc("DELETE /account/subscriptions/{id}", s.handleDeleteSubscription)
 	}
 }
 

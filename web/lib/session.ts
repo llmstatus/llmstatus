@@ -6,6 +6,7 @@ const COOKIE = "llms_session";
 export interface Session {
   userId: number;
   email: string;
+  token: string;
 }
 
 function secret(): Uint8Array {
@@ -23,7 +24,7 @@ export async function getSession(): Promise<Session | null> {
       token,
       secret(),
     );
-    return { userId: payload.uid, email: payload.email };
+    return { userId: payload.uid, email: payload.email, token };
   } catch {
     return null;
   }
