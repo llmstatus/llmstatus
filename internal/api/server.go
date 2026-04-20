@@ -98,6 +98,8 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /badge/{id}", s.getBadge)
 	s.mux.HandleFunc("GET /feed.xml", s.getGlobalFeed)
 	s.mux.HandleFunc("GET /v1/providers/{id}/feed.xml", s.getProviderFeed)
+	s.mux.HandleFunc("POST /v1/providers/{id}/report", s.postReport)
+	s.mux.HandleFunc("GET /v1/providers/{id}/reports/histogram", s.getReportHistogram)
 
 	// WebSocket for real-time updates
 	s.mux.HandleFunc("GET /ws", HandleWebSocket)

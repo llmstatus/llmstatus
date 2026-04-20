@@ -132,3 +132,10 @@ type User struct {
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 	VerifiedAt pgtype.Timestamptz `json:"verified_at"`
 }
+
+type UserReport struct {
+	ID         int64              `json:"id"`
+	ProviderID string             `json:"provider_id"`
+	IpHash     string             `json:"ip_hash"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}

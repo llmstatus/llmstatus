@@ -573,6 +573,33 @@ func (q *Queries) IsDigestSent(ctx context.Context, arg IsDigestSentParams) (boo
 	return sent, err
 }
 
+const insertUserReport = `-- name: InsertUserReport :exec
+
+INSERT INTO user_reports (provider_id, ip_hash)
+SELECT $1, $2
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_reports
+    WHERE provider_id = $1
+      AND ip_hash     = $2
+      AND created_at  > NOW() - INTERVAL '5 minutes'
+)
+`
+
+type InsertUserReportParams struct {
+	ProviderID string `json:"provider_id"`
+	IpHash     string `json:"ip_hash"`
+}
+
+// ============================================================
+// user_reports (LLMS-048)
+// ============================================================
+// Inserts a report only when no report from the same ip_hash exists for the
+// same provider within the last 5 minutes (server-side dedup).
+func (q *Queries) InsertUserReport(ctx context.Context, arg InsertUserReportParams) error {
+	_, err := q.db.Exec(ctx, insertUserReport, arg.ProviderID, arg.IpHash)
+	return err
+}
+
 const listActiveProviders = `-- name: ListActiveProviders :many
 SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config, probe_scope FROM providers
 WHERE active = TRUE
@@ -1702,4 +1729,47 @@ func (q *Queries) UpsertUser(ctx context.Context, email string) (User, error) {
 		&i.VerifiedAt,
 	)
 	return i, err
+}
+
+const userReportHistogram = `-- name: UserReportHistogram :many
+SELECT
+    gs.bucket,
+    COALESCE(COUNT(r.id), 0)::BIGINT AS count
+FROM generate_series(
+    date_trunc('hour', NOW() - INTERVAL '23 hours'),
+    date_trunc('hour', NOW()),
+    INTERVAL '1 hour'
+) AS gs(bucket)
+LEFT JOIN user_reports r
+    ON r.provider_id = $1
+    AND date_trunc('hour', r.created_at) = gs.bucket
+GROUP BY gs.bucket
+ORDER BY gs.bucket
+`
+
+type UserReportHistogramRow struct {
+	Bucket interface{} `json:"bucket"`
+	Count  int64       `json:"count"`
+}
+
+// Returns 24 hourly buckets for the given provider, oldest first.
+// Buckets with zero reports are included via generate_series.
+func (q *Queries) UserReportHistogram(ctx context.Context, providerID string) ([]UserReportHistogramRow, error) {
+	rows, err := q.db.Query(ctx, userReportHistogram, providerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UserReportHistogramRow{}
+	for rows.Next() {
+		var i UserReportHistogramRow
+		if err := rows.Scan(&i.Bucket, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

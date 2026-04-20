@@ -20,6 +20,10 @@ const (
 	openaiLightModel     = "gpt-4o-mini"
 	openaiLightProbeType = "light_inference"
 	openaiErrorDetailMax = 200
+
+	// probeUserAgent is sent on every outbound probe request so providers can
+	// identify monitoring traffic and we are transparent about our purpose.
+	probeUserAgent = "llmstatus.io/1.0 (+https://llmstatus.io)"
 )
 
 // OpenAIOption configures an OpenAI provider at construction time.
@@ -105,20 +109,8 @@ func (p *openaiProvider) ProbeLightInference(ctx context.Context, model string) 
 	return r, nil
 }
 
-// ProbeQuality is not implemented for OpenAI yet (LLMS-003+).
-func (p *openaiProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: "quality"}
-}
-
-// ProbeEmbedding is not implemented for OpenAI yet (LLMS-003+).
-func (p *openaiProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: "embedding"}
-}
-
-// ProbeStreaming is not implemented for OpenAI yet (LLMS-003+).
-func (p *openaiProvider) ProbeStreaming(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: "streaming"}
-}
+// ProbeQuality, ProbeEmbedding, ProbeStreaming are in openai_quality.go,
+// openai_embedding.go, openai_streaming.go respectively.
 
 type openaiChatRequest struct {
 	Model     string              `json:"model"`
@@ -164,6 +156,7 @@ func (p *openaiProvider) buildLightRequest(ctx context.Context, model string) (*
 	}
 	req.Header.Set("Authorization", "Bearer "+p.apiKey)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", probeUserAgent)
 	return req, nil
 }
 

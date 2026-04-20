@@ -117,20 +117,34 @@ func (r *Runner) runOnce(ctx context.Context) {
 	wg.Wait()
 }
 
-// dispatchProbe runs a single probe and forwards the result to the sink.
+// dispatchProbe runs all supported probe types for one (provider, model) pair
+// sequentially and forwards each result to the sink. Unsupported probe types
+// (ErrNotSupported) are silently skipped.
 func (r *Runner) dispatchProbe(ctx context.Context, pc ProviderConfig, model string) {
 	pCtx, cancel := context.WithTimeout(ctx, r.probeTimeout)
 	defer cancel()
 
-	result, _ := pc.Adapter.ProbeLightInference(pCtx, model)
-	result.RegionID = r.regionID
+	probeFns := []func(context.Context, string) (ProbeResult, error){
+		pc.Adapter.ProbeLightInference,
+		pc.Adapter.ProbeQuality,
+		pc.Adapter.ProbeEmbedding,
+		pc.Adapter.ProbeStreaming,
+	}
 
-	if err := r.sink.Receive(ctx, result); err != nil {
-		slog.Error("runner: sink error",
-			"provider", pc.Adapter.ID(),
-			"model", model,
-			"err", err,
-		)
+	for _, fn := range probeFns {
+		result, err := fn(pCtx, model)
+		if IsNotSupported(err) {
+			continue
+		}
+		result.RegionID = r.regionID
+		if sinkErr := r.sink.Receive(ctx, result); sinkErr != nil {
+			slog.Error("runner: sink error",
+				"provider", pc.Adapter.ID(),
+				"model", model,
+				"probe_type", result.ProbeType,
+				"err", sinkErr,
+			)
+		}
 	}
 }
 

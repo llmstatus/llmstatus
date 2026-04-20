@@ -6,6 +6,7 @@ package probes
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -86,4 +87,12 @@ type ErrNotSupported struct {
 
 func (e *ErrNotSupported) Error() string {
 	return "probes: " + e.ProbeType + " not supported by provider " + e.ProviderID
+}
+
+// IsNotSupported reports whether err signals that a probe type is not
+// implemented for a particular provider. Callers (e.g. the runner) use this
+// to skip unsupported probes without treating them as failures.
+func IsNotSupported(err error) bool {
+	var e *ErrNotSupported
+	return errors.As(err, &e)
 }

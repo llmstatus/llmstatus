@@ -120,6 +120,18 @@ export function getProviderHistory(id: string, window: HistoryWindow = "30d"): P
   );
 }
 
+export interface ReportHistogramBucket {
+  hour: string;
+  count: number;
+}
+
+export function getReportHistogram(id: string): Promise<ReportHistogramBucket[]> {
+  return apiFetch<ReportHistogramBucket[]>(
+    `/v1/providers/${encodeURIComponent(id)}/reports/histogram`,
+    60,
+  );
+}
+
 export function listIncidents(status = "all", limit = 50): Promise<IncidentDetail[]> {
   return apiFetch<IncidentDetail[]>(`/v1/incidents?status=${status}&limit=${limit}`, 30);
 }
