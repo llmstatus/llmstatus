@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
 
@@ -17,19 +19,13 @@ import (
 // whether another user reported from the same IP.
 func (s *Server) postReport(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-
-	// Verify provider exists; return 404 for unknown IDs.
-	if _, err := s.store.GetProvider(r.Context(), id); err != nil {
-		writeError(w, http.StatusNotFound, "provider not found")
-		return
-	}
-
 	ipHash := hashIP(r)
 	if err := s.store.InsertUserReport(r.Context(), pgstore.InsertUserReportParams{
 		ProviderID: id,
 		IpHash:     ipHash,
 	}); err != nil {
-		writeError(w, http.StatusInternalServerError, "could not record report")
+		// FK violation means unknown provider_id — treat as 404.
+		writeError(w, http.StatusNotFound, "provider not found")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -57,8 +53,13 @@ func (s *Server) getReportHistogram(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]bucket, 0, len(rows))
 	for _, row := range rows {
-		// generate_series returns pgtype.Timestamptz at runtime; assert to time.Time.
-		t, _ := row.Bucket.(time.Time)
+		var t time.Time
+		switch v := row.Bucket.(type) {
+		case time.Time:
+			t = v
+		case pgtype.Timestamptz:
+			t = v.Time
+		}
 		out = append(out, bucket{Hour: t.UTC(), Count: row.Count})
 	}
 	writeEnvelope(w, out)
@@ -66,16 +67,19 @@ func (s *Server) getReportHistogram(w http.ResponseWriter, r *http.Request) {
 
 // hashIP returns the hex-encoded SHA-256 of the client IP address (port stripped).
 // We never store raw IPs.
+//
+// When behind nginx, X-Forwarded-For is "client, proxy1, ..., $remote_addr".
+// We take only the rightmost entry — the one nginx itself appended — which cannot
+// be spoofed by the client. Left-hand entries are client-controlled and untrusted.
 func hashIP(r *http.Request) string {
 	addr := r.RemoteAddr
-	// Prefer X-Forwarded-For when behind a trusted proxy (nginx sets it).
 	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-		addr = fwd
+		parts := strings.Split(fwd, ",")
+		addr = strings.TrimSpace(parts[len(parts)-1])
 	}
-	host, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		host = addr
+	if host, _, err := net.SplitHostPort(addr); err == nil {
+		addr = host
 	}
-	sum := sha256.Sum256([]byte(host))
+	sum := sha256.Sum256([]byte(addr))
 	return fmt.Sprintf("%x", sum)
 }
