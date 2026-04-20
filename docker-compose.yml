@@ -151,6 +151,24 @@ services:
       timeout: 5s
       retries: 5
 
+  notifier:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.golang
+      args:
+        CMD: notifier
+    container_name: llmstatus-notifier
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@llmstatus.io}
+      SITE_URL: ${SITE_URL:-https://llmstatus.io}
+      NOTIFIER_POLL_INTERVAL: ${NOTIFIER_POLL_INTERVAL:-30s}
+    depends_on:
+      db:
+        condition: service_healthy
+
   # ── frontend ───────────────────────────────────────────────────────────────
 
   web:
@@ -187,9 +205,8 @@ services:
       PROBE_TIMEOUT: ${PROBE_TIMEOUT:-30s}
       PROBE_CONCURRENCY: ${PROBE_CONCURRENCY:-4}
       INGEST_URL: http://ingest:8080
-    env_file:
-      - path: .env
-        required: false
+      LLMS_OPENAI_API_KEY: ${LLMS_OPENAI_API_KEY:-}
+      LLMS_ANTHROPIC_API_KEY: ${LLMS_ANTHROPIC_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

@@ -23,12 +23,6 @@ const (
 	anthropicStatusOverloaded = 529
 )
 
-func init() {
-	// Register a zero-key placeholder so the adapter appears in the registry.
-	// cmd/prober replaces this with a keyed instance loaded from the environment.
-	Register(NewAnthropicProvider("", ""))
-}
-
 // AnthropicOption configures an Anthropic provider at construction time.
 type AnthropicOption func(*anthropicProvider)
 
