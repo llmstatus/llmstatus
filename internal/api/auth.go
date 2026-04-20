@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -27,9 +28,10 @@ type AuthStore interface {
 
 // AuthConfig holds dependencies for auth handlers.
 type AuthConfig struct {
-	Store     AuthStore
-	Email     *email.Client
-	JWTSecret string
+	Store          AuthStore
+	Email          *email.Client
+	JWTSecret      string
+	InternalSecret string // required for /auth/oauth/upsert; shared with Next.js via INTERNAL_SECRET env var
 }
 
 // handleOTPSend handles POST /auth/otp/send
@@ -91,29 +93,34 @@ func (s *Server) handleOTPVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := s.auth.Store.GetUserByEmail(r.Context(), body.Email)
-	if err != nil {
-		writeError(w, http.StatusUnauthorized, "invalid code")
-		return
-	}
-
+	// Always perform both DB queries regardless of whether the email exists —
+	// early return on missing email leaks user existence via timing difference.
+	user, userErr := s.auth.Store.GetUserByEmail(r.Context(), body.Email)
 	codeHash := auth.VerifyOTPHash(body.Code)
-	if _, err := s.auth.Store.ConsumeOTPToken(r.Context(), pgstore.ConsumeOTPTokenParams{
-		UserID:   user.ID,
+	_, consumeErr := s.auth.Store.ConsumeOTPToken(r.Context(), pgstore.ConsumeOTPTokenParams{
+		UserID:   user.ID, // 0 when user not found; no otp_token row matches, query returns error
 		CodeHash: codeHash,
-	}); err != nil {
+	})
+	if userErr != nil || consumeErr != nil {
 		writeError(w, http.StatusUnauthorized, "invalid or expired code")
 		return
 	}
 
-	_ = s.auth.Store.MarkUserVerified(r.Context(), user.ID)
+	if err := s.auth.Store.MarkUserVerified(r.Context(), user.ID); err != nil {
+		slog.Warn("auth: markUserVerified failed", "user_id", user.ID, "err", err)
+	}
 	s.writeToken(w, user)
 }
 
-// handleOAuthUpsert handles POST /auth/oauth/upsert (internal, called by Next.js)
+// handleOAuthUpsert handles POST /auth/oauth/upsert (internal, called by Next.js only).
+// Requires X-Internal-Token header matching AuthConfig.InternalSecret.
 // Body: {"provider": "google"|"github", "sub": "...", "email": "..."}
 // Returns {"token": "<jwt>"} on success.
 func (s *Server) handleOAuthUpsert(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("X-Internal-Token") != s.auth.InternalSecret {
+		writeError(w, http.StatusUnauthorized, "forbidden")
+		return
+	}
 	var body struct {
 		Provider string `json:"provider"`
 		Sub      string `json:"sub"`
@@ -134,13 +141,20 @@ func (s *Server) handleOAuthUpsert(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not create user")
 		return
 	}
-	if _, err := s.auth.Store.UpsertOAuthAccount(r.Context(), pgstore.UpsertOAuthAccountParams{
+	oauthAcc, err := s.auth.Store.UpsertOAuthAccount(r.Context(), pgstore.UpsertOAuthAccountParams{
 		UserID:   user.ID,
 		Provider: body.Provider,
 		Sub:      body.Sub,
 		Email:    body.Email,
-	}); err != nil {
+	})
+	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not link account")
+		return
+	}
+	// Guard against conflict: if the provider+sub was already linked to a
+	// different user, the ON CONFLICT clause preserves the original user_id.
+	if oauthAcc.UserID != user.ID {
+		writeError(w, http.StatusConflict, "oauth account linked to different user")
 		return
 	}
 	_ = s.auth.Store.MarkUserVerified(r.Context(), user.ID)

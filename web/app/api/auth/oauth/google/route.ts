@@ -31,20 +31,33 @@ export async function GET(req: NextRequest) {
 
   if (action === "callback") {
     const storedState = req.cookies.get("oauth_state")?.value;
-    const codeVerifier = req.cookies.get("oauth_cv")?.value ?? "";
+    const codeVerifier = req.cookies.get("oauth_cv")?.value;
     const state = req.nextUrl.searchParams.get("state");
     const code = req.nextUrl.searchParams.get("code");
-    if (!storedState || storedState !== state || !code) {
+    if (!storedState || storedState !== state || !code || !codeVerifier) {
       return NextResponse.json({ error: "invalid state" }, { status: 400 });
     }
 
-    const tokens = await google.validateAuthorizationCode(code, codeVerifier);
-    const idToken = tokens.idToken();
-    const claims = decodeIdToken(idToken) as { sub: string; email: string };
+    let tokens;
+    try {
+      tokens = await google.validateAuthorizationCode(code, codeVerifier);
+    } catch {
+      return NextResponse.redirect(`${SITE}/login?error=1`);
+    }
 
+    const idToken = tokens.idToken();
+    const claims = decodeIdToken(idToken) as { sub?: unknown; email?: unknown };
+    if (typeof claims.sub !== "string" || !claims.sub || typeof claims.email !== "string" || !claims.email) {
+      return NextResponse.redirect(`${SITE}/login?error=1`);
+    }
+
+    const internalSecret = process.env.INTERNAL_SECRET ?? "";
     const upsert = await fetch(`${API}/auth/oauth/upsert`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Internal-Token": internalSecret,
+      },
       body: JSON.stringify({ provider: "google", sub: claims.sub, email: claims.email }),
     });
     if (!upsert.ok) return NextResponse.redirect(`${SITE}/login?error=1`);

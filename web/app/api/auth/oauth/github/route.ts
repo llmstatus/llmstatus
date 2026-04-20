@@ -54,9 +54,13 @@ export async function GET(req: NextRequest) {
     }
     if (!emailAddr) return NextResponse.redirect(`${SITE}/login?error=1`);
 
+    const internalSecret = process.env.INTERNAL_SECRET ?? "";
     const upsert = await fetch(`${API}/auth/oauth/upsert`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Internal-Token": internalSecret,
+      },
       body: JSON.stringify({ provider: "github", sub: String(ghUser.id), email: emailAddr }),
     });
     if (!upsert.ok) return NextResponse.redirect(`${SITE}/login?error=1`);

@@ -40,7 +40,10 @@ func (c *Client) Send(ctx context.Context, msg Message) error {
 		"html":    msg.HTML,
 		"text":    msg.Text,
 	}
-	body, _ := json.Marshal(payload)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("email: marshal payload: %w", err)
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, resendAPI, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("email: build request: %w", err)

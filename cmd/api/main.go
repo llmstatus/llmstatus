@@ -13,6 +13,7 @@
 //	JWT_SECRET             Enable auth routes; signs session tokens
 //	RESEND_API_KEY         Resend email API key (required when JWT_SECRET set)
 //	EMAIL_FROM             Sender address (default "noreply@llmstatus.io")
+//	INTERNAL_SECRET        Shared secret for /auth/oauth/upsert (required when JWT_SECRET set)
 //	SITE_URL               Public site URL (default "https://llmstatus.io")
 //	GOOGLE_CLIENT_ID       Google OAuth client ID
 //	GOOGLE_CLIENT_SECRET   Google OAuth client secret
@@ -75,9 +76,10 @@ func main() {
 	if jwtSecret := os.Getenv("JWT_SECRET"); jwtSecret != "" {
 		emailFrom := envOr("EMAIL_FROM", "noreply@llmstatus.io")
 		authCfg := &api.AuthConfig{
-			Store:     store,
-			Email:     email.New(requireEnv("RESEND_API_KEY"), emailFrom),
-			JWTSecret: jwtSecret,
+			Store:          store,
+			Email:          email.New(requireEnv("RESEND_API_KEY"), emailFrom),
+			JWTSecret:      jwtSecret,
+			InternalSecret: requireEnv("INTERNAL_SECRET"),
 		}
 		opts = append(opts, api.WithAuth(authCfg))
 		slog.Info("api: auth enabled")
