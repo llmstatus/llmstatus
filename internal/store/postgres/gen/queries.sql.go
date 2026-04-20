@@ -13,6 +13,41 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const consumeOTPToken = `-- name: ConsumeOTPToken :one
+UPDATE otp_tokens
+SET used_at = NOW()
+WHERE id = (
+    SELECT t.id FROM otp_tokens t
+    WHERE t.user_id   = $1
+      AND t.code_hash = $2
+      AND t.used_at   IS NULL
+      AND t.expires_at > NOW()
+    ORDER BY t.created_at DESC
+    LIMIT 1
+)
+RETURNING id, user_id, code_hash, expires_at, used_at, created_at
+`
+
+type ConsumeOTPTokenParams struct {
+	UserID   int64  `json:"user_id"`
+	CodeHash string `json:"code_hash"`
+}
+
+// Finds a valid (unused, unexpired) token for the user and marks it used.
+func (q *Queries) ConsumeOTPToken(ctx context.Context, arg ConsumeOTPTokenParams) (OtpToken, error) {
+	row := q.db.QueryRow(ctx, consumeOTPToken, arg.UserID, arg.CodeHash)
+	var i OtpToken
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CodeHash,
+		&i.ExpiresAt,
+		&i.UsedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createIncident = `-- name: CreateIncident :one
 
 INSERT INTO incidents (
@@ -79,6 +114,32 @@ func (q *Queries) CreateIncident(ctx context.Context, arg CreateIncidentParams) 
 		&i.HumanReviewed,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createOTPToken = `-- name: CreateOTPToken :one
+INSERT INTO otp_tokens (user_id, code_hash, expires_at)
+VALUES ($1, $2, $3)
+RETURNING id, user_id, code_hash, expires_at, used_at, created_at
+`
+
+type CreateOTPTokenParams struct {
+	UserID    int64              `json:"user_id"`
+	CodeHash  string             `json:"code_hash"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+}
+
+func (q *Queries) CreateOTPToken(ctx context.Context, arg CreateOTPTokenParams) (OtpToken, error) {
+	row := q.db.QueryRow(ctx, createOTPToken, arg.UserID, arg.CodeHash, arg.ExpiresAt)
+	var i OtpToken
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CodeHash,
+		&i.ExpiresAt,
+		&i.UsedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -233,6 +294,67 @@ func (q *Queries) GetProvider(ctx context.Context, id string) (Provider, error) 
 		&i.AddedAt,
 		&i.Active,
 		&i.Config,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, email, digest_hour, timezone, created_at, verified_at FROM users WHERE email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DigestHour,
+		&i.Timezone,
+		&i.CreatedAt,
+		&i.VerifiedAt,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, email, digest_hour, timezone, created_at, verified_at FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DigestHour,
+		&i.Timezone,
+		&i.CreatedAt,
+		&i.VerifiedAt,
+	)
+	return i, err
+}
+
+const getUserByOAuth = `-- name: GetUserByOAuth :one
+SELECT u.id, u.email, u.digest_hour, u.timezone, u.created_at, u.verified_at FROM users u
+JOIN oauth_accounts o ON o.user_id = u.id
+WHERE o.provider = $1 AND o.sub = $2
+`
+
+type GetUserByOAuthParams struct {
+	Provider string `json:"provider"`
+	Sub      string `json:"sub"`
+}
+
+func (q *Queries) GetUserByOAuth(ctx context.Context, arg GetUserByOAuthParams) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByOAuth, arg.Provider, arg.Sub)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DigestHour,
+		&i.Timezone,
+		&i.CreatedAt,
+		&i.VerifiedAt,
 	)
 	return i, err
 }
@@ -496,6 +618,15 @@ func (q *Queries) ListProviders(ctx context.Context) ([]Provider, error) {
 	return items, nil
 }
 
+const markUserVerified = `-- name: MarkUserVerified :exec
+UPDATE users SET verified_at = NOW() WHERE id = $1 AND verified_at IS NULL
+`
+
+func (q *Queries) MarkUserVerified(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, markUserVerified, id)
+	return err
+}
+
 const resolveIncident = `-- name: ResolveIncident :exec
 UPDATE incidents
 SET status      = 'resolved',
@@ -564,6 +695,24 @@ func (q *Queries) UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentSt
 	return err
 }
 
+const updateUserSettings = `-- name: UpdateUserSettings :exec
+UPDATE users
+SET digest_hour = $2,
+    timezone    = $3
+WHERE id = $1
+`
+
+type UpdateUserSettingsParams struct {
+	ID         int64  `json:"id"`
+	DigestHour int32  `json:"digest_hour"`
+	Timezone   string `json:"timezone"`
+}
+
+func (q *Queries) UpdateUserSettings(ctx context.Context, arg UpdateUserSettingsParams) error {
+	_, err := q.db.Exec(ctx, updateUserSettings, arg.ID, arg.DigestHour, arg.Timezone)
+	return err
+}
+
 const upsertModel = `-- name: UpsertModel :one
 INSERT INTO models (
     provider_id, model_id, display_name, model_type, active
@@ -601,6 +750,39 @@ func (q *Queries) UpsertModel(ctx context.Context, arg UpsertModelParams) (Model
 		&i.DisplayName,
 		&i.ModelType,
 		&i.Active,
+	)
+	return i, err
+}
+
+const upsertOAuthAccount = `-- name: UpsertOAuthAccount :one
+INSERT INTO oauth_accounts (user_id, provider, sub, email)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (provider, sub) DO UPDATE SET email = EXCLUDED.email
+RETURNING id, user_id, provider, sub, email, created_at
+`
+
+type UpsertOAuthAccountParams struct {
+	UserID   int64  `json:"user_id"`
+	Provider string `json:"provider"`
+	Sub      string `json:"sub"`
+	Email    string `json:"email"`
+}
+
+func (q *Queries) UpsertOAuthAccount(ctx context.Context, arg UpsertOAuthAccountParams) (OauthAccount, error) {
+	row := q.db.QueryRow(ctx, upsertOAuthAccount,
+		arg.UserID,
+		arg.Provider,
+		arg.Sub,
+		arg.Email,
+	)
+	var i OauthAccount
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Provider,
+		&i.Sub,
+		&i.Email,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -651,4 +833,29 @@ func (q *Queries) UpsertProvider(ctx context.Context, arg UpsertProviderParams) 
 		arg.Config,
 	)
 	return err
+}
+
+const upsertUser = `-- name: UpsertUser :one
+
+INSERT INTO users (email)
+VALUES ($1)
+ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+RETURNING id, email, digest_hour, timezone, created_at, verified_at
+`
+
+// ============================================================
+// auth (LLMS-049)
+// ============================================================
+func (q *Queries) UpsertUser(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, upsertUser, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DigestHour,
+		&i.Timezone,
+		&i.CreatedAt,
+		&i.VerifiedAt,
+	)
+	return i, err
 }

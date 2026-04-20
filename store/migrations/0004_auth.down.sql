@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS otp_tokens;
+DROP TABLE IF EXISTS oauth_accounts;
+DROP TABLE IF EXISTS users;

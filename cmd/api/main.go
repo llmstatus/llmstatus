@@ -9,7 +9,16 @@
 //
 // Optional:
 //
-//	API_ADDR  Listen address (default ":8081")
+//	API_ADDR               Listen address (default ":8081")
+//	JWT_SECRET             Enable auth routes; signs session tokens
+//	RESEND_API_KEY         Resend email API key (required when JWT_SECRET set)
+//	EMAIL_FROM             Sender address (default "noreply@llmstatus.io")
+//	INTERNAL_SECRET        Shared secret for /auth/oauth/upsert (required when JWT_SECRET set)
+//	SITE_URL               Public site URL (default "https://llmstatus.io")
+//	GOOGLE_CLIENT_ID       Google OAuth client ID
+//	GOOGLE_CLIENT_SECRET   Google OAuth client secret
+//	GITHUB_CLIENT_ID       GitHub OAuth client ID
+//	GITHUB_CLIENT_SECRET   GitHub OAuth client secret
 package main
 
 import (
@@ -26,6 +35,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/llmstatus/llmstatus/internal/api"
+	"github.com/llmstatus/llmstatus/internal/email"
 	"github.com/llmstatus/llmstatus/internal/store/influx"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
@@ -56,14 +66,28 @@ func main() {
 	}, nil)
 	limiter := api.NewRateLimiter(rateLimit, time.Minute)
 
+	opts := []func(*api.Server){
+		api.WithPinger(pool),
+		api.WithHistoryReader(historyReader),
+		api.WithLiveStatsReader(historyReader),
+		api.WithRateLimiter(limiter),
+	}
+
+	if jwtSecret := os.Getenv("JWT_SECRET"); jwtSecret != "" {
+		emailFrom := envOr("EMAIL_FROM", "noreply@llmstatus.io")
+		authCfg := &api.AuthConfig{
+			Store:          store,
+			Email:          email.New(requireEnv("RESEND_API_KEY"), emailFrom),
+			JWTSecret:      jwtSecret,
+			InternalSecret: requireEnv("INTERNAL_SECRET"),
+		}
+		opts = append(opts, api.WithAuth(authCfg))
+		slog.Info("api: auth enabled")
+	}
+
 	srv := &http.Server{
-		Addr: addr,
-		Handler: api.New(store,
-			api.WithPinger(pool),
-			api.WithHistoryReader(historyReader),
-			api.WithLiveStatsReader(historyReader),
-			api.WithRateLimiter(limiter),
-		),
+		Addr:    addr,
+		Handler: api.New(store, opts...),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,

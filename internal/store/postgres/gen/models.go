@@ -40,6 +40,24 @@ type Model struct {
 	Active      bool   `json:"active"`
 }
 
+type OauthAccount struct {
+	ID        int64              `json:"id"`
+	UserID    int64              `json:"user_id"`
+	Provider  string             `json:"provider"`
+	Sub       string             `json:"sub"`
+	Email     string             `json:"email"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type OtpToken struct {
+	ID        int64              `json:"id"`
+	UserID    int64              `json:"user_id"`
+	CodeHash  string             `json:"code_hash"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	UsedAt    pgtype.Timestamptz `json:"used_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type Provider struct {
 	ID               string             `json:"id"`
 	Name             string             `json:"name"`
@@ -52,4 +70,13 @@ type Provider struct {
 	AddedAt          pgtype.Timestamptz `json:"added_at"`
 	Active           bool               `json:"active"`
 	Config           json.RawMessage    `json:"config"`
+}
+
+type User struct {
+	ID         int64              `json:"id"`
+	Email      string             `json:"email"`
+	DigestHour int32              `json:"digest_hour"`
+	Timezone   string             `json:"timezone"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	VerifiedAt pgtype.Timestamptz `json:"verified_at"`
 }

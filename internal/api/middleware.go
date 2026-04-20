@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,14 +33,18 @@ func requestIDMiddleware(next http.Handler) http.Handler {
 }
 
 // corsMiddleware adds permissive CORS headers for the public read-only API.
+// Auth routes (/auth/*) are excluded: they are called server-to-server from
+// Next.js API routes and must not be reachable cross-origin from browsers.
 // Handles preflight OPTIONS requests inline (204, no body).
-//
-// All origins are allowed: the API is unauthenticated, GET-only, and public.
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/auth/") {
+			next.ServeHTTP(w, r)
+			return
+		}
 		h := w.Header()
 		h.Set("Access-Control-Allow-Origin", "*")
-		h.Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		h.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		h.Set("Access-Control-Allow-Headers", "Accept, Content-Type, X-Request-ID")
 		h.Set("Access-Control-Max-Age", "86400")
 

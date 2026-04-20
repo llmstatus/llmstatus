@@ -31,6 +31,7 @@ type Server struct {
 	liveStats LiveStatsReader // optional; nil → uptime24h/p95_ms omitted
 	pinger    Pinger          // optional; nil → /healthz always 200
 	limiter   *RateLimiter    // optional; nil → no rate limiting
+	auth      *AuthConfig     // optional; nil → auth routes return 501
 	mux       *http.ServeMux
 	handler   http.Handler // mux optionally wrapped with limiter middleware
 }
@@ -38,6 +39,11 @@ type Server struct {
 // WithPinger enables a real DB liveness check in /healthz.
 func WithPinger(p Pinger) func(*Server) {
 	return func(s *Server) { s.pinger = p }
+}
+
+// WithAuth enables auth routes (OTP, OAuth, JWT).
+func WithAuth(cfg *AuthConfig) func(*Server) {
+	return func(s *Server) { s.auth = cfg }
 }
 
 // New creates a Server and registers all routes. Pass functional options
@@ -71,6 +77,13 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /badge/{id}", s.getBadge)
 	s.mux.HandleFunc("GET /feed.xml", s.getGlobalFeed)
 	s.mux.HandleFunc("GET /v1/providers/{id}/feed.xml", s.getProviderFeed)
+
+	if s.auth != nil {
+		s.mux.HandleFunc("POST /auth/otp/send", s.handleOTPSend)
+		s.mux.HandleFunc("POST /auth/otp/verify", s.handleOTPVerify)
+		s.mux.HandleFunc("POST /auth/oauth/upsert", s.handleOAuthUpsert)
+		s.mux.HandleFunc("GET /auth/me", s.handleMe)
+	}
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
@@ -138,4 +151,8 @@ func timeVal(t pgtype.Timestamptz) *time.Time {
 
 func mustTime(t pgtype.Timestamptz) time.Time {
 	return t.Time.UTC()
+}
+
+func mustTimestamptz(t time.Time) pgtype.Timestamptz {
+	return pgtype.Timestamptz{Time: t.UTC(), Valid: true}
 }
