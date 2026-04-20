@@ -13,9 +13,10 @@ import "os"
 
 func init() {
 	apiKey := os.Getenv("LLMS_OPENAI_API_KEY")
-	region := os.Getenv("LLMS_REGION_ID")
-	if apiKey == "" || region == "" {
+	if apiKey == "" {
 		return
 	}
-	Register(NewOpenAIProvider(apiKey, region))
+	// Region is overwritten by the runner (probes.Runner.dispatchProbe) from
+	// REGION_ID; pass empty string here to avoid requiring LLMS_REGION_ID.
+	Register(NewOpenAIProvider(apiKey, ""))
 }

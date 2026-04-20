@@ -12,9 +12,8 @@ import "os"
 
 func init() {
 	apiKey := os.Getenv("LLMS_ANTHROPIC_API_KEY")
-	region := os.Getenv("LLMS_REGION_ID")
-	if apiKey == "" || region == "" {
+	if apiKey == "" {
 		return
 	}
-	Register(NewAnthropicProvider(apiKey, region))
+	Register(NewAnthropicProvider(apiKey, ""))
 }

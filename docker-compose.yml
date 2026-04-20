@@ -207,6 +207,9 @@ services:
       INGEST_URL: http://ingest:8080
       LLMS_OPENAI_API_KEY: ${LLMS_OPENAI_API_KEY:-}
       LLMS_ANTHROPIC_API_KEY: ${LLMS_ANTHROPIC_API_KEY:-}
+      LLMS_DEEPSEEK_API_KEY: ${LLMS_DEEPSEEK_API_KEY:-}
+      LLMS_GEMINI_API_KEY: ${LLMS_GEMINI_API_KEY:-}
+      LLMS_MISTRAL_API_KEY: ${LLMS_MISTRAL_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
