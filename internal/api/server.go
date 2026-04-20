@@ -87,6 +87,7 @@ func (s *Server) registerRoutes() {
 		s.mux.HandleFunc("POST /account/subscriptions", s.handleCreateSubscription)
 		s.mux.HandleFunc("PUT /account/subscriptions/{id}", s.handleUpdateSubscription)
 		s.mux.HandleFunc("DELETE /account/subscriptions/{id}", s.handleDeleteSubscription)
+		s.mux.HandleFunc("PUT /account/settings", s.handleUpdateSettings)
 	}
 }
 

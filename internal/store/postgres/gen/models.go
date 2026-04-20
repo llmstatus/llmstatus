@@ -20,6 +20,13 @@ type AlertLog struct {
 	Event          string             `json:"event"`
 }
 
+type DigestLog struct {
+	ID       int64              `json:"id"`
+	UserID   int64              `json:"user_id"`
+	SentDate pgtype.Date        `json:"sent_date"`
+	SentAt   pgtype.Timestamptz `json:"sent_at"`
+}
+
 type Incident struct {
 	ID              uuid.UUID          `json:"id"`
 	Slug            string             `json:"slug"`

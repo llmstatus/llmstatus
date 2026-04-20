@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getSession } from "@/lib/session";
 import SubscriptionsManager from "./SubscriptionsManager";
+import DigestSettings from "./DigestSettings";
 import type { Subscription } from "./SubscriptionsManager";
 
 export const metadata: Metadata = { title: "Subscriptions — llmstatus.io" };
@@ -34,13 +35,28 @@ async function fetchProviders(): Promise<{ id: string; name: string }[]> {
   }
 }
 
+async function fetchMe(token: string): Promise<{ digest_hour: number; timezone: string }> {
+  try {
+    const res = await fetch(`${API}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return { digest_hour: 8, timezone: "UTC" };
+    const { data } = await res.json();
+    return { digest_hour: data.digest_hour ?? 8, timezone: data.timezone ?? "UTC" };
+  } catch {
+    return { digest_hour: 8, timezone: "UTC" };
+  }
+}
+
 export default async function SubscriptionsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [subscriptions, providers] = await Promise.all([
+  const [subscriptions, providers, me] = await Promise.all([
     fetchSubscriptions(session.token),
     fetchProviders(),
+    fetchMe(session.token),
   ]);
 
   return (
@@ -55,11 +71,19 @@ export default async function SubscriptionsPage() {
         <h1 className="text-xl font-semibold text-[var(--ink-100)]">Subscriptions &amp; alerts</h1>
       </div>
 
-      <SubscriptionsManager
-        initial={subscriptions}
-        providers={providers}
-        apiToken={session.token}
-      />
+      <div className="flex flex-col gap-8">
+        <SubscriptionsManager
+          initial={subscriptions}
+          providers={providers}
+          apiToken={session.token}
+        />
+
+        <DigestSettings
+          initialHour={me.digest_hour}
+          initialTimezone={me.timezone}
+          apiToken={session.token}
+        />
+      </div>
     </main>
   );
 }
