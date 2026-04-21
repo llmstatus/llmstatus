@@ -39,6 +39,7 @@ import (
 
 	"github.com/llmstatus/llmstatus/internal/api"
 	"github.com/llmstatus/llmstatus/internal/email"
+	"github.com/llmstatus/llmstatus/internal/keyenc"
 	"github.com/llmstatus/llmstatus/internal/otprl"
 	"github.com/llmstatus/llmstatus/internal/store/influx"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
@@ -96,6 +97,16 @@ func main() {
 		}
 		opts = append(opts, api.WithAuth(authCfg))
 		slog.Info("api: auth enabled")
+	}
+
+	if hexKey := os.Getenv("SPONSOR_KEY_ENCRYPTION_KEY"); hexKey != "" {
+		enc, err := keyenc.New(hexKey)
+		if err != nil {
+			slog.Error("api: invalid SPONSOR_KEY_ENCRYPTION_KEY", "err", err)
+			os.Exit(1)
+		}
+		opts = append(opts, api.WithKeyEncrypter(enc))
+		slog.Info("api: sponsor key encryption enabled")
 	}
 
 	srv := &http.Server{
