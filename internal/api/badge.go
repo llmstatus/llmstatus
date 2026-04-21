@@ -103,9 +103,17 @@ func renderBadge(label, message, color string) string {
 	return fmt.Sprintf(
 		`<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" role="img" aria-label="%s: %s">`+
 			`<title>%s: %s</title>`+
-			`<g shape-rendering="crispEdges">`+
+			`<linearGradient id="s" x2="0" y2="1">`+
+			`<stop offset="0" stop-color="#bbb" stop-opacity=".1"/>`+
+			`<stop offset="1" stop-opacity=".1"/>`+
+			`</linearGradient>`+
+			`<clipPath id="r">`+
+			`<rect width="%d" height="%d" rx="3" fill="#fff"/>`+
+			`</clipPath>`+
+			`<g clip-path="url(#r)">`+
 			`<rect width="%d" height="%d" fill="#555"/>`+
 			`<rect x="%d" width="%d" height="%d" fill="%s"/>`+
+			`<rect width="%d" height="%d" fill="url(#s)"/>`+
 			`</g>`+
 			`<g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,Geneva,sans-serif" font-size="110">`+
 			`<text x="%d" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="%d" lengthAdjust="spacing">%s</text>`+
@@ -118,7 +126,9 @@ func renderBadge(label, message, color string) string {
 		l, m,
 		l, m,
 		totalPx, hPx,
+		totalPx, hPx,
 		(labelU)/10, (msgU)/10, hPx, color,
+		totalPx, hPx,
 		labelCX, labelU-padU*2, l,
 		labelCX, labelU-padU*2, l,
 		msgCX, msgU-padU*2, m,
