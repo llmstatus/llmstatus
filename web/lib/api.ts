@@ -38,6 +38,7 @@ export interface ProviderSummary {
 export interface IncidentRef {
   id: string;
   slug: string;
+  provider_id: string;
   severity: Severity;
   title: string;
   status: string;
