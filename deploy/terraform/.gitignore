@@ -1,0 +1,8 @@
+# Local state and overrides — never commit
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+terraform.tfvars
+*.auto.tfvars
+crash.log

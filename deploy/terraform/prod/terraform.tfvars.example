@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars and fill in values.
+# terraform.tfvars is gitignored — never commit it.
+
+# Your SSH public key (ed25519 recommended).
+# Generate with: ssh-keygen -t ed25519 -C "llmstatus-prod"
+ssh_public_key = "ssh-ed25519 AAAA... your-key-comment"
