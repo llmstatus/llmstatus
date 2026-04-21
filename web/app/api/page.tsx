@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CopyButton } from "@/components/CopyButton";
 
 export const dynamic = "force-static";
 
@@ -14,8 +15,8 @@ export const metadata: Metadata = {
   },
 };
 
-const BASE = "https://llmstatus.io";
-const API_BASE = `${BASE}/api/v1`;
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://llmstatus.io";
+const API_BASE = `${BASE}/v1`;
 
 interface EndpointProps {
   method: string;
@@ -57,9 +58,12 @@ function Endpoint({ method, path, description, params, example, note }: Endpoint
         )}
 
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-2">
-            Example
-          </p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+              Example
+            </p>
+            <CopyButton text={example} />
+          </div>
           <pre className="rounded bg-[var(--canvas-sunken)] border border-[var(--ink-600)] px-3 py-3 text-[11px] font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">
             {example}
           </pre>
@@ -157,7 +161,7 @@ Retry-After: 42`}</pre>
       <Section title="System status">
         <Endpoint
           method="GET"
-          path="/api/v1/status"
+          path="/v1/status"
           description="Overall system status derived from active providers and ongoing incidents. Returns the worst-case status across all providers."
           example={`curl ${API_BASE}/status
 
@@ -179,7 +183,7 @@ Retry-After: 42`}</pre>
       <Section title="Providers">
         <Endpoint
           method="GET"
-          path="/api/v1/providers"
+          path="/v1/providers"
           description="List all active providers with current status, 24-hour uptime, and p95 latency."
           example={`curl ${API_BASE}/providers
 
@@ -202,7 +206,7 @@ Retry-After: 42`}</pre>
 
         <Endpoint
           method="GET"
-          path="/api/v1/providers/{id}"
+          path="/v1/providers/{id}"
           description="Full detail for a single provider including models, active incidents, and links."
           params={[
             { name: "{id}", description: "Provider identifier, e.g. openai, anthropic, deepseek" },
@@ -228,7 +232,7 @@ Retry-After: 42`}</pre>
 
         <Endpoint
           method="GET"
-          path="/api/v1/providers/{id}/history"
+          path="/v1/providers/{id}/history"
           description="Time-series uptime and latency data for a provider. Returns one bucket per hour (24h), per day (7d), or per day (30d)."
           params={[
             { name: "{id}", description: "Provider identifier" },
@@ -255,7 +259,7 @@ Retry-After: 42`}</pre>
       <Section title="Incidents">
         <Endpoint
           method="GET"
-          path="/api/v1/incidents"
+          path="/v1/incidents"
           description="List incidents. Defaults to all statuses, newest first."
           params={[
             { name: "status", description: "Filter by status: ongoing | monitoring | resolved | all (default: all)" },
@@ -281,7 +285,7 @@ Retry-After: 42`}</pre>
 
         <Endpoint
           method="GET"
-          path="/api/v1/incidents/{id}"
+          path="/v1/incidents/{id}"
           description="Full detail for one incident. The {id} parameter accepts either the UUID or the human-readable slug."
           params={[
             { name: "{id}", description: "Incident UUID or slug (e.g. 2026-04-15-openai-elevated-errors)" },
@@ -323,12 +327,12 @@ curl "${BASE}/badge/openai.svg?style=detailed"
 
         <Endpoint
           method="GET"
-          path="/api/v1/providers/{id}/feed.xml"
+          path="/v1/providers/{id}/feed.xml"
           description="RSS 2.0 feed of incidents for a single provider."
           params={[
             { name: "{id}", description: "Provider identifier" },
           ]}
-          example={`curl ${BASE}/api/v1/providers/openai/feed.xml`}
+          example={`curl ${API_BASE}/providers/openai/feed.xml`}
         />
       </Section>
 
