@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE_URL, lastModified: now, changeFrequency: "always", priority: 1 },
     { url: `${SITE_URL}/providers`, lastModified: now, changeFrequency: "always", priority: 0.95 },
     { url: `${SITE_URL}/incidents`, lastModified: now, changeFrequency: "always", priority: 0.9 },
+    { url: `${SITE_URL}/china`, lastModified: now, changeFrequency: "always", priority: 0.85 },
     { url: `${SITE_URL}/api`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/badges`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${SITE_URL}/compare`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
