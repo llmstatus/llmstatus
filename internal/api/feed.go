@@ -1,10 +1,13 @@
 package api
 
 import (
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+	"text/template"
+	"time"
+	"encoding/xml"
 
 	"github.com/jackc/pgx/v5"
 
@@ -13,35 +16,53 @@ import (
 
 const feedMaxItems = 50
 
-// ----- RSS 2.0 structures -------------------------------------------------------
+// feedTmpl emits RSS 2.0 with atom:link rel="self" and lastBuildDate.
+// All user-supplied strings pass through xmlescape to prevent injection.
+var feedTmpl = template.Must(template.New("rss").Funcs(template.FuncMap{
+	"xmlescape": func(s string) string {
+		var b strings.Builder
+		_ = xml.EscapeText(&b, []byte(s))
+		return b.String()
+	},
+}).Parse(`<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>{{xmlescape .Title}}</title>
+    <link>{{xmlescape .Link}}</link>
+    <description>{{xmlescape .Description}}</description>
+    <language>{{.Language}}</language>
+    <lastBuildDate>{{.LastBuildDate}}</lastBuildDate>
+    <ttl>{{.TTL}}</ttl>
+    <atom:link href="{{xmlescape .SelfURL}}" rel="self" type="application/rss+xml"/>
+    {{- range .Items}}
+    <item>
+      <title>{{xmlescape .Title}}</title>
+      <link>{{xmlescape .Link}}</link>
+      <description>{{xmlescape .Description}}</description>
+      <pubDate>{{.PubDate}}</pubDate>
+      <guid isPermaLink="true">{{xmlescape .GUID}}</guid>
+    </item>
+    {{- end}}
+  </channel>
+</rss>`))
 
-type rssFeed struct {
-	XMLName xml.Name   `xml:"rss"`
-	Version string     `xml:"version,attr"`
-	Channel rssChannel `xml:"channel"`
+type feedData struct {
+	Title         string
+	Link          string
+	Description   string
+	Language      string
+	LastBuildDate string
+	TTL           int
+	SelfURL       string
+	Items         []feedItem
 }
 
-type rssChannel struct {
-	Title       string    `xml:"title"`
-	Link        string    `xml:"link"`
-	Description string    `xml:"description"`
-	Language    string    `xml:"language"`
-	TTL         int       `xml:"ttl"`
-	Items       []rssItem `xml:"item"`
-}
-
-type rssItem struct {
-	Title       string  `xml:"title"`
-	Link        string  `xml:"link"`
-	Description string  `xml:"description"`
-	PubDate     string  `xml:"pubDate"`
-	GUID        rssGUID `xml:"guid"`
-}
-
-// rssGUID marks the guid as a permalink when the value is a stable URL.
-type rssGUID struct {
-	Value       string `xml:",chardata"`
-	IsPermaLink string `xml:"isPermaLink,attr"`
+type feedItem struct {
+	Title       string
+	Link        string
+	Description string
+	PubDate     string
+	GUID        string
 }
 
 // ----- handlers -----------------------------------------------------------------
@@ -60,13 +81,15 @@ func (s *Server) getGlobalFeed(w http.ResponseWriter, r *http.Request) {
 	names := providerNameMap(providers)
 
 	base := siteBase(r)
-	writeFeed(w, rssChannel{
-		Title:       "llmstatus.io — All Incidents",
-		Link:        base,
-		Description: "Real-time incident feed for all AI API providers monitored by llmstatus.io",
-		Language:    "en",
-		TTL:         1,
-		Items:       incidentsToItems(incidents, names, base),
+	writeFeed(w, feedData{
+		Title:         "llmstatus.io — All Incidents",
+		Link:          base,
+		Description:   "Real-time incident feed for all AI API providers monitored by llmstatus.io",
+		Language:      "en",
+		LastBuildDate: time.Now().UTC().Format(time.RFC1123Z),
+		TTL:           1,
+		SelfURL:       base + "/feed.xml",
+		Items:         incidentsToItems(incidents, names, base),
 	})
 }
 
@@ -94,30 +117,28 @@ func (s *Server) getProviderFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	base := siteBase(r)
-	writeFeed(w, rssChannel{
-		Title:       p.Name + " — Incidents | llmstatus.io",
-		Link:        base + "/providers/" + p.ID,
-		Description: "Incident feed for " + p.Name + " — llmstatus.io",
-		Language:    "en",
-		TTL:         1,
-		Items:       incidentsToItems(incidents, map[string]string{p.ID: p.Name}, base),
+	writeFeed(w, feedData{
+		Title:         p.Name + " — Incidents | llmstatus.io",
+		Link:          base + "/providers/" + p.ID,
+		Description:   "Incident feed for " + p.Name + " — llmstatus.io",
+		Language:      "en",
+		LastBuildDate: time.Now().UTC().Format(time.RFC1123Z),
+		TTL:           1,
+		SelfURL:       base + "/v1/providers/" + p.ID + "/feed.xml",
+		Items:         incidentsToItems(incidents, map[string]string{p.ID: p.Name}, base),
 	})
 }
 
 // ----- helpers ------------------------------------------------------------------
 
-func writeFeed(w http.ResponseWriter, ch rssChannel) {
+func writeFeed(w http.ResponseWriter, data feedData) {
 	w.Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 	w.Header().Set("Cache-Control", "max-age=60, s-maxage=60")
-
-	_, _ = fmt.Fprint(w, xml.Header)
-	enc := xml.NewEncoder(w)
-	enc.Indent("", "  ")
-	_ = enc.Encode(rssFeed{Version: "2.0", Channel: ch})
+	_ = feedTmpl.Execute(w, data)
 }
 
-func incidentsToItems(incidents []pgstore.Incident, names map[string]string, base string) []rssItem {
-	items := make([]rssItem, 0, len(incidents))
+func incidentsToItems(incidents []pgstore.Incident, names map[string]string, base string) []feedItem {
+	items := make([]feedItem, 0, len(incidents))
 	for _, inc := range incidents {
 		name := inc.ProviderID
 		if n, ok := names[inc.ProviderID]; ok {
@@ -131,12 +152,12 @@ func incidentsToItems(incidents []pgstore.Incident, names map[string]string, bas
 		if inc.Description.Valid && inc.Description.String != "" {
 			desc += "\n\n" + inc.Description.String
 		}
-		items = append(items, rssItem{
+		items = append(items, feedItem{
 			Title:       fmt.Sprintf("[%s] %s: %s", name, inc.Severity, inc.Title),
 			Link:        link,
 			Description: desc,
-			PubDate:     mustTime(inc.StartedAt).UTC().Format("Mon, 02 Jan 2006 15:04:05 -0700"),
-			GUID:        rssGUID{Value: link, IsPermaLink: "true"},
+			PubDate:     mustTime(inc.StartedAt).UTC().Format(time.RFC1123Z),
+			GUID:        link,
 		})
 	}
 	return items

@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     description:
       "Real-time uptime and latency for Chinese AI API providers, measured from mainland China nodes.",
   },
+  alternates: {
+    types: { "application/rss+xml": "/api/feed" },
+  },
 };
 
 export default async function ChinaPage() {
