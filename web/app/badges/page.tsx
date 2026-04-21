@@ -127,12 +127,72 @@ export default async function BadgesPage() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 pb-16">
+        <div className="flex flex-col gap-4">
           {providers.map((p) => (
             <BadgeRow key={p.id} name={p.name} id={p.id} />
           ))}
         </div>
       )}
+
+      {/* RSS feeds section */}
+      <div className="mt-16 mb-16">
+        <div className="mb-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+            RSS Feeds
+          </p>
+          <h2 className="text-xl font-semibold text-[var(--ink-100)] mb-2">
+            Subscribe to incident feeds
+          </h2>
+          <p className="text-sm text-[var(--ink-400)] leading-relaxed max-w-xl">
+            Subscribe to the global feed or to any provider&#39;s feed in your RSS reader.
+            Feeds update within 60 seconds of a new incident.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {/* Global feed */}
+          <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[var(--ink-600)]">
+              <span className="text-sm font-semibold text-[var(--ink-100)]">All providers</span>
+            </div>
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+                  Feed URL
+                </span>
+                <CopyButton text={`${SITE_URL}/api/feed`} />
+              </div>
+              <pre className="text-[11px] font-mono text-[var(--ink-300)] break-all whitespace-pre-wrap leading-relaxed">
+                {SITE_URL}/api/feed
+              </pre>
+            </div>
+          </div>
+
+          {/* Per-provider feeds */}
+          {providers !== null &&
+            providers.map((p) => (
+              <div
+                key={p.id}
+                className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] overflow-hidden"
+              >
+                <div className="px-4 py-3 border-b border-[var(--ink-600)]">
+                  <span className="text-sm font-semibold text-[var(--ink-100)]">{p.name}</span>
+                </div>
+                <div className="px-4 py-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+                      Feed URL
+                    </span>
+                    <CopyButton text={`${SITE_URL}/api/feed/${p.id}`} />
+                  </div>
+                  <pre className="text-[11px] font-mono text-[var(--ink-300)] break-all whitespace-pre-wrap leading-relaxed">
+                    {SITE_URL}/api/feed/{p.id}
+                  </pre>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
     </main>
   );
 }
