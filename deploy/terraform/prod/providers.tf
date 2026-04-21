@@ -18,7 +18,7 @@ provider "aws" {
   region = "ap-southeast-1"
 }
 
-# Azure — authenticates via `az login` or ARM_* env vars.
-provider "azurerm" {
-  features {}
+provider "aws" {
+  alias  = "eu_central_1"
+  region = "eu-central-1"
 }

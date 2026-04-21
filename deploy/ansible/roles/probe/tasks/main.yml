@@ -1,0 +1,74 @@
+---
+# ── Go runtime ────────────────────────────────────────────────────────────
+- name: check Go installation
+  command: /usr/local/go/bin/go version
+  register: go_check
+  failed_when: false
+  changed_when: false
+
+- name: download Go
+  get_url:
+    url: https://go.dev/dl/go1.24.2.linux-amd64.tar.gz
+    dest: /tmp/go.tar.gz
+    mode: "0644"
+  when: go_check.rc != 0
+
+- name: install Go
+  unarchive:
+    src: /tmp/go.tar.gz
+    dest: /usr/local
+    remote_src: true
+  when: go_check.rc != 0
+
+# ── App source ────────────────────────────────────────────────────────────
+- name: create app directory
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+
+- name: clone/update repo
+  git:
+    repo: https://github.com/llmstatus/llmstatus.git
+    dest: "{{ app_dir }}"
+    version: main
+    force: true
+  become_user: ubuntu
+
+# ── Build prober binary ───────────────────────────────────────────────────
+- name: build prober
+  command: /usr/local/go/bin/go build -o /usr/local/bin/llmstatus-prober ./cmd/prober
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: ubuntu
+  environment:
+    HOME: /home/ubuntu
+    GOPATH: /home/ubuntu/go
+
+# ── Prober env and service ────────────────────────────────────────────────
+- name: deploy prober env file
+  template:
+    src: prober.env.j2
+    dest: /etc/llmstatus-prober.env
+    owner: root
+    group: root
+    mode: "0600"
+  notify: restart prober
+
+- name: deploy prober systemd service
+  template:
+    src: prober.service.j2
+    dest: /etc/systemd/system/llmstatus-prober.service
+    mode: "0644"
+  notify:
+    - reload systemd
+    - restart prober
+
+- name: enable and start prober
+  systemd:
+    name: llmstatus-prober
+    enabled: true
+    state: started
+    daemon_reload: true

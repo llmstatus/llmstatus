@@ -61,3 +61,18 @@ html, body {
   background-color: var(--canvas-base);
   color: var(--ink-100);
 }
+
+.input-field {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--ink-600);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--ink-100);
+  outline: none;
+}
+.input-field:focus {
+  border-color: var(--ink-400);
+}

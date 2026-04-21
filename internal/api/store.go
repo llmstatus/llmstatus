@@ -19,4 +19,13 @@ type Store interface {
 	ListIncidentsByStatus(ctx context.Context, arg pgstore.ListIncidentsByStatusParams) ([]pgstore.Incident, error)
 	GetIncidentByID(ctx context.Context, id uuid.UUID) (pgstore.Incident, error)
 	GetIncidentBySlug(ctx context.Context, slug string) (pgstore.Incident, error)
+
+	// Sponsors
+	ListActiveSponsors(ctx context.Context) ([]pgstore.Sponsor, error)
+	CreateSponsor(ctx context.Context, arg pgstore.CreateSponsorParams) (pgstore.Sponsor, error)
+	GetSponsorByUserID(ctx context.Context, userID int64) (pgstore.Sponsor, error)
+	UpdateSponsor(ctx context.Context, arg pgstore.UpdateSponsorParams) (pgstore.Sponsor, error)
+	ListSponsorKeys(ctx context.Context, sponsorID string) ([]pgstore.SponsorKey, error)
+	UpsertSponsorKey(ctx context.Context, arg pgstore.UpsertSponsorKeyParams) (pgstore.SponsorKey, error)
+	DeleteSponsorKey(ctx context.Context, arg pgstore.DeleteSponsorKeyParams) error
 }

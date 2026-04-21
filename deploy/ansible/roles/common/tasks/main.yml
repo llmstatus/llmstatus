@@ -1,0 +1,30 @@
+---
+- name: update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: install base packages
+  apt:
+    name:
+      - curl
+      - git
+      - unzip
+      - htop
+      - fail2ban
+      - ufw
+      - ca-certificates
+      - gnupg
+    state: present
+
+- name: allow SSH through ufw
+  ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: enable ufw
+  ufw:
+    state: enabled
+    policy: deny
+    direction: incoming

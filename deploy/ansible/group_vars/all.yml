@@ -1,0 +1,11 @@
+# Shared variables for all hosts.
+# Secrets (API keys, INGEST_SECRET) go in group_vars/all/vault.yml (ansible-vault encrypted).
+
+app_dir: /opt/llmstatus
+data_dir: /data
+
+# Ingest endpoint — probe nodes push results here (through nginx)
+ingest_url: "https://llmstatus.io/ingest"
+
+# Go binary version tag to deploy
+app_version: main

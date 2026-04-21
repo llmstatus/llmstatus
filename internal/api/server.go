@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/llmstatus/llmstatus/internal/keyenc"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
 
@@ -32,6 +33,7 @@ type Server struct {
 	pinger    Pinger          // optional; nil → /healthz always 200
 	limiter   *RateLimiter    // optional; nil → no rate limiting
 	auth      *AuthConfig     // optional; nil → auth routes return 501
+	keyEnc    *keyenc.Encrypter // optional; nil → sponsor key endpoints return 503
 	mux       *http.ServeMux
 	handler   http.Handler // mux optionally wrapped with limiter middleware
 }
@@ -44,6 +46,11 @@ func WithPinger(p Pinger) func(*Server) {
 // WithAuth enables auth routes (OTP, OAuth, JWT).
 func WithAuth(cfg *AuthConfig) func(*Server) {
 	return func(s *Server) { s.auth = cfg }
+}
+
+// WithKeyEncrypter enables sponsor API key storage.
+func WithKeyEncrypter(enc *keyenc.Encrypter) func(*Server) {
+	return func(s *Server) { s.keyEnc = enc }
 }
 
 // New creates a Server and registers all routes. Pass functional options
@@ -88,6 +95,14 @@ func (s *Server) registerRoutes() {
 		s.mux.HandleFunc("PUT /account/subscriptions/{id}", s.handleUpdateSubscription)
 		s.mux.HandleFunc("DELETE /account/subscriptions/{id}", s.handleDeleteSubscription)
 		s.mux.HandleFunc("PUT /account/settings", s.handleUpdateSettings)
+
+		// Sponsor self-service
+		s.mux.HandleFunc("GET /v1/sponsors", s.listSponsors)
+		s.mux.HandleFunc("POST /v1/sponsor/register", s.registerSponsor)
+		s.mux.HandleFunc("GET /v1/sponsor/me", s.getSponsorMe)
+		s.mux.HandleFunc("PATCH /v1/sponsor/me", s.updateSponsorMe)
+		s.mux.HandleFunc("PUT /v1/sponsor/me/keys/{provider_id}", s.upsertSponsorKey)
+		s.mux.HandleFunc("DELETE /v1/sponsor/me/keys/{provider_id}", s.deleteSponsorKey)
 	}
 }
 

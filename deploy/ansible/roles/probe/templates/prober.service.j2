@@ -1,0 +1,18 @@
+[Unit]
+Description=llmstatus prober — {{ probe_node_name }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+EnvironmentFile=/etc/llmstatus-prober.env
+ExecStart=/usr/local/bin/llmstatus-prober
+Restart=always
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=llmstatus-prober
+
+[Install]
+WantedBy=multi-user.target
