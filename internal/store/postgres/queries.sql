@@ -17,12 +17,20 @@ SELECT * FROM providers
 WHERE active = TRUE
 ORDER BY name;
 
+-- name: ListProvidersForScope :many
+-- Returns active providers visible to a probe node with the given scope.
+-- 'global' providers are probed by every node; 'intl'/'cn' are scope-specific.
+SELECT * FROM providers
+WHERE active = TRUE
+  AND (probe_scope = 'global' OR probe_scope = $1)
+ORDER BY name;
+
 -- name: UpsertProvider :exec
 INSERT INTO providers (
     id, name, category, base_url, auth_type,
-    status_page_url, documentation_url, region, active, config
+    status_page_url, documentation_url, region, active, config, probe_scope
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
 ON CONFLICT (id) DO UPDATE SET
     name              = EXCLUDED.name,
@@ -33,7 +41,11 @@ ON CONFLICT (id) DO UPDATE SET
     documentation_url = EXCLUDED.documentation_url,
     region            = EXCLUDED.region,
     active            = EXCLUDED.active,
-    config            = EXCLUDED.config;
+    config            = EXCLUDED.config,
+    probe_scope       = EXCLUDED.probe_scope;
+
+-- name: SetProviderProbeScope :exec
+UPDATE providers SET probe_scope = $2 WHERE id = $1;
 
 -- name: SetProviderActive :exec
 UPDATE providers SET active = $2 WHERE id = $1;

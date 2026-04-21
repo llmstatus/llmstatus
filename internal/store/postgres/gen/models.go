@@ -86,6 +86,7 @@ type Provider struct {
 	AddedAt          pgtype.Timestamptz `json:"added_at"`
 	Active           bool               `json:"active"`
 	Config           json.RawMessage    `json:"config"`
+	ProbeScope       string             `json:"probe_scope"`
 }
 
 type Sponsor struct {
