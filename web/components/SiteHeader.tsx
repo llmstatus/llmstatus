@@ -22,6 +22,7 @@ export async function SiteHeader() {
           <NavLink href="/incidents">Incidents</NavLink>
           <NavLink href="/china">China</NavLink>
           <NavLink href="/compare">Compare</NavLink>
+          <NavLink href="/sponsors">Sponsors</NavLink>
           <NavLink href="/badges">Badges</NavLink>
           <NavLink href="/api">API</NavLink>
           {session ? (

@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS sponsor_keys;
+DROP TABLE IF EXISTS sponsors;

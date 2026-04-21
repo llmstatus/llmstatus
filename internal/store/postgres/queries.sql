@@ -279,3 +279,55 @@ SELECT EXISTS(
 -- name: LogDigest :exec
 INSERT INTO digest_log (user_id, sent_date) VALUES ($1, $2)
 ON CONFLICT (user_id, sent_date) DO NOTHING;
+
+-- ── Sponsors ──────────────────────────────────────────────────────────────
+
+-- name: CreateSponsor :one
+INSERT INTO sponsors (id, user_id, name, website_url, logo_url, tier)
+VALUES ($1, $2, $3, $4, $5, 'standard')
+RETURNING *;
+
+-- name: GetSponsorByUserID :one
+SELECT * FROM sponsors WHERE user_id = $1;
+
+-- name: GetSponsorByID :one
+SELECT * FROM sponsors WHERE id = $1;
+
+-- name: UpdateSponsor :one
+UPDATE sponsors
+SET name = $2, website_url = $3, logo_url = $4
+WHERE id = $1
+RETURNING *;
+
+-- name: ListActiveSponsors :many
+SELECT * FROM sponsors WHERE active = TRUE ORDER BY tier DESC, created_at ASC;
+
+-- ── Sponsor keys ──────────────────────────────────────────────────────────
+
+-- name: UpsertSponsorKey :one
+INSERT INTO sponsor_keys (sponsor_id, provider_id, encrypted_key, key_hint)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (sponsor_id, provider_id) DO UPDATE
+    SET encrypted_key    = EXCLUDED.encrypted_key,
+        key_hint         = EXCLUDED.key_hint,
+        active           = TRUE,
+        last_error       = NULL,
+        updated_at       = NOW()
+RETURNING *;
+
+-- name: DeleteSponsorKey :exec
+DELETE FROM sponsor_keys WHERE sponsor_id = $1 AND provider_id = $2;
+
+-- name: ListSponsorKeys :many
+SELECT * FROM sponsor_keys WHERE sponsor_id = $1 ORDER BY provider_id;
+
+-- name: ListActiveSponsorKeys :many
+SELECT * FROM sponsor_keys WHERE active = TRUE ORDER BY sponsor_id, provider_id;
+
+-- name: UpdateSponsorKeyVerification :exec
+UPDATE sponsor_keys
+SET last_verified_at = NOW(),
+    last_error       = $3,
+    active           = ($3 = ''),
+    updated_at       = NOW()
+WHERE sponsor_id = $1 AND provider_id = $2;
