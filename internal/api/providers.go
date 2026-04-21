@@ -22,6 +22,7 @@ type providerSummary struct {
 	Name             string      `json:"name"`
 	Category         string      `json:"category"`
 	Region           string      `json:"region"`
+	ProbeScope       string      `json:"probe_scope"`
 	CurrentStatus    string      `json:"current_status"`
 	ActiveIncidentID *string     `json:"active_incident_id,omitempty"`
 	Uptime24h        *float64    `json:"uptime_24h,omitempty"`
@@ -253,6 +254,7 @@ func toProviderSummary(p pgstore.Provider, incMap map[string]pgstore.Incident) p
 		Name:             p.Name,
 		Category:         p.Category,
 		Region:           p.Region,
+		ProbeScope:       p.ProbeScope,
 		CurrentStatus:    status,
 		ActiveIncidentID: activeID,
 	}

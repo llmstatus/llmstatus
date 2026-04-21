@@ -12,6 +12,7 @@ import (
 // pgstore.Queries satisfies this interface at compile time (see server.go).
 type Store interface {
 	ListActiveProviders(ctx context.Context) ([]pgstore.Provider, error)
+	ListProvidersForScope(ctx context.Context, probeScope string) ([]pgstore.Provider, error)
 	GetProvider(ctx context.Context, id string) (pgstore.Provider, error)
 	ListModelsByProvider(ctx context.Context, providerID string) ([]pgstore.Model, error)
 	ListIncidents(ctx context.Context, arg pgstore.ListIncidentsParams) ([]pgstore.Incident, error)

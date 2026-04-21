@@ -55,6 +55,9 @@ type Querier interface {
 	ListIncidentsUpdatedSince(ctx context.Context, updatedAt pgtype.Timestamptz) ([]Incident, error)
 	ListModelsByProvider(ctx context.Context, providerID string) ([]Model, error)
 	ListProviders(ctx context.Context) ([]Provider, error)
+	// Returns active providers visible to a probe node with the given scope.
+	// 'global' providers are probed by every node; 'intl'/'cn' are scope-specific.
+	ListProvidersForScope(ctx context.Context, probeScope string) ([]Provider, error)
 	// Incidents opened or updated within the last 24 hours for a provider.
 	ListRecentIncidentsByProvider(ctx context.Context, providerID string) ([]Incident, error)
 	ListSponsorKeys(ctx context.Context, sponsorID string) ([]SponsorKey, error)
@@ -74,6 +77,7 @@ type Querier interface {
 	ResolveIncident(ctx context.Context, arg ResolveIncidentParams) error
 	SetIncidentDescription(ctx context.Context, arg SetIncidentDescriptionParams) error
 	SetProviderActive(ctx context.Context, arg SetProviderActiveParams) error
+	SetProviderProbeScope(ctx context.Context, arg SetProviderProbeScopeParams) error
 	UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentStatusParams) error
 	UpdateSponsor(ctx context.Context, arg UpdateSponsorParams) (Sponsor, error)
 	UpdateSponsorKeyVerification(ctx context.Context, arg UpdateSponsorKeyVerificationParams) error

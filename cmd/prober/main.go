@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -47,7 +48,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	configs, err := loadProviderConfigs(ctx, pool)
+	configs, err := loadProviderConfigs(ctx, pool, regionID)
 	if err != nil {
 		slog.Error("prober: cannot load providers", "err", err)
 		os.Exit(1)
@@ -84,13 +85,24 @@ func main() {
 	}
 }
 
-func loadProviderConfigs(ctx context.Context, pool *pgxpool.Pool) ([]probes.ProviderConfig, error) {
+// nodeScope maps a REGION_ID to the probe_scope value used in the DB query.
+// Regions prefixed "cn-" are China nodes; everything else is international.
+func nodeScope(regionID string) string {
+	if strings.HasPrefix(regionID, "cn-") {
+		return "cn"
+	}
+	return "intl"
+}
+
+func loadProviderConfigs(ctx context.Context, pool *pgxpool.Pool, regionID string) ([]probes.ProviderConfig, error) {
 	q := pgstore.New(pool)
 
-	providers, err := q.ListActiveProviders(ctx)
+	scope := nodeScope(regionID)
+	providers, err := q.ListProvidersForScope(ctx, scope)
 	if err != nil {
 		return nil, err
 	}
+	slog.Info("prober: provider scope filter", "region", regionID, "scope", scope, "providers", len(providers))
 
 	var configs []probes.ProviderConfig
 	for _, p := range providers {

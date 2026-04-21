@@ -375,7 +375,7 @@ func (q *Queries) GetOngoingByProviderAndRule(ctx context.Context, arg GetOngoin
 const getProvider = `-- name: GetProvider :one
 
 
-SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config FROM providers
+SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config, probe_scope FROM providers
 WHERE id = $1
 `
 
@@ -398,6 +398,7 @@ func (q *Queries) GetProvider(ctx context.Context, id string) (Provider, error) 
 		&i.AddedAt,
 		&i.Active,
 		&i.Config,
+		&i.ProbeScope,
 	)
 	return i, err
 }
@@ -573,7 +574,7 @@ func (q *Queries) IsDigestSent(ctx context.Context, arg IsDigestSentParams) (boo
 }
 
 const listActiveProviders = `-- name: ListActiveProviders :many
-SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config FROM providers
+SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config, probe_scope FROM providers
 WHERE active = TRUE
 ORDER BY name
 `
@@ -599,6 +600,7 @@ func (q *Queries) ListActiveProviders(ctx context.Context) ([]Provider, error) {
 			&i.AddedAt,
 			&i.Active,
 			&i.Config,
+			&i.ProbeScope,
 		); err != nil {
 			return nil, err
 		}
@@ -958,7 +960,7 @@ func (q *Queries) ListModelsByProvider(ctx context.Context, providerID string) (
 }
 
 const listProviders = `-- name: ListProviders :many
-SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config FROM providers
+SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config, probe_scope FROM providers
 ORDER BY name
 `
 
@@ -983,6 +985,49 @@ func (q *Queries) ListProviders(ctx context.Context) ([]Provider, error) {
 			&i.AddedAt,
 			&i.Active,
 			&i.Config,
+			&i.ProbeScope,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProvidersForScope = `-- name: ListProvidersForScope :many
+SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config, probe_scope FROM providers
+WHERE active = TRUE
+  AND (probe_scope = 'global' OR probe_scope = $1)
+ORDER BY name
+`
+
+// Returns active providers visible to a probe node with the given scope.
+// 'global' providers are probed by every node; 'intl'/'cn' are scope-specific.
+func (q *Queries) ListProvidersForScope(ctx context.Context, probeScope string) ([]Provider, error) {
+	rows, err := q.db.Query(ctx, listProvidersForScope, probeScope)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Provider{}
+	for rows.Next() {
+		var i Provider
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Category,
+			&i.BaseUrl,
+			&i.AuthType,
+			&i.StatusPageUrl,
+			&i.DocumentationUrl,
+			&i.Region,
+			&i.AddedAt,
+			&i.Active,
+			&i.Config,
+			&i.ProbeScope,
 		); err != nil {
 			return nil, err
 		}
@@ -1319,6 +1364,20 @@ func (q *Queries) SetProviderActive(ctx context.Context, arg SetProviderActivePa
 	return err
 }
 
+const setProviderProbeScope = `-- name: SetProviderProbeScope :exec
+UPDATE providers SET probe_scope = $2 WHERE id = $1
+`
+
+type SetProviderProbeScopeParams struct {
+	ID         string `json:"id"`
+	ProbeScope string `json:"probe_scope"`
+}
+
+func (q *Queries) SetProviderProbeScope(ctx context.Context, arg SetProviderProbeScopeParams) error {
+	_, err := q.db.Exec(ctx, setProviderProbeScope, arg.ID, arg.ProbeScope)
+	return err
+}
+
 const updateIncidentStatus = `-- name: UpdateIncidentStatus :exec
 UPDATE incidents
 SET status     = $2,
@@ -1528,9 +1587,9 @@ func (q *Queries) UpsertOAuthAccount(ctx context.Context, arg UpsertOAuthAccount
 const upsertProvider = `-- name: UpsertProvider :exec
 INSERT INTO providers (
     id, name, category, base_url, auth_type,
-    status_page_url, documentation_url, region, active, config
+    status_page_url, documentation_url, region, active, config, probe_scope
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
 ON CONFLICT (id) DO UPDATE SET
     name              = EXCLUDED.name,
@@ -1541,7 +1600,8 @@ ON CONFLICT (id) DO UPDATE SET
     documentation_url = EXCLUDED.documentation_url,
     region            = EXCLUDED.region,
     active            = EXCLUDED.active,
-    config            = EXCLUDED.config
+    config            = EXCLUDED.config,
+    probe_scope       = EXCLUDED.probe_scope
 `
 
 type UpsertProviderParams struct {
@@ -1555,6 +1615,7 @@ type UpsertProviderParams struct {
 	Region           string          `json:"region"`
 	Active           bool            `json:"active"`
 	Config           json.RawMessage `json:"config"`
+	ProbeScope       string          `json:"probe_scope"`
 }
 
 func (q *Queries) UpsertProvider(ctx context.Context, arg UpsertProviderParams) error {
@@ -1569,6 +1630,7 @@ func (q *Queries) UpsertProvider(ctx context.Context, arg UpsertProviderParams) 
 		arg.Region,
 		arg.Active,
 		arg.Config,
+		arg.ProbeScope,
 	)
 	return err
 }
