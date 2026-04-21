@@ -1,0 +1,9 @@
+---
+- name: reload systemd
+  systemd:
+    daemon_reload: true
+
+- name: restart prober
+  systemd:
+    name: llmstatus-prober
+    state: restarted

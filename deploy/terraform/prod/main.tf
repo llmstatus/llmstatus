@@ -64,14 +64,17 @@ module "probe_ap_southeast_1" {
   tags           = local.tags
 }
 
-# ── Azure probe: Germany West Central (EU) ──────────────────────────────────
-module "probe_eu" {
-  source = "../modules/azure-probe"
+# ── AWS probe: eu-central-1 (Frankfurt, EU) ─────────────────────────────────
+module "probe_eu_central_1" {
+  source = "../modules/aws-probe"
+
+  providers = {
+    aws = aws.eu_central_1
+  }
 
   project        = var.project
   environment    = var.environment
-  node_name      = "eu-west"
-  location       = "Germany West Central"
+  node_name      = "eu-central-1"
   ssh_public_key = var.ssh_public_key
   tags           = local.tags
 }

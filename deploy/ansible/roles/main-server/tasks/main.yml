@@ -1,0 +1,198 @@
+---
+# ── Firewall ──────────────────────────────────────────────────────────────
+- name: allow HTTP
+  ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+
+- name: allow HTTPS
+  ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+
+# ── Docker ────────────────────────────────────────────────────────────────
+- name: add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: add Docker apt repo
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+
+- name: add ubuntu user to docker group
+  user:
+    name: ubuntu
+    groups: docker
+    append: true
+
+- name: enable and start Docker
+  systemd:
+    name: docker
+    enabled: true
+    state: started
+
+# ── EBS data volume ───────────────────────────────────────────────────────
+- name: check if data volume has a filesystem
+  command: blkid /dev/nvme1n1
+  register: blkid_result
+  failed_when: false
+  changed_when: false
+
+- name: format data volume (first run only)
+  filesystem:
+    fstype: ext4
+    dev: /dev/nvme1n1
+  when: blkid_result.rc != 0
+
+- name: create mount point
+  file:
+    path: "{{ data_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: mount data volume
+  mount:
+    path: "{{ data_dir }}"
+    src: /dev/nvme1n1
+    fstype: ext4
+    opts: defaults,nofail
+    state: mounted
+
+- name: create data subdirectories
+  file:
+    path: "{{ data_dir }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - postgres
+    - influx
+    - redis
+
+# ── App directory ─────────────────────────────────────────────────────────
+- name: create app directory
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+
+- name: clone/update repo
+  git:
+    repo: https://github.com/llmstatus/llmstatus.git
+    dest: "{{ app_dir }}"
+    version: main
+    force: true
+  become_user: ubuntu
+
+- name: deploy .env
+  template:
+    src: env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+# ── nginx ─────────────────────────────────────────────────────────────────
+- name: install nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: create SSL directory
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: "0700"
+
+- name: deploy SSL certificate
+  copy:
+    src: ssl/llmstatus.crt
+    dest: /etc/nginx/ssl/llmstatus.crt
+    mode: "0644"
+  notify: reload nginx
+
+- name: deploy SSL private key
+  copy:
+    src: ssl/llmstatus.key
+    dest: /etc/nginx/ssl/llmstatus.key
+    mode: "0600"
+  notify: reload nginx
+
+- name: deploy Cloudflare real-ip snippet
+  template:
+    src: cloudflare-realip.conf.j2
+    dest: /etc/nginx/conf.d/cloudflare-realip.conf
+    mode: "0644"
+  notify: reload nginx
+
+- name: deploy nginx site config
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/llmstatus
+    mode: "0644"
+  notify: reload nginx
+
+- name: enable nginx site
+  file:
+    src: /etc/nginx/sites-available/llmstatus
+    dest: /etc/nginx/sites-enabled/llmstatus
+    state: link
+  notify: reload nginx
+
+- name: remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx
+
+- name: enable and start nginx
+  systemd:
+    name: nginx
+    enabled: true
+    state: started
+
+# ── Docker Compose services ───────────────────────────────────────────────
+- name: pull Docker images
+  command: docker compose pull
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: ubuntu
+  register: compose_pull
+  changed_when: "'Downloaded newer image' in compose_pull.stdout"
+
+- name: start services
+  command: docker compose up -d
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: ubuntu
+
+- name: wait for postgres to be ready
+  command: docker compose exec -T db pg_isready -U llmstatus
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: ubuntu
+  register: pg_ready
+  until: pg_ready.rc == 0
+  retries: 15
+  delay: 5
+
+- name: run database migrations
+  command: docker compose run --rm migrate
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: ubuntu

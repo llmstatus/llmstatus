@@ -18,9 +18,9 @@ output "probe_ap_southeast_1_ip" {
   value       = module.probe_ap_southeast_1.public_ip
 }
 
-output "probe_eu_ip" {
-  description = "Probe node: Germany West Central (EU)"
-  value       = module.probe_eu.public_ip
+output "probe_eu_central_1_ip" {
+  description = "Probe node: eu-central-1 (Frankfurt, EU)"
+  value       = module.probe_eu_central_1.public_ip
 }
 
 output "cloudflare_records" {
@@ -34,10 +34,10 @@ output "cloudflare_records" {
 output "ansible_inventory_hint" {
   description = "Node IPs for deploy/ansible/inventories/prod/hosts.yml"
   value = {
-    main        = module.main_server.public_ip
-    us_east_1   = module.probe_us_east_1.public_ip
-    ap_ne_1     = module.probe_ap_northeast_1.public_ip
-    ap_se_1     = module.probe_ap_southeast_1.public_ip
-    eu_west     = module.probe_eu.public_ip
+    main          = module.main_server.public_ip
+    us_east_1     = module.probe_us_east_1.public_ip
+    ap_northeast_1 = module.probe_ap_northeast_1.public_ip
+    ap_southeast_1 = module.probe_ap_southeast_1.public_ip
+    eu_central_1  = module.probe_eu_central_1.public_ip
   }
 }

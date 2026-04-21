@@ -1,0 +1,8 @@
+# SSL private key — never commit
+roles/main-server/files/ssl/llmstatus.key
+
+# Ansible Vault password file
+.vault_pass
+
+# Retry files
+*.retry
