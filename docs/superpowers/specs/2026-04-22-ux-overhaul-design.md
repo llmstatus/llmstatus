@@ -21,8 +21,8 @@ This design outlines a comprehensive UX overhaul for llmstatus.io using a Founda
 
 ### Real-time Infrastructure
 
-**WebSocket/SSE Connection**
-- Single persistent connection per client with automatic reconnection
+**WebSocket Connection**
+- Single persistent WebSocket connection per client with automatic reconnection
 - Selective subscriptions - clients only receive updates for providers/incidents they're viewing
 - Connection resilience with exponential backoff (1s, 2s, 4s, 8s, max 30s)
 - Graceful degradation to 30-second polling when WebSocket unavailable
@@ -288,10 +288,10 @@ This design outlines a comprehensive UX overhaul for llmstatus.io using a Founda
 ## Technical Considerations
 
 **Browser Support**
-- Modern browsers with WebSocket support (IE11+ not required)
-- Progressive enhancement for older browsers
-- Polyfills for critical features only
-- Graceful degradation for unsupported features
+- Modern browsers with WebSocket support (Chrome 88+, Firefox 85+, Safari 14+, Edge 88+)
+- Progressive enhancement for older browsers without WebSocket
+- Polyfills for critical features only (IntersectionObserver, ResizeObserver)
+- Graceful degradation to polling for unsupported WebSocket
 
 **Security**
 - WebSocket connection over WSS (encrypted)

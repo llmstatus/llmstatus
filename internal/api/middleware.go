@@ -92,15 +92,35 @@ func (r *statusRecorder) WriteHeader(code int) {
 	r.ResponseWriter.WriteHeader(code)
 }
 
+// websocketMiddleware detects WebSocket upgrade requests and bypasses CORS
+// for them, since WebSocket connections use a different handshake mechanism.
+// WebSocket connections still get request ID and access logging.
+func websocketMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if this is a WebSocket upgrade request
+		if r.Header.Get("Upgrade") == "websocket" {
+			// WebSocket upgrade requests bypass CORS middleware
+			// They will be handled by the WebSocket handler directly
+			next.ServeHTTP(w, r)
+			return
+		}
+		// Non-WebSocket requests continue through normal middleware
+		next.ServeHTTP(w, r)
+	})
+}
+
 // applyMiddleware wraps handler with the production middleware stack.
-// Execution order (outer-to-inner): accessLog → requestID → cors → handler.
+// Execution order (outer-to-inner): accessLog → requestID → websocket → cors → handler.
 // requestID runs before cors so that X-Request-ID is set on every response,
 // including CORS preflight (OPTIONS) 204 responses that short-circuit before
-// reaching the handler.
+// reaching the handler. websocket middleware detects upgrade requests and
+// bypasses CORS for them.
 func applyMiddleware(handler http.Handler) http.Handler {
 	return accessLogMiddleware(
 		requestIDMiddleware(
-			corsMiddleware(handler),
+			websocketMiddleware(
+				corsMiddleware(handler),
+			),
 		),
 	)
 }

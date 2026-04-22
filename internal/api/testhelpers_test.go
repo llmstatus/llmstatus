@@ -114,6 +114,38 @@ func (f *fakeStore) GetIncidentBySlug(_ context.Context, slug string) (pgstore.I
 	return pgstore.Incident{}, pgx.ErrNoRows
 }
 
+func (f *fakeStore) ListActiveSponsors(_ context.Context) ([]pgstore.Sponsor, error) {
+	return nil, f.err
+}
+
+func (f *fakeStore) CreateSponsor(_ context.Context, arg pgstore.CreateSponsorParams) (pgstore.Sponsor, error) {
+	return pgstore.Sponsor{}, f.err
+}
+
+func (f *fakeStore) GetSponsorByUserID(_ context.Context, userID int64) (pgstore.Sponsor, error) {
+	return pgstore.Sponsor{}, pgx.ErrNoRows
+}
+
+func (f *fakeStore) UpdateSponsor(_ context.Context, arg pgstore.UpdateSponsorParams) (pgstore.Sponsor, error) {
+	return pgstore.Sponsor{}, f.err
+}
+
+func (f *fakeStore) ListSponsorKeys(_ context.Context, sponsorID string) ([]pgstore.SponsorKey, error) {
+	return nil, f.err
+}
+
+func (f *fakeStore) UpsertSponsorKey(_ context.Context, arg pgstore.UpsertSponsorKeyParams) (pgstore.SponsorKey, error) {
+	return pgstore.SponsorKey{}, f.err
+}
+
+func (f *fakeStore) DeleteSponsorKey(_ context.Context, arg pgstore.DeleteSponsorKeyParams) error {
+	return f.err
+}
+
+func (f *fakeStore) ListProvidersForScope(_ context.Context, probeScope string) ([]pgstore.Provider, error) {
+	return f.providers, f.err
+}
+
 // ---- fixtures ---------------------------------------------------------------
 
 func fixtureProvider(id, name string) pgstore.Provider {
