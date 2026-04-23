@@ -1,3 +1,4 @@
+@import '../styles/design-system.css';
 @import "tailwindcss";
 
 /* Brand system — BRAND_SYSTEM.md §4 */
@@ -55,6 +56,43 @@
   --color-signal-amber:   var(--signal-amber);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-family-sans);
+    background-color: var(--canvas-base);
+    color: var(--ink-100);
+    line-height: 1.6;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .status-pill {
+    @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-pill--operational {
+    @apply bg-green-100 text-green-800;
+    background-color: color-mix(in srgb, var(--color-status-operational) 10%, transparent);
+    color: var(--color-status-operational);
+  }
+
+  .status-pill--degraded {
+    @apply bg-amber-100 text-amber-800;
+    background-color: color-mix(in srgb, var(--color-status-degraded) 10%, transparent);
+    color: var(--color-status-degraded);
+  }
+
+  .status-pill--down {
+    @apply bg-red-100 text-red-800;
+    background-color: color-mix(in srgb, var(--color-status-down) 10%, transparent);
+    color: var(--color-status-down);
+  }
 }
 
 html, body {

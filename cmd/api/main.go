@@ -133,6 +133,13 @@ func main() {
 	if err := srv.Shutdown(shutCtx); err != nil {
 		slog.Error("api: shutdown error", "err", err)
 	}
+
+	// Gracefully shutdown WebSocket hub
+	hubShutCtx, hubCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer hubCancel()
+	if err := api.GetGlobalHub().Shutdown(hubShutCtx); err != nil {
+		slog.Error("api: hub shutdown error", "err", err)
+	}
 }
 
 func requireEnv(key string) string {

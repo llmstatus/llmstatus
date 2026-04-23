@@ -34,6 +34,7 @@ type Server struct {
 	limiter   *RateLimiter    // optional; nil → no rate limiting
 	auth      *AuthConfig     // optional; nil → auth routes return 501
 	keyEnc    *keyenc.Encrypter // optional; nil → sponsor key endpoints return 503
+	hub       *Hub            // WebSocket hub for real-time updates
 	mux       *http.ServeMux
 	handler   http.Handler // mux optionally wrapped with limiter middleware
 }
@@ -56,7 +57,11 @@ func WithKeyEncrypter(enc *keyenc.Encrypter) func(*Server) {
 // New creates a Server and registers all routes. Pass functional options
 // (e.g. WithHistoryReader, WithRateLimiter) to enable optional capabilities.
 func New(store Store, opts ...func(*Server)) *Server {
-	s := &Server{store: store, mux: http.NewServeMux()}
+	s := &Server{
+		store: store,
+		mux:   http.NewServeMux(),
+		hub:   GetGlobalHub(),
+	}
 	for _, o := range opts {
 		o(s)
 	}
@@ -73,6 +78,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.handler.ServeHTTP(w, r)
 }
 
+// Shutdown gracefully shuts down the server and closes all WebSocket connections.
+func (s *Server) Shutdown(ctx context.Context) error {
+	if s.hub != nil {
+		return s.hub.Shutdown(ctx)
+	}
+	return nil
+}
+
 func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /v1/status", s.getStatus)
@@ -84,6 +97,9 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /badge/{id}", s.getBadge)
 	s.mux.HandleFunc("GET /feed.xml", s.getGlobalFeed)
 	s.mux.HandleFunc("GET /v1/providers/{id}/feed.xml", s.getProviderFeed)
+
+	// WebSocket for real-time updates
+	s.mux.HandleFunc("GET /ws", HandleWebSocket)
 
 	if s.auth != nil {
 		s.mux.HandleFunc("POST /auth/otp/send", s.handleOTPSend)
