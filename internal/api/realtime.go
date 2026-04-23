@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -12,6 +11,14 @@ import (
 type SubscriptionMessage struct {
 	Type  string `json:"type"`
 	Topic string `json:"topic"`
+}
+
+// StatusUpdate represents a real-time status update (spec-required struct).
+type StatusUpdate struct {
+	Type       string `json:"type"`
+	ProviderID string `json:"provider_id"`
+	Status     string `json:"status"`
+	Timestamp  int64  `json:"timestamp"`
 }
 
 // RealtimeMessage represents a message sent over WebSocket to clients.
@@ -151,20 +158,13 @@ func (rm *RealtimeManager) SubscriberCount(channel string) int {
 func handleSubscription(client *Client, msg SubscriptionMessage) error {
 	switch msg.Type {
 	case "subscribe":
-		client.mu.Lock()
 		client.subscriptions[msg.Topic] = true
-		client.mu.Unlock()
-		slog.Debug("subscription: client subscribed", "topic", msg.Topic)
-		return nil
+		slog.Info("client subscribed", "topic", msg.Topic)
 	case "unsubscribe":
-		client.mu.Lock()
 		delete(client.subscriptions, msg.Topic)
-		client.mu.Unlock()
-		slog.Debug("subscription: client unsubscribed", "topic", msg.Topic)
-		return nil
-	default:
-		return fmt.Errorf("invalid subscription type: %s", msg.Type)
+		slog.Info("client unsubscribed", "topic", msg.Topic)
 	}
+	return nil
 }
 
 // BroadcastToTopic sends a message to all clients subscribed to a specific topic.
@@ -183,7 +183,8 @@ func (h *Hub) BroadcastToTopic(topic string, data interface{}) {
 			select {
 			case client.send <- message:
 			default:
-				slog.Warn("subscription: client send channel full, dropping message", "topic", topic)
+				close(client.send)
+				delete(h.clients, client)
 			}
 		}
 	}

@@ -5,8 +5,6 @@ const config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '^react$': '<rootDir>/node_modules/react',
-    '^react-dom$': '<rootDir>/node_modules/react-dom',
   },
   testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
   transform: {

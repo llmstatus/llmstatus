@@ -1,0 +1,95 @@
+/* web/components/ui/TimeSeriesChart.module.css */
+.container {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 0.75rem;
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.chartContainer {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.loadingSpinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border-light);
+  border-top: 2px solid var(--color-status-operational);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: var(--spacing-sm);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.tooltip {
+  position: absolute;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 0.375rem;
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border-medium);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .loadingSpinner {
+    animation: none;
+  }
+}

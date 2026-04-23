@@ -123,6 +123,9 @@ func TestInvalidSubscriptionType(t *testing.T) {
 		Topic: "provider:openai",
 	}
 
+	// Spec requires ignoring invalid types and returning nil
 	err := handleSubscription(client, msg)
-	assert.Error(t, err)
+	assert.NoError(t, err)
+	// Invalid type should be ignored, no subscription created
+	assert.False(t, client.subscriptions["provider:openai"])
 }
