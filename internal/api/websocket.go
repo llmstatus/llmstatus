@@ -341,16 +341,19 @@ func isValidChannelName(channel string) bool {
 	if len(channel) == 0 || len(channel) > 256 {
 		return false
 	}
-
 	for _, r := range channel {
-		if !((r >= 'a' && r <= 'z') ||
-			(r >= 'A' && r <= 'Z') ||
-			(r >= '0' && r <= '9') ||
-			r == '_' || r == ':' || r == '-') {
+		if !isChannelRune(r) {
 			return false
 		}
 	}
 	return true
+}
+
+func isChannelRune(r rune) bool {
+	return (r >= 'a' && r <= 'z') ||
+		(r >= 'A' && r <= 'Z') ||
+		(r >= '0' && r <= '9') ||
+		r == '_' || r == ':' || r == '-'
 }
 
 // IsSubscribed checks if the client is subscribed to a channel.

@@ -161,6 +161,14 @@ func (r *influxHistoryReader) AllModelLiveStats(ctx context.Context) ([]ModelLiv
 	return out, nil
 }
 
+// sparklineRow is a single result row from the sparkline query.
+type sparklineRow struct {
+	ProviderID string   `json:"provider_id"`
+	Model      string   `json:"model"`
+	Bucket     string   `json:"bucket"`
+	AvgMs      *float64 `json:"avg_ms"`
+}
+
 // AllModelSparklines returns 60 avg_ms values per provider+model for the last
 // 24 h. Each bucket covers 24 min. Zero means no successful probe data.
 // Key format: "provider_id:model".
@@ -196,21 +204,19 @@ func (r *influxHistoryReader) AllModelSparklines(ctx context.Context) (map[strin
 	}
 
 	// avg_ms can be null in JSON when the FILTER removes all rows.
-	var rows []struct {
-		ProviderID string   `json:"provider_id"`
-		Model      string   `json:"model"`
-		Bucket     string   `json:"bucket"`
-		AvgMs      *float64 `json:"avg_ms"`
-	}
+	var rows []sparklineRow
 	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
 		return nil, fmt.Errorf("influx sparklines: decode: %w", err)
 	}
 
-	// Compute the first bucket timestamp for the 24 h window.
 	nowSec := time.Now().Unix()
 	windowStartSec := nowSec - int64(windowSecs)
 	firstBucket := (windowStartSec / sparklineBucketSecs) * sparklineBucketSecs
+	return indexSparklinesFromRows(rows, firstBucket), nil
+}
 
+// indexSparklinesFromRows places each row into the correct time-bucket slot.
+func indexSparklinesFromRows(rows []sparklineRow, firstBucket int64) map[string][]float64 {
 	out := make(map[string][]float64)
 	for _, row := range rows {
 		ts, err := parseInfluxTime(row.Bucket)
@@ -229,7 +235,16 @@ func (r *influxHistoryReader) AllModelSparklines(ctx context.Context) (map[strin
 			out[key][idx] = *row.AvgMs
 		}
 	}
-	return out, nil
+	return out
+}
+
+// regionRow is a single result row from the region stats query.
+type regionRow struct {
+	RegionID string  `json:"region_id"`
+	Model    string  `json:"model"`
+	Total    float64 `json:"total"`
+	Errors   float64 `json:"errors"`
+	P95Ms    float64 `json:"p95_ms"`
 }
 
 // ProviderRegionStats returns 24 h stats per probe region for one provider.
@@ -274,23 +289,24 @@ func (r *influxHistoryReader) ProviderRegionStats(ctx context.Context, providerI
 		return nil, fmt.Errorf("influx region stats: status %d: %s", resp.StatusCode, detail)
 	}
 
-	var rows []struct {
-		RegionID string  `json:"region_id"`
-		Model    string  `json:"model"`
-		Total    float64 `json:"total"`
-		Errors   float64 `json:"errors"`
-		P95Ms    float64 `json:"p95_ms"`
-	}
+	var rows []regionRow
 	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
 		return nil, fmt.Errorf("influx region stats: decode: %w", err)
 	}
 
-	// Fold to worst uptime + max p95 per region.
-	type agg struct {
-		uptime float64
-		p95    float64
+	byRegion := foldRegionRows(rows)
+	out := make([]RegionLiveStat, 0, len(byRegion))
+	for regionID, v := range byRegion {
+		out = append(out, RegionLiveStat{RegionID: regionID, Uptime24h: v[0], P95Ms: v[1]})
 	}
-	byRegion := make(map[string]agg)
+	sort.Slice(out, func(i, j int) bool { return out[i].RegionID < out[j].RegionID })
+	return out, nil
+}
+
+// foldRegionRows folds per-model rows into worst uptime + max p95 per region.
+// Result map value: [uptime, p95_ms].
+func foldRegionRows(rows []regionRow) map[string][2]float64 {
+	byRegion := make(map[string][2]float64)
 	for _, row := range rows {
 		uptime := 1.0
 		if row.Total > 0 {
@@ -298,29 +314,18 @@ func (r *influxHistoryReader) ProviderRegionStats(ctx context.Context, providerI
 		}
 		cur, seen := byRegion[row.RegionID]
 		if !seen {
-			byRegion[row.RegionID] = agg{uptime: uptime, p95: row.P95Ms}
-		} else {
-			if uptime < cur.uptime {
-				cur.uptime = uptime
-			}
-			if row.P95Ms > cur.p95 {
-				cur.p95 = row.P95Ms
-			}
-			byRegion[row.RegionID] = cur
+			byRegion[row.RegionID] = [2]float64{uptime, row.P95Ms}
+			continue
 		}
+		if uptime < cur[0] {
+			cur[0] = uptime
+		}
+		if row.P95Ms > cur[1] {
+			cur[1] = row.P95Ms
+		}
+		byRegion[row.RegionID] = cur
 	}
-
-	out := make([]RegionLiveStat, 0, len(byRegion))
-	for regionID, a := range byRegion {
-		out = append(out, RegionLiveStat{
-			RegionID:  regionID,
-			Uptime24h: a.uptime,
-			P95Ms:     a.p95,
-		})
-	}
-	// Sort by region_id for deterministic ordering.
-	sort.Slice(out, func(i, j int) bool { return out[i].RegionID < out[j].RegionID })
-	return out, nil
+	return byRegion
 }
 
 // parseInfluxTime handles InfluxDB 3's varying timestamp formats:

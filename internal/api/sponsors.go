@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/llmstatus/llmstatus/internal/keyenc"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )

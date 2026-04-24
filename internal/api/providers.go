@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -89,14 +90,6 @@ func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	incidentByProvider := make(map[string]pgstore.Incident)
-	for _, inc := range ongoing {
-		existing, seen := incidentByProvider[inc.ProviderID]
-		if !seen || severityRank(inc.Severity) > severityRank(existing.Severity) {
-			incidentByProvider[inc.ProviderID] = inc
-		}
-	}
-
 	// Fetch models for each provider (N ≈ 7; 30 s cache makes this acceptable).
 	modelsByProvider := make(map[string][]pgstore.Model)
 	for _, p := range providers {
@@ -105,38 +98,18 @@ func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Fetch all InfluxDB stats in parallel (three queries, all non-fatal).
-	var (
-		liveByProvider = make(map[string][2]float64) // provider_id → [uptime, p95]
-		modelLiveStats = make(map[string][2]float64) // "pid:model" → [uptime, p95]
-		sparklines     = make(map[string][]float64)  // "pid:model" → [60]float64
-	)
-	if s.liveStats != nil {
-		ctx := r.Context()
-		if stats, err := s.liveStats.AllProviderLiveStats(ctx); err == nil {
-			for _, st := range stats {
-				liveByProvider[st.ProviderID] = [2]float64{st.Uptime24h, st.P95Ms}
-			}
-		}
-		if mstats, err := s.liveStats.AllModelLiveStats(ctx); err == nil {
-			for _, ms := range mstats {
-				modelLiveStats[ms.ProviderID+":"+ms.Model] = [2]float64{ms.Uptime24h, ms.P95Ms}
-			}
-		}
-		if sl, err := s.liveStats.AllModelSparklines(ctx); err == nil {
-			sparklines = sl
-		}
-	}
+	live := s.loadAllLiveStats(r.Context())
+	incByProvider := ongoingIncidentMap(ongoing)
 
 	summaries := make([]providerSummary, 0, len(providers))
 	for _, p := range providers {
-		ps := toProviderSummary(p, incidentByProvider)
-		if live, ok := liveByProvider[p.ID]; ok {
-			u, p95 := live[0], live[1]
+		ps := toProviderSummary(p, incByProvider)
+		if st, ok := live.byProvider[p.ID]; ok {
+			u, p95 := st[0], st[1]
 			ps.Uptime24h = &u
 			ps.P95Ms = &p95
 		}
-		ps.ModelStats = buildModelStats(p.ID, modelsByProvider[p.ID], modelLiveStats, sparklines)
+		ps.ModelStats = buildModelStats(p.ID, modelsByProvider[p.ID], live.byModel, live.sparklines)
 		summaries = append(summaries, ps)
 	}
 
@@ -195,52 +168,9 @@ func (s *Server) getProvider(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build incident map for status derivation.
-	incMap := map[string]pgstore.Incident{}
-	if len(activeIncs) > 0 {
-		for _, inc := range activeIncs {
-			if inc.Status == statusOngoing {
-				existing, seen := incMap[inc.ProviderID]
-				if !seen || severityRank(inc.Severity) > severityRank(existing.Severity) {
-					incMap[inc.ProviderID] = inc
-				}
-			}
-		}
-	}
-
-	// Fetch model live stats (non-fatal if InfluxDB is unavailable).
-	var (
-		modelLiveStats = make(map[string][2]float64)
-		sparklines     = make(map[string][]float64)
-	)
-	if s.liveStats != nil {
-		ctx := r.Context()
-		if mstats, err := s.liveStats.AllModelLiveStats(ctx); err == nil {
-			for _, ms := range mstats {
-				modelLiveStats[ms.ProviderID+":"+ms.Model] = [2]float64{ms.Uptime24h, ms.P95Ms}
-			}
-		}
-		if sl, err := s.liveStats.AllModelSparklines(ctx); err == nil {
-			sparklines = sl
-		}
-	}
-
-	var regionStats []regionStat
-	if s.liveStats != nil {
-		if rs, err := s.liveStats.ProviderRegionStats(r.Context(), id); err == nil {
-			regionStats = make([]regionStat, 0, len(rs))
-			for _, reg := range rs {
-				regionStats = append(regionStats, regionStat{
-					RegionID:  reg.RegionID,
-					Uptime24h: reg.Uptime24h,
-					P95Ms:     reg.P95Ms,
-				})
-			}
-		}
-	}
-
-	ps := toProviderSummary(p, incMap)
-	ps.ModelStats = buildModelStats(id, models, modelLiveStats, sparklines)
+	modelByModel, sparklines := s.loadModelLiveStats(r.Context())
+	ps := toProviderSummary(p, ongoingIncidentMap(activeIncs))
+	ps.ModelStats = buildModelStats(id, models, modelByModel, sparklines)
 
 	detail := providerDetail{
 		providerSummary:  ps,
@@ -248,7 +178,7 @@ func (s *Server) getProvider(w http.ResponseWriter, r *http.Request) {
 		DocumentationURL: textVal(p.DocumentationUrl),
 		Models:           toModelSummaries(models),
 		ActiveIncidents:  toIncidentRefs(activeIncs),
-		RegionStats:      coalesceSlice(regionStats),
+		RegionStats:      coalesceSlice(s.loadRegionStats(r.Context(), id)),
 	}
 
 	writeEnvelope(w, detail)
@@ -328,4 +258,76 @@ func toIncidentRefs(incidents []pgstore.Incident) []incidentRef {
 		})
 	}
 	return coalesceSlice(out)
+}
+
+// allLiveStats groups the three InfluxDB stat maps used by listProviders.
+type allLiveStats struct {
+	byProvider map[string][2]float64 // provider_id → [uptime24h, p95_ms]
+	byModel    map[string][2]float64 // "provider_id:model" → [uptime24h, p95_ms]
+	sparklines map[string][]float64  // "provider_id:model" → 60 avg_ms buckets
+}
+
+// loadAllLiveStats fetches provider-level, model-level, and sparkline stats.
+// All queries are non-fatal; missing data results in zero values.
+func (s *Server) loadAllLiveStats(ctx context.Context) allLiveStats {
+	out := allLiveStats{
+		byProvider: make(map[string][2]float64),
+		byModel:    make(map[string][2]float64),
+		sparklines: make(map[string][]float64),
+	}
+	if s.liveStats == nil {
+		return out
+	}
+	if ps, err := s.liveStats.AllProviderLiveStats(ctx); err == nil {
+		for _, st := range ps {
+			out.byProvider[st.ProviderID] = [2]float64{st.Uptime24h, st.P95Ms}
+		}
+	}
+	if ms, err := s.liveStats.AllModelLiveStats(ctx); err == nil {
+		for _, m := range ms {
+			out.byModel[m.ProviderID+":"+m.Model] = [2]float64{m.Uptime24h, m.P95Ms}
+		}
+	}
+	if sl, err := s.liveStats.AllModelSparklines(ctx); err == nil {
+		out.sparklines = sl
+	}
+	return out
+}
+
+// loadModelLiveStats fetches model-level stats and sparklines for getProvider.
+func (s *Server) loadModelLiveStats(ctx context.Context) (map[string][2]float64, map[string][]float64) {
+	byModel := make(map[string][2]float64)
+	sparklines := make(map[string][]float64)
+	if s.liveStats == nil {
+		return byModel, sparklines
+	}
+	if ms, err := s.liveStats.AllModelLiveStats(ctx); err == nil {
+		for _, m := range ms {
+			byModel[m.ProviderID+":"+m.Model] = [2]float64{m.Uptime24h, m.P95Ms}
+		}
+	}
+	if sl, err := s.liveStats.AllModelSparklines(ctx); err == nil {
+		sparklines = sl
+	}
+	return byModel, sparklines
+}
+
+// loadRegionStats fetches per-region 24 h stats for a single provider.
+func (s *Server) loadRegionStats(ctx context.Context, providerID string) []regionStat {
+	if s.liveStats == nil {
+		return nil
+	}
+	rs, err := s.liveStats.ProviderRegionStats(ctx, providerID)
+	if err != nil {
+		return nil
+	}
+	out := make([]regionStat, 0, len(rs))
+	for _, reg := range rs {
+		out = append(out, regionStat{
+			RegionID:  reg.RegionID,
+			Uptime24h: reg.Uptime24h,
+			P95Ms:     reg.P95Ms,
+		})
+	}
+	return out
 }

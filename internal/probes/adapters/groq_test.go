@@ -74,16 +74,6 @@ func testOpenAICompatAdapter(t *testing.T, providerID, fixtureDir string,
 	}
 }
 
-func testOpenAICompatTimeout(t *testing.T, p probes.Provider, model string) {
-	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		time.Sleep(200 * time.Millisecond)
-		w.WriteHeader(http.StatusOK)
-	}))
-	t.Cleanup(srv.Close)
-	_ = srv // timeout via client, not server close
-}
-
 // ---- Groq -------------------------------------------------------------------
 
 func TestGroq_Identity(t *testing.T) {

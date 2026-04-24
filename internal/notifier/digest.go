@@ -106,16 +106,16 @@ func buildDigestEmail(ctx context.Context, ds DigestStore, subs []pgstore.ListDi
 	var sb strings.Builder
 	var hb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("llmstatus.io daily digest — %s\n\n", date))
-	hb.WriteString(fmt.Sprintf(`<!DOCTYPE html><html><body style="font-family:monospace;background:#0d0d0d;color:#e0e0e0;padding:40px;max-width:640px">
+	fmt.Fprintf(&sb, "llmstatus.io daily digest — %s\n\n", date)
+	fmt.Fprintf(&hb, `<!DOCTYPE html><html><body style="font-family:monospace;background:#0d0d0d;color:#e0e0e0;padding:40px;max-width:640px">
 <h2 style="color:#e0e0e0">[llmstatus] daily digest</h2>
-<p style="color:#888;font-size:12px;margin-bottom:24px">%s</p>`, date))
+<p style="color:#888;font-size:12px;margin-bottom:24px">%s</p>`, date)
 
 	for _, sub := range subs {
 		incidents, _ := ds.ListRecentIncidentsByProvider(ctx, sub.ProviderID)
-		sb.WriteString(fmt.Sprintf("## %s\n", sub.ProviderName))
-		hb.WriteString(fmt.Sprintf(`<div style="border:1px solid #333;border-radius:6px;padding:16px;margin-bottom:16px">
-<h3 style="margin:0 0 8px;color:#e0e0e0">%s</h3>`, sub.ProviderName))
+		fmt.Fprintf(&sb, "## %s\n", sub.ProviderName)
+		fmt.Fprintf(&hb, `<div style="border:1px solid #333;border-radius:6px;padding:16px;margin-bottom:16px">
+<h3 style="margin:0 0 8px;color:#e0e0e0">%s</h3>`, sub.ProviderName)
 
 		if len(incidents) == 0 {
 			sb.WriteString("  No incidents in the last 24h.\n\n")
@@ -124,26 +124,26 @@ func buildDigestEmail(ctx context.Context, ds DigestStore, subs []pgstore.ListDi
 			for _, inc := range incidents {
 				severity := inc.Severity
 				status := inc.Status
-				sb.WriteString(fmt.Sprintf("  [%s] %s (%s)\n", severity, inc.Title, status))
+				fmt.Fprintf(&sb, "  [%s] %s (%s)\n", severity, inc.Title, status)
 				color := "#f5a623"
 				if status == "resolved" {
 					color = "#4caf50"
 				}
-				hb.WriteString(fmt.Sprintf(
+				fmt.Fprintf(&hb,
 					`<p style="margin:4px 0;font-size:13px"><span style="color:%s">[%s]</span> %s <span style="color:#888">(%s)</span></p>`,
-					color, severity, inc.Title, status))
+					color, severity, inc.Title, status)
 			}
 			sb.WriteString("\n")
 		}
 
-		hb.WriteString(fmt.Sprintf(`<p style="margin:8px 0 0;font-size:11px"><a href="%s/providers/%s" style="color:#888">View provider →</a></p></div>`,
-			siteURL, sub.ProviderID))
+		fmt.Fprintf(&hb, `<p style="margin:8px 0 0;font-size:11px"><a href="%s/providers/%s" style="color:#888">View provider →</a></p></div>`,
+			siteURL, sub.ProviderID)
 	}
 
-	sb.WriteString(fmt.Sprintf("\nManage your subscriptions: %s\n", unsubURL))
-	hb.WriteString(fmt.Sprintf(`<p style="margin-top:32px;font-size:11px;color:#555">
+	fmt.Fprintf(&sb, "\nManage your subscriptions: %s\n", unsubURL)
+	fmt.Fprintf(&hb, `<p style="margin-top:32px;font-size:11px;color:#555">
 <a href="%s" style="color:#555">Manage subscriptions</a>
-</p></body></html>`, unsubURL))
+</p></body></html>`, unsubURL)
 
 	return sb.String(), hb.String()
 }

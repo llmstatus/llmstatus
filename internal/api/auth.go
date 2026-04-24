@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -143,18 +144,9 @@ func (s *Server) handleOAuthUpsert(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "forbidden")
 		return
 	}
-	var body struct {
-		Provider string `json:"provider"`
-		Sub      string `json:"sub"`
-		Email    string `json:"email"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil ||
-		body.Provider == "" || body.Sub == "" || body.Email == "" {
-		writeError(w, http.StatusBadRequest, "provider, sub and email required")
-		return
-	}
-	if body.Provider != "google" && body.Provider != "github" {
-		writeError(w, http.StatusBadRequest, "invalid provider")
+	body, err := decodeOAuthBody(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -203,6 +195,29 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 }
 
 // ---- helpers ------------------------------------------------------------
+
+type oauthBody struct {
+	Provider string
+	Sub      string
+	Email    string
+}
+
+// decodeOAuthBody parses and validates the /auth/oauth/upsert request body.
+func decodeOAuthBody(r *http.Request) (oauthBody, error) {
+	var raw struct {
+		Provider string `json:"provider"`
+		Sub      string `json:"sub"`
+		Email    string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil ||
+		raw.Provider == "" || raw.Sub == "" || raw.Email == "" {
+		return oauthBody{}, errors.New("provider, sub and email required")
+	}
+	if raw.Provider != "google" && raw.Provider != "github" {
+		return oauthBody{}, errors.New("invalid provider")
+	}
+	return oauthBody{Provider: raw.Provider, Sub: raw.Sub, Email: raw.Email}, nil
+}
 
 func (s *Server) writeToken(w http.ResponseWriter, user pgstore.User) {
 	token, err := auth.SignJWT(user.ID, user.Email, s.auth.JWTSecret)
