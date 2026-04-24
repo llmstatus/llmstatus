@@ -1,0 +1,69 @@
+name: Build and push Docker images
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  ORG: llmstatus
+
+jobs:
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - service: api
+            dockerfile: deploy/docker/Dockerfile.golang
+            build_arg: CMD=api
+          - service: ingest
+            dockerfile: deploy/docker/Dockerfile.golang
+            build_arg: CMD=ingest
+          - service: detector
+            dockerfile: deploy/docker/Dockerfile.golang
+            build_arg: CMD=detector
+          - service: prober
+            dockerfile: deploy/docker/Dockerfile.golang
+            build_arg: CMD=prober
+          - service: notifier
+            dockerfile: deploy/docker/Dockerfile.golang
+            build_arg: CMD=notifier
+          - service: migrate
+            dockerfile: deploy/docker/Dockerfile.golang
+            build_arg: CMD=migrate
+          - service: web
+            dockerfile: deploy/docker/Dockerfile.web
+            build_arg: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          build-args: ${{ matrix.build_arg }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.ORG }}/llmstatus-${{ matrix.service }}:latest
+            ${{ env.REGISTRY }}/${{ env.ORG }}/llmstatus-${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
