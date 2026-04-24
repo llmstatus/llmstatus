@@ -35,7 +35,7 @@ export function rollbackUpdate<T extends OptimisticItem>(
       }
       // Fallback to original value if server data not available
       if (item._originalValue) {
-        return item._originalValue
+        return item._originalValue as T
       }
     }
     return item
