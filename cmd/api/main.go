@@ -78,25 +78,8 @@ func main() {
 		api.WithRateLimiter(limiter),
 	}
 
-	if jwtSecret := os.Getenv("JWT_SECRET"); jwtSecret != "" {
-		emailFrom := envOr("EMAIL_FROM", "noreply@llmstatus.io")
-		authCfg := &api.AuthConfig{
-			Store:          store,
-			Email:          email.New(requireEnv("RESEND_API_KEY"), emailFrom),
-			JWTSecret:      jwtSecret,
-			InternalSecret: requireEnv("INTERNAL_SECRET"),
-		}
-		if redisURL := os.Getenv("REDIS_URL"); redisURL != "" {
-			opt, err := redis.ParseURL(redisURL)
-			if err != nil {
-				slog.Error("api: invalid REDIS_URL", "err", err)
-				os.Exit(1)
-			}
-			authCfg.OTPLimiter = otprl.NewRedis(redis.NewClient(opt))
-			slog.Info("api: OTP rate-limiting enabled")
-		}
+	if authCfg, ok := buildAuthConfig(store); ok {
 		opts = append(opts, api.WithAuth(authCfg))
-		slog.Info("api: auth enabled")
 	}
 
 	if hexKey := os.Getenv("SPONSOR_KEY_ENCRYPTION_KEY"); hexKey != "" {
@@ -117,13 +100,7 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	go func() {
-		slog.Info("api: listening", "addr", addr)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("api: server error", "err", err)
-			os.Exit(1)
-		}
-	}()
+	go runServer(srv)
 
 	<-ctx.Done()
 	slog.Info("api: shutting down")
@@ -134,11 +111,43 @@ func main() {
 		slog.Error("api: shutdown error", "err", err)
 	}
 
-	// Gracefully shutdown WebSocket hub
 	hubShutCtx, hubCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer hubCancel()
 	if err := api.GetGlobalHub().Shutdown(hubShutCtx); err != nil {
 		slog.Error("api: hub shutdown error", "err", err)
+	}
+}
+
+func buildAuthConfig(store api.AuthStore) (*api.AuthConfig, bool) {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		return nil, false
+	}
+	emailFrom := envOr("EMAIL_FROM", "noreply@llmstatus.io")
+	authCfg := &api.AuthConfig{
+		Store:          store,
+		Email:          email.New(requireEnv("RESEND_API_KEY"), emailFrom),
+		JWTSecret:      jwtSecret,
+		InternalSecret: requireEnv("INTERNAL_SECRET"),
+	}
+	if redisURL := os.Getenv("REDIS_URL"); redisURL != "" {
+		opt, err := redis.ParseURL(redisURL)
+		if err != nil {
+			slog.Error("api: invalid REDIS_URL", "err", err)
+			os.Exit(1)
+		}
+		authCfg.OTPLimiter = otprl.NewRedis(redis.NewClient(opt))
+		slog.Info("api: OTP rate-limiting enabled")
+	}
+	slog.Info("api: auth enabled")
+	return authCfg, true
+}
+
+func runServer(srv *http.Server) {
+	slog.Info("api: listening", "addr", srv.Addr)
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		slog.Error("api: server error", "err", err)
+		os.Exit(1)
 	}
 }
 

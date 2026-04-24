@@ -48,53 +48,68 @@ func main() {
 		cmd = flag.Arg(0)
 	}
 
-	src, err := iofs.New(migrations.FS, ".")
-	if err != nil {
-		log.Fatalf("source: %v", err)
-	}
-
-	m, err := migrate.NewWithSourceInstance("iofs", src, *dbURL)
-	if err != nil {
-		log.Fatalf("init: %v", err)
-	}
-	defer func() {
-		srcErr, dbErr := m.Close()
-		if srcErr != nil {
-			log.Printf("close source: %v", srcErr)
-		}
-		if dbErr != nil {
-			log.Printf("close db: %v", dbErr)
-		}
-	}()
+	m := newMigrator(*dbURL)
+	defer closeMigrator(m)
 
 	switch cmd {
 	case "up":
 		cmdUp(m)
 	case "down":
-		n := 1
-		if flag.NArg() > 1 {
-			n, err = strconv.Atoi(flag.Arg(1))
-			if err != nil || n < 1 {
-				log.Fatalf("down: N must be a positive integer, got %q", flag.Arg(1))
-			}
-		}
-		cmdDown(m, n)
+		runDown(m)
 	case "version":
 		cmdVersion(m)
 	case "status":
 		cmdStatus(m)
 	case "force":
-		if flag.NArg() < 2 {
-			log.Fatal("force: version number required")
-		}
-		v, verr := strconv.Atoi(flag.Arg(1))
-		if verr != nil {
-			log.Fatalf("force: invalid version %q", flag.Arg(1))
-		}
-		cmdForce(m, v)
+		runForce(m)
 	default:
 		log.Fatalf("unknown command %q — run migrate -help", cmd)
 	}
+}
+
+func newMigrator(dbURL string) *migrate.Migrate {
+	src, err := iofs.New(migrations.FS, ".")
+	if err != nil {
+		log.Fatalf("source: %v", err)
+	}
+	m, err := migrate.NewWithSourceInstance("iofs", src, dbURL)
+	if err != nil {
+		log.Fatalf("init: %v", err)
+	}
+	return m
+}
+
+func closeMigrator(m *migrate.Migrate) {
+	srcErr, dbErr := m.Close()
+	if srcErr != nil {
+		log.Printf("close source: %v", srcErr)
+	}
+	if dbErr != nil {
+		log.Printf("close db: %v", dbErr)
+	}
+}
+
+func runDown(m *migrate.Migrate) {
+	n := 1
+	if flag.NArg() > 1 {
+		var err error
+		n, err = strconv.Atoi(flag.Arg(1))
+		if err != nil || n < 1 {
+			log.Fatalf("down: N must be a positive integer, got %q", flag.Arg(1))
+		}
+	}
+	cmdDown(m, n)
+}
+
+func runForce(m *migrate.Migrate) {
+	if flag.NArg() < 2 {
+		log.Fatal("force: version number required")
+	}
+	v, err := strconv.Atoi(flag.Arg(1))
+	if err != nil {
+		log.Fatalf("force: invalid version %q", flag.Arg(1))
+	}
+	cmdForce(m, v)
 }
 
 func cmdUp(m *migrate.Migrate) {

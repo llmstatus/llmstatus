@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"net/http"
@@ -28,32 +29,44 @@ func (s *Server) getBadge(w http.ResponseWriter, r *http.Request) {
 		activeIncs = nil
 	}
 
-	incMap := map[string]pgstore.Incident{}
-	for _, inc := range activeIncs {
-		if inc.Status == "ongoing" {
-			existing, seen := incMap[inc.ProviderID]
-			if !seen || severityRank(inc.Severity) > severityRank(existing.Severity) {
-				incMap[inc.ProviderID] = inc
-			}
-		}
-	}
-
-	status, _ := deriveStatus(p.ID, incMap)
+	status, _ := deriveStatus(p.ID, ongoingIncidentMap(activeIncs))
 	message := status
+	if r.URL.Query().Get("style") == "detailed" {
+		message = s.badgeDetailedMessage(r.Context(), id, status)
+	}
+	writeBadge(w, p.Name, message, statusColor(status))
+}
 
-	// ?style=detailed appends live uptime when available.
-	if r.URL.Query().Get("style") == "detailed" && s.liveStats != nil {
-		if stats, err := s.liveStats.AllProviderLiveStats(r.Context()); err == nil {
-			for _, st := range stats {
-				if st.ProviderID == id && st.Uptime24h >= 0 {
-					message = fmt.Sprintf("%s · %.1f%%", status, st.Uptime24h*100)
-					break
-				}
-			}
+func (s *Server) badgeDetailedMessage(ctx context.Context, id, status string) string {
+	if s.liveStats == nil {
+		return status
+	}
+	stats, err := s.liveStats.AllProviderLiveStats(ctx)
+	if err != nil {
+		return status
+	}
+	for _, st := range stats {
+		if st.ProviderID == id && st.Uptime24h >= 0 {
+			return fmt.Sprintf("%s · %.1f%%", status, st.Uptime24h*100)
 		}
 	}
+	return status
+}
 
-	writeBadge(w, p.Name, message, statusColor(status))
+// ongoingIncidentMap builds a map of the worst ongoing incident per provider.
+// It filters to status "ongoing" so it is safe to call with a mixed-status slice.
+func ongoingIncidentMap(incs []pgstore.Incident) map[string]pgstore.Incident {
+	m := make(map[string]pgstore.Incident)
+	for _, inc := range incs {
+		if inc.Status != statusOngoing {
+			continue
+		}
+		existing, seen := m[inc.ProviderID]
+		if !seen || severityRank(inc.Severity) > severityRank(existing.Severity) {
+			m[inc.ProviderID] = inc
+		}
+	}
+	return m
 }
 
 func writeBadge(w http.ResponseWriter, label, message, color string) {

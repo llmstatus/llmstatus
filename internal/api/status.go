@@ -28,7 +28,7 @@ func (s *Server) getStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ongoing, err := s.store.ListIncidentsByStatus(r.Context(), pgstore.ListIncidentsByStatusParams{
-		Status: "ongoing",
+		Status: statusOngoing,
 		Limit:  200,
 		Offset: 0,
 	})
@@ -50,13 +50,13 @@ func (s *Server) getStatus(w http.ResponseWriter, r *http.Request) {
 	for _, p := range providers {
 		st, _ := deriveStatus(p.ID, incidentByProvider)
 		switch st {
-		case "down":
+		case statusDown:
 			counts.Down++
-			worst = "down"
-		case "degraded":
+			worst = statusDown
+		case statusDegraded:
 			counts.Degraded++
-			if worst != "down" {
-				worst = "degraded"
+			if worst != statusDown {
+				worst = statusDegraded
 			}
 		default:
 			counts.Operational++
