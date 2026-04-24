@@ -167,16 +167,19 @@
     state: started
 
 # ── Docker Compose services ───────────────────────────────────────────────
-- name: pull Docker images
+- name: log in to GHCR
+  command: docker login ghcr.io -u {{ ghcr_username }} -p {{ ghcr_token }}
+  become_user: ubuntu
+  no_log: true
+
+- name: pull Docker images from GHCR
   command: docker compose pull
   args:
     chdir: "{{ app_dir }}"
   become_user: ubuntu
-  register: compose_pull
-  changed_when: "'Downloaded newer image' in compose_pull.stdout"
 
 - name: start services
-  command: docker compose up -d
+  command: docker compose up -d --no-build
   args:
     chdir: "{{ app_dir }}"
   become_user: ubuntu
