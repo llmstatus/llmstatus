@@ -43,14 +43,17 @@ func TestMoonshot_Identity(t *testing.T) {
 
 func TestMoonshot_ProbeLightInference(t *testing.T) {
 	testOpenAICompatAdapter(t, "moonshot", "moonshot",
-		func(base string) probes.Provider { return NewMoonshotProvider("k", "r", WithNewMoonshotProviderBaseURL(base)) },
+		func(base string) probes.Provider {
+			return NewMoonshotProvider("k", "r", WithNewMoonshotProviderBaseURL(base))
+		},
 		moonshotLightModel,
 	)
 }
 
 func TestMoonshot_Timeout(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		time.Sleep(200 * time.Millisecond); w.WriteHeader(http.StatusOK)
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
 	}))
 	t.Cleanup(srv.Close)
 	p := NewMoonshotProvider("k", "r", WithNewMoonshotProviderBaseURL(srv.URL), WithNewMoonshotProviderHTTPClient(&http.Client{Timeout: 30 * time.Millisecond}))
@@ -70,14 +73,17 @@ func TestZhipu_Identity(t *testing.T) {
 
 func TestZhipu_ProbeLightInference(t *testing.T) {
 	testOpenAICompatAdapter(t, "zhipu", "zhipu",
-		func(base string) probes.Provider { return NewZhipuProvider("k", "r", WithNewZhipuProviderBaseURL(base)) },
+		func(base string) probes.Provider {
+			return NewZhipuProvider("k", "r", WithNewZhipuProviderBaseURL(base))
+		},
 		zhipuLightModel,
 	)
 }
 
 func TestZhipu_Timeout(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		time.Sleep(200 * time.Millisecond); w.WriteHeader(http.StatusOK)
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
 	}))
 	t.Cleanup(srv.Close)
 	p := NewZhipuProvider("k", "r", WithNewZhipuProviderBaseURL(srv.URL), WithNewZhipuProviderHTTPClient(&http.Client{Timeout: 30 * time.Millisecond}))
@@ -97,14 +103,17 @@ func TestZeroOne_Identity(t *testing.T) {
 
 func TestZeroOne_ProbeLightInference(t *testing.T) {
 	testOpenAICompatAdapter(t, "zeroone_ai", "zeroone",
-		func(base string) probes.Provider { return NewZeroOneProvider("k", "r", WithNewZeroOneProviderBaseURL(base)) },
+		func(base string) probes.Provider {
+			return NewZeroOneProvider("k", "r", WithNewZeroOneProviderBaseURL(base))
+		},
 		zerooneLightModel,
 	)
 }
 
 func TestZeroOne_Timeout(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		time.Sleep(200 * time.Millisecond); w.WriteHeader(http.StatusOK)
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
 	}))
 	t.Cleanup(srv.Close)
 	p := NewZeroOneProvider("k", "r", WithNewZeroOneProviderBaseURL(srv.URL), WithNewZeroOneProviderHTTPClient(&http.Client{Timeout: 30 * time.Millisecond}))
@@ -131,7 +140,8 @@ func TestQwen_ProbeLightInference(t *testing.T) {
 
 func TestQwen_Timeout(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		time.Sleep(200 * time.Millisecond); w.WriteHeader(http.StatusOK)
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
 	}))
 	t.Cleanup(srv.Close)
 	p := NewQwenProvider("k", "r", WithNewQwenProviderBaseURL(srv.URL), WithNewQwenProviderHTTPClient(&http.Client{Timeout: 30 * time.Millisecond}))
@@ -160,7 +170,8 @@ func TestFireworks_ProbeLightInference(t *testing.T) {
 
 func TestFireworks_Timeout(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		time.Sleep(200 * time.Millisecond); w.WriteHeader(http.StatusOK)
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
 	}))
 	t.Cleanup(srv.Close)
 	p := NewFireworksProvider("k", "r", WithNewFireworksProviderBaseURL(srv.URL), WithNewFireworksProviderHTTPClient(&http.Client{Timeout: 30 * time.Millisecond}))

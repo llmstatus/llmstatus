@@ -27,7 +27,9 @@ type CohereOption func(*cohereProvider)
 func WithCohereBaseURL(u string) CohereOption { return func(p *cohereProvider) { p.baseURL = u } }
 
 // WithCohereHTTPClient overrides the HTTP client. Intended for tests.
-func WithCohereHTTPClient(c *http.Client) CohereOption { return func(p *cohereProvider) { p.client = c } }
+func WithCohereHTTPClient(c *http.Client) CohereOption {
+	return func(p *cohereProvider) { p.client = c }
+}
 
 // NewCohereProvider returns a probes.Provider backed by api.cohere.com.
 func NewCohereProvider(apiKey, region string, opts ...CohereOption) probes.Provider {

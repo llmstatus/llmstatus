@@ -84,7 +84,7 @@ func TestHandler_ValidProbe(t *testing.T) {
 
 func TestHandler_MissingFields(t *testing.T) {
 	cases := []struct {
-		name  string
+		name   string
 		mutate func(*probes.ProbeResult)
 	}{
 		{"missing provider_id", func(r *probes.ProbeResult) { r.ProviderID = "" }},

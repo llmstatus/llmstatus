@@ -52,7 +52,7 @@ func postWebhook(ctx context.Context, url string, body []byte) error {
 	if err != nil {
 		return fmt.Errorf("send: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("remote returned %d", resp.StatusCode)
 	}

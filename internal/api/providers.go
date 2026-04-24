@@ -7,6 +7,15 @@ import (
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
 
+// Incident and severity values used across multiple handlers.
+const (
+	statusOngoing     = "ongoing"
+	statusOperational = "operational"
+	statusDown        = "down"
+	statusDegraded    = "degraded"
+	severityMajor     = "major"
+)
+
 // ---- response types ---------------------------------------------------------
 
 type modelStat struct {
@@ -71,7 +80,7 @@ func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ongoing, err := s.store.ListIncidentsByStatus(r.Context(), pgstore.ListIncidentsByStatusParams{
-		Status: "ongoing",
+		Status: statusOngoing,
 		Limit:  200,
 		Offset: 0,
 	})
@@ -98,9 +107,9 @@ func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch all InfluxDB stats in parallel (three queries, all non-fatal).
 	var (
-		liveByProvider = make(map[string][2]float64)       // provider_id → [uptime, p95]
-		modelLiveStats = make(map[string][2]float64)       // "pid:model" → [uptime, p95]
-		sparklines     = make(map[string][]float64)        // "pid:model" → [60]float64
+		liveByProvider = make(map[string][2]float64) // provider_id → [uptime, p95]
+		modelLiveStats = make(map[string][2]float64) // "pid:model" → [uptime, p95]
+		sparklines     = make(map[string][]float64)  // "pid:model" → [60]float64
 	)
 	if s.liveStats != nil {
 		ctx := r.Context()
@@ -190,7 +199,7 @@ func (s *Server) getProvider(w http.ResponseWriter, r *http.Request) {
 	incMap := map[string]pgstore.Incident{}
 	if len(activeIncs) > 0 {
 		for _, inc := range activeIncs {
-			if inc.Status == "ongoing" {
+			if inc.Status == statusOngoing {
 				existing, seen := incMap[inc.ProviderID]
 				if !seen || severityRank(inc.Severity) > severityRank(existing.Severity) {
 					incMap[inc.ProviderID] = inc
@@ -263,16 +272,16 @@ func toProviderSummary(p pgstore.Provider, incMap map[string]pgstore.Incident) p
 func deriveStatus(providerID string, incMap map[string]pgstore.Incident) (string, *string) {
 	inc, ok := incMap[providerID]
 	if !ok {
-		return "operational", nil
+		return statusOperational, nil
 	}
 	id := inc.ID.String()
 	switch inc.Severity {
 	case "critical":
-		return "down", &id
-	case "major":
-		return "degraded", &id
+		return statusDown, &id
+	case severityMajor:
+		return statusDegraded, &id
 	default:
-		return "degraded", &id
+		return statusDegraded, &id
 	}
 }
 
@@ -280,7 +289,7 @@ func severityRank(s string) int {
 	switch s {
 	case "critical":
 		return 3
-	case "major":
+	case severityMajor:
 		return 2
 	case "minor":
 		return 1
@@ -306,7 +315,7 @@ func toIncidentRefs(incidents []pgstore.Incident) []incidentRef {
 	// Filter to ongoing only for the "active_incidents" field.
 	out := make([]incidentRef, 0)
 	for _, inc := range incidents {
-		if inc.Status != "ongoing" {
+		if inc.Status != statusOngoing {
 			continue
 		}
 		out = append(out, incidentRef{

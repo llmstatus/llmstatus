@@ -21,7 +21,9 @@ const (
 type NewZhipuProviderOption func(*zhipuProvider)
 
 // WithNewZhipuProviderBaseURL overrides the base URL. Intended for tests.
-func WithNewZhipuProviderBaseURL(u string) NewZhipuProviderOption { return func(p *zhipuProvider) { p.baseURL = u } }
+func WithNewZhipuProviderBaseURL(u string) NewZhipuProviderOption {
+	return func(p *zhipuProvider) { p.baseURL = u }
+}
 
 // WithNewZhipuProviderHTTPClient overrides the HTTP client. Intended for tests.
 func WithNewZhipuProviderHTTPClient(c *http.Client) NewZhipuProviderOption {

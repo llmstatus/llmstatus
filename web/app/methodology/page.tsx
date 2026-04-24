@@ -104,7 +104,7 @@ export default function MethodologyPage() {
           <div className="px-4 py-3 grid grid-cols-[6rem_1fr] gap-4">
             <span className="text-xs font-semibold text-[var(--ink-400)]">Light inference</span>
             <span className="text-xs text-[var(--ink-200)]">
-              Sends a minimal prompt ("Reply with OK"), expects ≤10 token response. Runs every 60 s.
+              Sends a minimal prompt (&quot;Reply with OK&quot;), expects ≤10 token response. Runs every 60 s.
               This is the primary uptime signal.
             </span>
           </div>

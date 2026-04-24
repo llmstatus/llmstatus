@@ -155,7 +155,7 @@ func TestMiddlewareOrdering_RateLimitBeforeApplication(t *testing.T) {
 	// Rate limiter fires at limit=1. Second request should be 429.
 	// CORS and request-ID headers should still appear on the 429 response
 	// because they are added by the outer middleware layers.
-	rl := api.NewRateLimiter(1, 0) // window=0 means every call resets (use window=1min)
+	rl := api.NewRateLimiter(1, 0)               // window=0 means every call resets (use window=1min)
 	rl2 := api.NewRateLimiter(1, 60_000_000_000) // 1 req per minute
 	srv := api.New(&fakeStore{}, api.WithRateLimiter(rl2))
 

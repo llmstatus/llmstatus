@@ -180,7 +180,7 @@ func TestEvaluateLatencyRule_ZeroBaselineP95(t *testing.T) {
 
 func TestEvaluateRegionalRule_Fires(t *testing.T) {
 	regional := []RegionalStats{
-		{ProviderID: "openai", Region: "us-east-1", Total: 10, Errors: 6}, // 60%
+		{ProviderID: "openai", Region: "us-east-1", Total: 10, Errors: 6},  // 60%
 		{ProviderID: "openai", Region: "eu-central", Total: 10, Errors: 0}, // 0% — healthy
 	}
 	// Global stats show openai is NOT down overall.
@@ -235,9 +235,9 @@ func TestEvaluateRegionalRule_TooFewProbes(t *testing.T) {
 
 func TestEvaluateRegionalRule_MultipleRegions(t *testing.T) {
 	regional := []RegionalStats{
-		{ProviderID: "openai", Region: "us-east-1", Total: 10, Errors: 6}, // 60% — fire
+		{ProviderID: "openai", Region: "us-east-1", Total: 10, Errors: 6},      // 60% — fire
 		{ProviderID: "openai", Region: "ap-northeast-1", Total: 10, Errors: 9}, // 90% — fire
-		{ProviderID: "openai", Region: "eu-central", Total: 10, Errors: 0}, // healthy
+		{ProviderID: "openai", Region: "eu-central", Total: 10, Errors: 0},     // healthy
 	}
 	global := []ProbeStats{{ProviderID: "openai", Total: 30, Errors: 15}} // 50% — exactly at threshold, NOT > threshold
 	detections := EvaluateRegionalRule(regional, global)

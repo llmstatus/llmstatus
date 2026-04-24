@@ -20,10 +20,10 @@ import (
 // fakeAuthStore implements api.AuthStore for unit tests.
 type fakeAuthStore struct {
 	fakeStore
-	subs          []pgstore.Subscription
-	subRows       []pgstore.ListSubscriptionsByUserRow
-	createErr     error
-	users         []pgstore.User
+	subs      []pgstore.Subscription
+	subRows   []pgstore.ListSubscriptionsByUserRow
+	createErr error
+	users     []pgstore.User
 }
 
 func (f *fakeAuthStore) UpsertUser(_ context.Context, e string) (pgstore.User, error) {
@@ -117,6 +117,7 @@ func newAuthServer(store *fakeAuthStore) *api.Server {
 	}))
 }
 
+//nolint:unparam
 func bearerHeader(t *testing.T, userID int64, email string) string {
 	t.Helper()
 	tok, err := auth.SignJWT(userID, email, testJWTSecret)

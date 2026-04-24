@@ -115,8 +115,8 @@ type geminiPart struct {
 }
 
 type geminiGenerateRequest struct {
-	Contents         []geminiContent  `json:"contents"`
-	GenerationConfig geminiGenConfig  `json:"generationConfig"`
+	Contents         []geminiContent `json:"contents"`
+	GenerationConfig geminiGenConfig `json:"generationConfig"`
 }
 
 type geminiGenConfig struct {

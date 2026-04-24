@@ -1,8 +1,8 @@
 export interface OptimisticItem {
   id: string
   _optimistic?: boolean
-  _originalValue?: any
-  [key: string]: any
+  _originalValue?: unknown
+  [key: string]: unknown
 }
 
 export function optimisticUpdate<T extends OptimisticItem>(

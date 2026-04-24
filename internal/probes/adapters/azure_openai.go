@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	azureOpenAIDefaultBaseURL   = "https://%s.openai.azure.com"
+	azureOpenAIDefaultBaseURL    = "https://%s.openai.azure.com"
 	azureOpenAIDefaultAPIVersion = "2024-10-21"
-	azureOpenAIProviderID       = "azure_openai"
-	azureOpenAILightProbeType   = "light_inference"
-	azureOpenAIErrorDetailMax   = 200
+	azureOpenAIProviderID        = "azure_openai"
+	azureOpenAILightProbeType    = "light_inference"
+	azureOpenAIErrorDetailMax    = 200
 )
 
 // AzureOpenAIOption configures an Azure OpenAI provider at construction time.

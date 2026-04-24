@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	defaultInterval    = 60 * time.Second
+	defaultInterval     = 60 * time.Second
 	defaultProbeTimeout = 30 * time.Second
-	defaultConcurrency = 8
+	defaultConcurrency  = 8
 )
 
 // ResultSink receives probe results. Implementations include LogSink (default)

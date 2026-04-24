@@ -1,3 +1,4 @@
+// Package auth provides JWT token generation and validation.
 package auth
 
 import (
@@ -7,9 +8,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// TokenTTL is the duration a JWT token is valid.
 const TokenTTL = 30 * 24 * time.Hour
+
+// CookieName is the HTTP cookie name for the JWT token.
 const CookieName = "llms_session"
 
+// Claims holds the JWT payload fields.
 type Claims struct {
 	UserID int64  `json:"uid"`
 	Email  string `json:"email"`

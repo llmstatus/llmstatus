@@ -110,8 +110,8 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: api.New(store, opts...),
+		Addr:         addr,
+		Handler:      api.New(store, opts...),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,

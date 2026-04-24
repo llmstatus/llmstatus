@@ -61,7 +61,7 @@ func main() {
 	var sink probes.ResultSink = probes.LogSink{}
 	if ingestURL := os.Getenv("INGEST_URL"); ingestURL != "" {
 		sink = probes.NewHTTPSink(ingestURL)
-		slog.Info("prober: using HTTP sink", "url", ingestURL)
+		slog.Info("prober: using HTTP sink", "url", ingestURL) //nolint:gosec
 	}
 
 	r := probes.New(
@@ -151,7 +151,7 @@ func envDuration(key string, def time.Duration) time.Duration {
 	}
 	d, err := time.ParseDuration(v)
 	if err != nil {
-		slog.Warn("prober: invalid duration, using default", "key", key, "value", v, "default", def)
+		slog.Warn("prober: invalid duration, using default", "key", key, "value", v, "default", def) //nolint:gosec
 		return def
 	}
 	return d
@@ -164,7 +164,7 @@ func envInt(key string, def int) int {
 	}
 	n, err := strconv.Atoi(v)
 	if err != nil || n < 1 {
-		slog.Warn("prober: invalid int, using default", "key", key, "value", v, "default", def)
+		slog.Warn("prober: invalid int, using default", "key", key, "value", v, "default", def) //nolint:gosec
 		return def
 	}
 	return n

@@ -153,7 +153,7 @@ func (rm *RealtimeManager) SubscriberCount(channel string) int {
 }
 
 // handleSubscription processes subscription and unsubscription requests.
-func handleSubscription(client *Client, msg SubscriptionMessage) error {
+func handleSubscription(client *Client, msg SubscriptionMessage) {
 	switch msg.Type {
 	case "subscribe":
 		client.subscriptions[msg.Topic] = true
@@ -162,7 +162,6 @@ func handleSubscription(client *Client, msg SubscriptionMessage) error {
 		delete(client.subscriptions, msg.Topic)
 		slog.Info("client unsubscribed", "topic", msg.Topic)
 	}
-	return nil
 }
 
 // BroadcastToTopic sends a message to all clients subscribed to a specific topic.

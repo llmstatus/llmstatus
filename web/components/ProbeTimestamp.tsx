@@ -28,6 +28,9 @@ export function ProbeTimestamp({ iso, prefix }: Props) {
   const [label, setLabel] = useState(() => relativeTime(iso));
 
   useEffect(() => {
+    // Sync label to new `iso` prop on change, then poll every 10 s.
+    // The synchronous setState is intentional: it avoids a one-tick stale display.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLabel(relativeTime(iso));
     const id = setInterval(() => setLabel(relativeTime(iso)), 10_000);
     return () => clearInterval(id);

@@ -18,7 +18,7 @@ func TestWebSocketUpgrade(t *testing.T) {
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
 	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
 	require.NoError(t, err)
-	defer ws.Close()
+	defer ws.Close() //nolint:errcheck
 
 	// Should receive connection confirmation
 	var msg map[string]interface{}
@@ -39,7 +39,7 @@ func TestWebSocketClientRegistration(t *testing.T) {
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
 	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
 	require.NoError(t, err)
-	defer ws.Close()
+	defer ws.Close() //nolint:errcheck
 
 	// Receive connection confirmation
 	var msg map[string]interface{}
@@ -68,7 +68,7 @@ func TestWebSocketMultipleClients(t *testing.T) {
 	// Connect first client
 	ws1, _, err := websocket.DefaultDialer.Dial(url, nil)
 	require.NoError(t, err)
-	defer ws1.Close()
+	defer ws1.Close() //nolint:errcheck
 
 	var msg1 map[string]interface{}
 	err = ws1.ReadJSON(&msg1)
@@ -77,7 +77,7 @@ func TestWebSocketMultipleClients(t *testing.T) {
 	// Connect second client
 	ws2, _, err := websocket.DefaultDialer.Dial(url, nil)
 	require.NoError(t, err)
-	defer ws2.Close()
+	defer ws2.Close() //nolint:errcheck
 
 	var msg2 map[string]interface{}
 	err = ws2.ReadJSON(&msg2)
@@ -116,7 +116,7 @@ func TestWebSocketClientDisconnection(t *testing.T) {
 	assert.Equal(t, 1, initialCount)
 
 	// Close connection
-	ws.Close()
+	_ = ws.Close()
 
 	// Give hub time to process unregister
 	// In production, this would be handled by the client read loop detecting closure

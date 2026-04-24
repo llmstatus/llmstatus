@@ -75,6 +75,7 @@ func newDigestNotifier(t *testing.T, store *digestStore) *Notifier {
 	})
 }
 
+//nolint:unparam
 func userFixture(id int64, digestHour int, tz string) pgstore.User {
 	return pgstore.User{
 		ID:         id,

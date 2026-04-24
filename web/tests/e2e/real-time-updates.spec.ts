@@ -5,31 +5,28 @@ test.describe('Real-time Updates', () => {
     // Mock WebSocket for testing
     await page.addInitScript(() => {
       class MockWebSocket {
-        constructor(url: string) {
+        onopen: ((event: Event) => void) | null = null
+        onmessage: ((event: MessageEvent) => void) | null = null
+        onclose: ((event: CloseEvent) => void) | null = null
+        onerror: ((event: Event) => void) | null = null
+
+        constructor(_url: string) {
           setTimeout(() => {
-            this.onopen?.({ type: 'open' })
-            this.onmessage?.({
-              type: 'message',
+            this.onopen?.(new Event('open'))
+            this.onmessage?.(new MessageEvent('message', {
               data: JSON.stringify({ type: 'connected' })
-            })
+            }))
           }, 100)
         }
 
-        send(data: string) {
-          // Mock send
-        }
+        send(_data: string) {}
 
         close() {
-          this.onclose?.({ type: 'close' })
+          this.onclose?.(new CloseEvent('close'))
         }
-
-        onopen: ((event: any) => void) | null = null
-        onmessage: ((event: any) => void) | null = null
-        onclose: ((event: any) => void) | null = null
-        onerror: ((event: any) => void) | null = null
       }
 
-      (window as any).WebSocket = MockWebSocket
+      ;(window as unknown as Record<string, unknown>).WebSocket = MockWebSocket
     })
 
     await page.goto('/')
