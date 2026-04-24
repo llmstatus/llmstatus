@@ -27,14 +27,15 @@ func TestIntegration_Provider(t *testing.T) {
 
 	t.Run("upsert and get", func(t *testing.T) {
 		err := q.UpsertProvider(ctx, pgstore.UpsertProviderParams{
-			ID:       "test_openai",
-			Name:     "OpenAI",
-			Category: "official",
-			BaseUrl:  "https://api.openai.com",
-			AuthType: "bearer",
-			Region:   "global",
-			Active:   true,
-			Config:   json.RawMessage(`{"models":["gpt-4o-mini"]}`),
+			ID:         "test_openai",
+			Name:       "OpenAI",
+			Category:   "official",
+			BaseUrl:    "https://api.openai.com",
+			AuthType:   "bearer",
+			Region:     "global",
+			Active:     true,
+			Config:     json.RawMessage(`{"models":["gpt-4o-mini"]}`),
+			ProbeScope: "global",
 		})
 		if err != nil {
 			t.Fatalf("UpsertProvider: %v", err)
@@ -57,14 +58,15 @@ func TestIntegration_Provider(t *testing.T) {
 
 	t.Run("upsert is idempotent", func(t *testing.T) {
 		params := pgstore.UpsertProviderParams{
-			ID:       "test_openai",
-			Name:     "OpenAI (updated)",
-			Category: "official",
-			BaseUrl:  "https://api.openai.com",
-			AuthType: "bearer",
-			Region:   "us",
-			Active:   true,
-			Config:   json.RawMessage(`{}`),
+			ID:         "test_openai",
+			Name:       "OpenAI (updated)",
+			Category:   "official",
+			BaseUrl:    "https://api.openai.com",
+			AuthType:   "bearer",
+			Region:     "us",
+			Active:     true,
+			Config:     json.RawMessage(`{}`),
+			ProbeScope: "global",
 		}
 		if err := q.UpsertProvider(ctx, params); err != nil {
 			t.Fatalf("UpsertProvider (2nd): %v", err)
@@ -85,7 +87,7 @@ func TestIntegration_Provider(t *testing.T) {
 		_ = q.UpsertProvider(ctx, pgstore.UpsertProviderParams{
 			ID: "test_inactive", Name: "Inactive", Category: "official",
 			BaseUrl: "https://x.test", AuthType: "bearer", Region: "global",
-			Active: false, Config: json.RawMessage(`{}`),
+			Active: false, Config: json.RawMessage(`{}`), ProbeScope: "global",
 		})
 
 		active, err := q.ListActiveProviders(ctx)
