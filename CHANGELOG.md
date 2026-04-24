@@ -10,6 +10,10 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Changed (LLMS-070)
+- Refactor 7 production functions exceeding cyclomatic complexity 10: `handleCreateSubscription`, `handleUpdateSubscription`, `handleOAuthUpsert`, `AllModelSparklines`, `ProviderRegionStats`, `cmd/migrate main`, `cmd/api main`; extract helpers `fetchOwnedSub`, `mergeSubFields`, `resolveEmailPrefs`, `classifySubCreateError`, `decodeOAuthBody`, `indexSparklinesFromRows`, `foldRegionRows`, `newMigrator`, `closeMigrator`, `runDown`, `runForce`, `buildAuthConfig`, `runServer`
+- All extracted helpers are ≤ 7 complexity; no behaviour changes
+
 ### Fixed
 - Add missing `internal/api/websocket.go` (WebSocket Hub/Client types) omitted from prior commits, causing all PR CI runs to fail with undefined symbols
 - Fix `otprl.RedisLimiter.Allow`: use `SetArgs` method instead of incorrect `Set` call for NX+TTL semantics
