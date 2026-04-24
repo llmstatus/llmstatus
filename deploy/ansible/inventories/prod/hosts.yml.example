@@ -1,0 +1,37 @@
+---
+# Production inventory — EXAMPLE TEMPLATE
+#
+# Copy this file to hosts.yml and fill in the real IPs from:
+#   cd deploy/terraform/prod && terraform output ansible_inventory_hint
+#
+# hosts.yml is gitignored. Never commit real IP addresses.
+
+all:
+  children:
+    main:
+      hosts:
+        main_server:
+          ansible_host: <MAIN_SERVER_IP>
+          ansible_user: ubuntu
+    probes:
+      hosts:
+        probe_us_east_1:
+          ansible_host: <US_EAST_1_IP>
+          ansible_user: ubuntu
+          probe_node_name: us-east-1
+          probe_region: us-east-1
+        probe_ap_northeast_1:
+          ansible_host: <AP_NORTHEAST_1_IP>
+          ansible_user: ubuntu
+          probe_node_name: ap-northeast-1
+          probe_region: ap-northeast-1
+        probe_ap_southeast_1:
+          ansible_host: <AP_SOUTHEAST_1_IP>
+          ansible_user: ubuntu
+          probe_node_name: ap-southeast-1
+          probe_region: ap-southeast-1
+        probe_eu_central_1:
+          ansible_host: <EU_CENTRAL_1_IP>
+          ansible_user: ubuntu
+          probe_node_name: eu-central-1
+          probe_region: eu-central-1

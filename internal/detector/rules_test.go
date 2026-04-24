@@ -316,7 +316,6 @@ func TestRunner_RegionalOutage_CreatesIncident(t *testing.T) {
 type latencyFakeReader struct {
 	current  []LatencyStats
 	baseline []LatencyStats
-	callN    int
 }
 
 func (f *latencyFakeReader) ErrorRateByProvider(_ context.Context, _ time.Duration) ([]ProbeStats, error) {

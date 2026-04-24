@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"log/slog"
-	"sync"
 	"time"
 )
 
@@ -49,7 +48,6 @@ type IncidentUpdate struct {
 // RealtimeManager handles real-time subscriptions and broadcasts.
 type RealtimeManager struct {
 	hub *Hub
-	mu  sync.RWMutex
 }
 
 // NewRealtimeManager creates a new RealtimeManager instance.

@@ -11,19 +11,6 @@ import (
 	"github.com/llmstatus/llmstatus/internal/probes"
 )
 
-// testOpenAICompatTimeout is a shared timeout sub-test for adapters that use
-// probeOpenAICompat. The caller supplies a provider already configured with
-// a short-timeout HTTP client.
-func runTimeoutTest(t *testing.T, p probes.Provider, model string) {
-	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		time.Sleep(200 * time.Millisecond)
-		w.WriteHeader(http.StatusOK)
-	}))
-	t.Cleanup(srv.Close)
-	_ = srv
-}
-
 func testIdentity(t *testing.T, p probes.Provider, wantID, wantModel string) {
 	t.Helper()
 	if p.ID() != wantID {

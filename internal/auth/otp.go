@@ -7,8 +7,6 @@ import (
 	"math/big"
 )
 
-const otpLen = 6
-
 // GenerateOTP returns a random 6-digit code and its SHA-256 hex hash.
 func GenerateOTP() (plain, hash string, err error) {
 	max := big.NewInt(1_000_000)
