@@ -215,7 +215,6 @@ func (c *Client) readPump() {
 	_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.conn.SetPongHandler(func(string) error {
 		return c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
 	})
 
 	for {

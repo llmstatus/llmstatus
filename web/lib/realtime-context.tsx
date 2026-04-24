@@ -28,9 +28,9 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         dispatch({
           type: 'PROVIDER_UPDATE',
           provider: {
-            id: message.provider_id,
-            status: message.status,
-            lastUpdated: message.timestamp || Date.now(),
+            id: message.provider_id as string,
+            status: message.status as 'operational' | 'degraded' | 'down',
+            lastUpdated: (message.timestamp as number | undefined) || Date.now(),
           },
         })
       }
