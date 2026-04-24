@@ -161,7 +161,7 @@ services:
       args:
         CMD: notifier
     container_name: llmstatus-notifier
-    restart: unless-stopped
+    restart: on-failure
     environment:
       DATABASE_URL: postgres://llmstatus:${POSTGRES_PASSWORD:-llmstatus}@db:5432/llmstatus?sslmode=disable
       RESEND_API_KEY: ${RESEND_API_KEY:-}
