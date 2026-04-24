@@ -10,9 +10,7 @@
 #   influx   — InfluxDB 3 Core      host:18086 → container:8181
 #   ingest   — probe ingest API     host:18080 → container:8080
 #   api      — public read API      host:18081 → container:8081
-#
-# Next.js dev server runs OUTSIDE Docker:
-#   cd web && npm run dev           (reads web/.env.local, listens on :13000)
+#   web      — Next.js frontend     host:13000 → container:3000
 #
 # First-time setup:
 #   cp .env.example .env
@@ -23,7 +21,7 @@
 #   cd web && npm run dev          # browser → http://localhost:13000
 #
 # Usage:
-#   docker compose up -d            # start backend (db, influx, api, ingest, detector)
+#   docker compose up -d            # start all services
 #   docker compose logs -f api      # tail a service
 #   docker compose down -v          # stop and wipe volumes
 
@@ -37,10 +35,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: llmstatus
-      POSTGRES_PASSWORD: llmstatus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-llmstatus}
       POSTGRES_DB: llmstatus
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - ${POSTGRES_DATA_DIR:-./data/postgres}:/var/lib/postgresql/data
     ports:
       - "15432:5432"
     healthcheck:
@@ -53,11 +51,11 @@ services:
     image: influxdb:3-core
     container_name: llmstatus-influx
     restart: unless-stopped
-    command: serve --without-auth   # dev only; prod uses token auth
+    command: serve --without-auth
     environment:
-      INFLUXDB3_NODE_IDENTIFIER_PREFIX: local-dev
+      INFLUXDB3_NODE_IDENTIFIER_PREFIX: ${REGION_ID:-local-dev}
     volumes:
-      - influx_data:/var/lib/influxdb3
+      - ${INFLUX_DATA_DIR:-./data/influx}:/var/lib/influxdb3
     ports:
       - "18086:8181"
     healthcheck:
@@ -76,7 +74,7 @@ services:
         CMD: migrate
     container_name: llmstatus-migrate
     environment:
-      DATABASE_URL: pgx5://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      DATABASE_URL: pgx5://llmstatus:${POSTGRES_PASSWORD:-llmstatus}@db:5432/llmstatus?sslmode=disable
     depends_on:
       db:
         condition: service_healthy
@@ -95,7 +93,7 @@ services:
     environment:
       INFLUX_HOST: http://influx:8181
       INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
-      INFLUX_DATABASE: ${INFLUX_DATABASE:-llmstatus}
+      INFLUX_DATABASE: ${INFLUX_DATABASE:-probes}
       INGEST_ADDR: ":8080"
     depends_on:
       influx:
@@ -112,10 +110,10 @@ services:
     container_name: llmstatus-detector
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      DATABASE_URL: postgres://llmstatus:${POSTGRES_PASSWORD:-llmstatus}@db:5432/llmstatus?sslmode=disable
       INFLUX_HOST: http://influx:8181
       INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
-      INFLUX_DATABASE: ${INFLUX_DATABASE:-llmstatus}
+      INFLUX_DATABASE: ${INFLUX_DATABASE:-probes}
       DETECTOR_INTERVAL: ${DETECTOR_INTERVAL:-60s}
     depends_on:
       db:
@@ -132,10 +130,10 @@ services:
     container_name: llmstatus-api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      DATABASE_URL: postgres://llmstatus:${POSTGRES_PASSWORD:-llmstatus}@db:5432/llmstatus?sslmode=disable
       INFLUX_HOST: http://influx:8181
       INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
-      INFLUX_DATABASE: ${INFLUX_DATABASE:-llmstatus}
+      INFLUX_DATABASE: ${INFLUX_DATABASE:-probes}
       API_ADDR: ":8081"
       API_RATE_LIMIT: ${API_RATE_LIMIT:-60}
     depends_on:
@@ -160,7 +158,7 @@ services:
     container_name: llmstatus-notifier
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      DATABASE_URL: postgres://llmstatus:${POSTGRES_PASSWORD:-llmstatus}@db:5432/llmstatus?sslmode=disable
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@llmstatus.io}
       SITE_URL: ${SITE_URL:-https://llmstatus.io}
@@ -185,10 +183,8 @@ services:
         condition: service_healthy
     ports:
       - "13000:3000"
-    profiles:
-      - web-docker
 
-  # ── local probe runner (dev only) ──────────────────────────────────────────
+  # ── probe runner ──────────────────────────────────────────────────────────
 
   prober:
     build:
@@ -199,7 +195,7 @@ services:
     container_name: llmstatus-prober
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://llmstatus:llmstatus@db:5432/llmstatus?sslmode=disable
+      DATABASE_URL: postgres://llmstatus:${POSTGRES_PASSWORD:-llmstatus}@db:5432/llmstatus?sslmode=disable
       REGION_ID: ${REGION_ID:-local-dev}
       PROBE_INTERVAL: ${PROBE_INTERVAL:-60s}
       PROBE_TIMEOUT: ${PROBE_TIMEOUT:-30s}
@@ -233,9 +229,3 @@ services:
         condition: service_healthy
       ingest:
         condition: service_started
-    profiles:
-      - prober
-
-volumes:
-  db_data:
-  influx_data:

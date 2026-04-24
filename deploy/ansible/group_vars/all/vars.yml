@@ -9,3 +9,6 @@ ingest_url: "https://llmstatus.io/ingest"
 
 # Go binary version tag to deploy
 app_version: main
+
+# Region ID for the main server probe node
+main_region_id: us-west-2

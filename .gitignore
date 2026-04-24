@@ -52,6 +52,7 @@ pnpm-debug.log*
 
 # Docker
 docker-compose.override.yml
+data/
 
 # Go compiled binaries (build artifacts — never commit)
 /api
@@ -62,3 +63,6 @@ docker-compose.override.yml
 
 # Ansible production inventory (contains live IPs — use hosts.yml.example as template)
 deploy/ansible/inventories/prod/hosts.yml
+
+# Ansible vault (plain-text secrets — keep locally, never commit unencrypted)
+deploy/ansible/group_vars/all/vault.yml

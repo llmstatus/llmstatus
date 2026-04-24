@@ -87,9 +87,22 @@ func (p *anthropicProvider) ProbeStreaming(ctx context.Context, model string) (p
 		return r, nil
 	}
 
-	gotToken := false
+	durationMs, gotToken := scanAnthropicStream(bufio.NewScanner(resp.Body), started)
+	r.DurationMs = durationMs
+	if !gotToken {
+		r.ErrorClass = probes.ErrorClassMalformedBody
+		r.ErrorDetail = "stream ended without content token"
+		return r, nil
+	}
+
+	r.Success = true
+	return r, nil
+}
+
+// scanAnthropicStream reads SSE lines until a text_delta token is found.
+// Returns the elapsed ms and whether a token was received.
+func scanAnthropicStream(scanner *bufio.Scanner, started time.Time) (int64, bool) {
 	var currentEvent string
-	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "event: ") {
@@ -104,19 +117,8 @@ func (p *anthropicProvider) ProbeStreaming(ctx context.Context, model string) (p
 			continue
 		}
 		if delta.Delta.Type == "text_delta" && delta.Delta.Text != "" {
-			r.DurationMs = time.Since(started).Milliseconds()
-			gotToken = true
-			break
+			return time.Since(started).Milliseconds(), true
 		}
 	}
-
-	if !gotToken {
-		r.DurationMs = time.Since(started).Milliseconds()
-		r.ErrorClass = probes.ErrorClassMalformedBody
-		r.ErrorDetail = "stream ended without content token"
-		return r, nil
-	}
-
-	r.Success = true
-	return r, nil
+	return time.Since(started).Milliseconds(), false
 }

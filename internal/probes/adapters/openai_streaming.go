@@ -86,8 +86,21 @@ func (p *openaiProvider) ProbeStreaming(ctx context.Context, model string) (prob
 		return r, nil
 	}
 
-	gotToken := false
-	scanner := bufio.NewScanner(resp.Body)
+	durationMs, gotToken := scanOpenAIStream(bufio.NewScanner(resp.Body), started)
+	r.DurationMs = durationMs
+	if !gotToken {
+		r.ErrorClass = probes.ErrorClassMalformedBody
+		r.ErrorDetail = "stream ended without content token"
+		return r, nil
+	}
+
+	r.Success = true
+	return r, nil
+}
+
+// scanOpenAIStream reads SSE lines until a non-empty content token is found.
+// Returns the elapsed ms and whether a token was received.
+func scanOpenAIStream(scanner *bufio.Scanner, started time.Time) (int64, bool) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if !strings.HasPrefix(line, "data: ") {
@@ -102,19 +115,8 @@ func (p *openaiProvider) ProbeStreaming(ctx context.Context, model string) (prob
 			continue
 		}
 		if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
-			r.DurationMs = time.Since(started).Milliseconds()
-			gotToken = true
-			break
+			return time.Since(started).Milliseconds(), true
 		}
 	}
-
-	if !gotToken {
-		r.DurationMs = time.Since(started).Milliseconds()
-		r.ErrorClass = probes.ErrorClassMalformedBody
-		r.ErrorDetail = "stream ended without content token"
-		return r, nil
-	}
-
-	r.Success = true
-	return r, nil
+	return time.Since(started).Milliseconds(), false
 }
