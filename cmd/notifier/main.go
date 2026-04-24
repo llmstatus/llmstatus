@@ -29,7 +29,11 @@ import (
 
 func main() {
 	dbURL := requireEnv("DATABASE_URL")
-	resendKey := requireEnv("RESEND_API_KEY")
+	resendKey := os.Getenv("RESEND_API_KEY")
+	if resendKey == "" {
+		slog.Info("notifier: RESEND_API_KEY not set, email notifications disabled")
+		return
+	}
 	emailFrom := envOr("EMAIL_FROM", "noreply@llmstatus.io")
 	siteURL := envOr("SITE_URL", "https://llmstatus.io")
 	interval := envDuration("NOTIFIER_POLL_INTERVAL", 30*time.Second)
