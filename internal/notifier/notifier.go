@@ -44,6 +44,7 @@ type Notifier struct {
 	cfg Config
 }
 
+// New creates a Notifier wired to the given dependencies.
 func New(cfg Config) *Notifier {
 	if cfg.Interval <= 0 {
 		cfg.Interval = 30 * time.Second
@@ -166,15 +167,15 @@ func incidentEvent(status string) string {
 }
 
 type webhookPayload struct {
-	Event      string  `json:"event"`
-	ProviderID string  `json:"provider_id"`
+	Event      string    `json:"event"`
+	ProviderID string    `json:"provider_id"`
 	IncidentID uuid.UUID `json:"incident_id"`
-	Severity   string  `json:"severity"`
-	Title      string  `json:"title"`
-	Status     string  `json:"status"`
-	StartedAt  string  `json:"started_at"`
-	ResolvedAt *string `json:"resolved_at,omitempty"`
-	URL        string  `json:"url"`
+	Severity   string    `json:"severity"`
+	Title      string    `json:"title"`
+	Status     string    `json:"status"`
+	StartedAt  string    `json:"started_at"`
+	ResolvedAt *string   `json:"resolved_at,omitempty"`
+	URL        string    `json:"url"`
 }
 
 func buildPayload(inc pgstore.Incident, event, siteURL string) webhookPayload {

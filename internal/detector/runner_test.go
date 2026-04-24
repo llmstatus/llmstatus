@@ -16,11 +16,11 @@ import (
 // ---- fake ProbeReader -------------------------------------------------------
 
 type fakeReader struct {
-	stats5m   []ProbeStats
-	stats10m  []ProbeStats
-	latency   []LatencyStats
-	regional  []RegionalStats
-	err       error
+	stats5m  []ProbeStats
+	stats10m []ProbeStats
+	latency  []LatencyStats
+	regional []RegionalStats
+	err      error
 }
 
 func (f *fakeReader) ErrorRateByProvider(_ context.Context, window time.Duration) ([]ProbeStats, error) {
@@ -44,13 +44,13 @@ func (f *fakeReader) RegionalErrorRateByProvider(_ context.Context, _ time.Durat
 // ---- fake IncidentStore -----------------------------------------------------
 
 type fakeIncidentStore struct {
-	incidents   []pgstore.Incident
-	created     []pgstore.CreateIncidentParams
-	resolved    []pgstore.ResolveIncidentParams
-	getErr      error // non-nil → GetOngoingByProviderAndRule returns this error
-	createErr   error // non-nil → CreateIncident returns this error
-	listErr     error // non-nil → ListIncidentsByStatus returns this error
-	resolveErr  error // non-nil → ResolveIncident returns this error
+	incidents  []pgstore.Incident
+	created    []pgstore.CreateIncidentParams
+	resolved   []pgstore.ResolveIncidentParams
+	getErr     error // non-nil → GetOngoingByProviderAndRule returns this error
+	createErr  error // non-nil → CreateIncident returns this error
+	listErr    error // non-nil → ListIncidentsByStatus returns this error
+	resolveErr error // non-nil → ResolveIncident returns this error
 }
 
 func (f *fakeIncidentStore) GetOngoingByProviderAndRule(_ context.Context, arg pgstore.GetOngoingByProviderAndRuleParams) (pgstore.Incident, error) {

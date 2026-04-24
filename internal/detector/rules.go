@@ -1,5 +1,6 @@
 package detector
 
+// Detection rule identifiers.
 const (
 	RuleProviderDown       = "provider_down"
 	RuleElevatedErrors     = "elevated_errors"

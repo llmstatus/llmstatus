@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	anthropicDefaultBaseURL  = "https://api.anthropic.com/v1"
-	anthropicProviderID      = "anthropic"
-	anthropicVersion         = "2023-06-01"
-	anthropicLightModel      = "claude-haiku-4-5-20251001"
-	anthropicLightProbeType  = "light_inference"
-	anthropicErrorDetailMax  = 200
+	anthropicDefaultBaseURL = "https://api.anthropic.com/v1"
+	anthropicProviderID     = "anthropic"
+	anthropicVersion        = "2023-06-01"
+	anthropicLightModel     = "claude-haiku-4-5-20251001"
+	anthropicLightProbeType = "light_inference"
+	anthropicErrorDetailMax = 200
 	// 529 is Anthropic's non-standard "overloaded" HTTP status (see docs/known-quirks.md).
 	anthropicStatusOverloaded = 529
 )

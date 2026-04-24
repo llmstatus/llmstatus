@@ -12,5 +12,5 @@ export interface SubscriptionMessage {
 
 export interface WebSocketMessage {
   type: string
-  [key: string]: any
+  [key: string]: unknown
 }

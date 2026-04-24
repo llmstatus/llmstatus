@@ -2,8 +2,8 @@ package influx
 
 import (
 	"context"
-	"net/http"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"

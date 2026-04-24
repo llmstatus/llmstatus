@@ -122,7 +122,7 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			for client := range h.clients {
 				close(client.send)
-				client.conn.Close()
+				_ = client.conn.Close()
 			}
 			h.clients = make(map[*Client]bool)
 			h.mu.Unlock()
@@ -195,7 +195,7 @@ func HandleWebSocketWithHub(w http.ResponseWriter, r *http.Request, hub *Hub) {
 	confirmMsg := map[string]string{"type": "connected"}
 	if err := conn.WriteJSON(confirmMsg); err != nil {
 		slog.Error("websocket: failed to send connection confirmation", "err", err)
-		conn.Close()
+		_ = conn.Close()
 		hub.unregister <- client
 		return
 	}
@@ -209,12 +209,12 @@ func HandleWebSocketWithHub(w http.ResponseWriter, r *http.Request, hub *Hub) {
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 
-	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
 
@@ -256,15 +256,15 @@ func (c *Client) writePump() {
 	ticker := time.NewTicker(54 * time.Second)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 
 	for {
 		select {
 		case message, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -273,7 +273,7 @@ func (c *Client) writePump() {
 			}
 
 		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}

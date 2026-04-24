@@ -1,3 +1,4 @@
+// Package detector implements event detection rules and readers.
 package detector
 
 import (

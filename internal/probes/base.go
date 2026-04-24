@@ -45,6 +45,7 @@ type Provider interface {
 // METHODOLOGY.md §5.4. Do not add new values without a methodology PR.
 type ErrorClass string
 
+// Error classification constants.
 const (
 	ErrorClassNone            ErrorClass = ""
 	ErrorClassTimeout         ErrorClass = "timeout"

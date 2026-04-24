@@ -1,13 +1,13 @@
 package api
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"text/template"
 	"time"
-	"encoding/xml"
 
 	"github.com/jackc/pgx/v5"
 

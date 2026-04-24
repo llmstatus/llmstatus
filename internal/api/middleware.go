@@ -70,7 +70,7 @@ func accessLogMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 
 		id, _ := r.Context().Value(ctxKeyRequestID).(string)
-		slog.Info("api: request",
+		slog.Info("api: request", //nolint:gosec
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", rw.status,

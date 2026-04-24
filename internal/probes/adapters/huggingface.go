@@ -21,7 +21,9 @@ const (
 type NewHuggingFaceProviderOption func(*huggingfaceProvider)
 
 // WithNewHuggingFaceProviderBaseURL overrides the base URL. Intended for tests.
-func WithNewHuggingFaceProviderBaseURL(u string) NewHuggingFaceProviderOption { return func(p *huggingfaceProvider) { p.baseURL = u } }
+func WithNewHuggingFaceProviderBaseURL(u string) NewHuggingFaceProviderOption {
+	return func(p *huggingfaceProvider) { p.baseURL = u }
+}
 
 // WithNewHuggingFaceProviderHTTPClient overrides the HTTP client. Intended for tests.
 func WithNewHuggingFaceProviderHTTPClient(c *http.Client) NewHuggingFaceProviderOption {

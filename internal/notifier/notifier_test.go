@@ -24,6 +24,7 @@ type fakeStore struct {
 	sent      map[string]bool
 }
 
+//nolint:unparam
 func alertKey(subID int64, incID uuid.UUID, ch, ev string) string {
 	return incID.String() + ":" + ch + ":" + ev
 }
@@ -68,6 +69,7 @@ func incidentFixture(providerID, status, severity string) pgstore.Incident {
 	}
 }
 
+//nolint:unparam
 func subFixture(providerID, minSev, userEmail string, emailAlerts bool, webhookURL string) pgstore.ListSubscriptionsForProviderRow {
 	row := pgstore.ListSubscriptionsForProviderRow{
 		ID:           1,

@@ -21,7 +21,9 @@ const (
 type NewMinimaxProviderOption func(*minimaxProvider)
 
 // WithNewMinimaxProviderBaseURL overrides the base URL. Intended for tests.
-func WithNewMinimaxProviderBaseURL(u string) NewMinimaxProviderOption { return func(p *minimaxProvider) { p.baseURL = u } }
+func WithNewMinimaxProviderBaseURL(u string) NewMinimaxProviderOption {
+	return func(p *minimaxProvider) { p.baseURL = u }
+}
 
 // WithNewMinimaxProviderHTTPClient overrides the HTTP client. Intended for tests.
 func WithNewMinimaxProviderHTTPClient(c *http.Client) NewMinimaxProviderOption {

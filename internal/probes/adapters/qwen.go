@@ -21,7 +21,9 @@ const (
 type NewQwenProviderOption func(*qwenProvider)
 
 // WithNewQwenProviderBaseURL overrides the base URL. Intended for tests.
-func WithNewQwenProviderBaseURL(u string) NewQwenProviderOption { return func(p *qwenProvider) { p.baseURL = u } }
+func WithNewQwenProviderBaseURL(u string) NewQwenProviderOption {
+	return func(p *qwenProvider) { p.baseURL = u }
+}
 
 // WithNewQwenProviderHTTPClient overrides the HTTP client. Intended for tests.
 func WithNewQwenProviderHTTPClient(c *http.Client) NewQwenProviderOption {

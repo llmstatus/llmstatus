@@ -67,6 +67,8 @@ func (p *groqProvider) ProbeStreaming(_ context.Context, _ string) (probes.Probe
 
 // probeOpenAICompat is the shared probe implementation for all providers that
 // expose the OpenAI Chat Completions API at /chat/completions.
+//
+//nolint:unparam
 func probeOpenAICompat(ctx context.Context, baseURL, apiKey, region, providerID, probeType string, maxDetail int, model string, client *http.Client) (probes.ProbeResult, error) {
 	started := time.Now()
 	r := probes.ProbeResult{

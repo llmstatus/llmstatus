@@ -21,7 +21,9 @@ const (
 type NewDoubaoProviderOption func(*doubaoProvider)
 
 // WithNewDoubaoProviderBaseURL overrides the base URL. Intended for tests.
-func WithNewDoubaoProviderBaseURL(u string) NewDoubaoProviderOption { return func(p *doubaoProvider) { p.baseURL = u } }
+func WithNewDoubaoProviderBaseURL(u string) NewDoubaoProviderOption {
+	return func(p *doubaoProvider) { p.baseURL = u }
+}
 
 // WithNewDoubaoProviderHTTPClient overrides the HTTP client. Intended for tests.
 func WithNewDoubaoProviderHTTPClient(c *http.Client) NewDoubaoProviderOption {

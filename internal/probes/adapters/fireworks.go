@@ -21,7 +21,9 @@ const (
 type NewFireworksProviderOption func(*fireworksProvider)
 
 // WithNewFireworksProviderBaseURL overrides the base URL. Intended for tests.
-func WithNewFireworksProviderBaseURL(u string) NewFireworksProviderOption { return func(p *fireworksProvider) { p.baseURL = u } }
+func WithNewFireworksProviderBaseURL(u string) NewFireworksProviderOption {
+	return func(p *fireworksProvider) { p.baseURL = u }
+}
 
 // WithNewFireworksProviderHTTPClient overrides the HTTP client. Intended for tests.
 func WithNewFireworksProviderHTTPClient(c *http.Client) NewFireworksProviderOption {

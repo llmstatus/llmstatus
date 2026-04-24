@@ -129,7 +129,9 @@ func TestGetStatus_Empty(t *testing.T) {
 	}
 	mustDecode(t, rec.Body, &body)
 	// Should return operational when no providers configured.
-	var d struct{ Status string `json:"status"` }
+	var d struct {
+		Status string `json:"status"`
+	}
 	if err := json.Unmarshal(body.Data, &d); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}

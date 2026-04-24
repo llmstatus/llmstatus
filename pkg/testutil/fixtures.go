@@ -18,14 +18,15 @@ func FixtureProvider(t *testing.T, pool *pgxpool.Pool) string {
 	id := "fixture_" + t.Name()
 	q := pgstore.New(pool)
 	err := q.UpsertProvider(context.Background(), pgstore.UpsertProviderParams{
-		ID:       id,
-		Name:     "Fixture Provider",
-		Category: "official",
-		BaseUrl:  "https://api.fixture.test",
-		AuthType: "bearer",
-		Region:   "global",
-		Active:   true,
-		Config:   json.RawMessage(`{}`),
+		ID:         id,
+		Name:       "Fixture Provider",
+		Category:   "official",
+		BaseUrl:    "https://api.fixture.test",
+		AuthType:   "bearer",
+		Region:     "global",
+		Active:     true,
+		Config:     json.RawMessage(`{}`),
+		ProbeScope: "global",
 	})
 	if err != nil {
 		t.Fatalf("FixtureProvider: upsert provider %q: %v", id, err)

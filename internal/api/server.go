@@ -28,13 +28,13 @@ type Pinger interface {
 // Server wires handlers to a ServeMux and owns the store reference.
 type Server struct {
 	store     Store
-	history   HistoryReader   // optional; nil → GET /history returns 503
-	liveStats LiveStatsReader // optional; nil → uptime24h/p95_ms omitted
-	pinger    Pinger          // optional; nil → /healthz always 200
-	limiter   *RateLimiter    // optional; nil → no rate limiting
-	auth      *AuthConfig     // optional; nil → auth routes return 501
+	history   HistoryReader     // optional; nil → GET /history returns 503
+	liveStats LiveStatsReader   // optional; nil → uptime24h/p95_ms omitted
+	pinger    Pinger            // optional; nil → /healthz always 200
+	limiter   *RateLimiter      // optional; nil → no rate limiting
+	auth      *AuthConfig       // optional; nil → auth routes return 501
 	keyEnc    *keyenc.Encrypter // optional; nil → sponsor key endpoints return 503
-	hub       *Hub            // WebSocket hub for real-time updates
+	hub       *Hub              // WebSocket hub for real-time updates
 	mux       *http.ServeMux
 	handler   http.Handler // mux optionally wrapped with limiter middleware
 }

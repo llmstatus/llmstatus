@@ -21,7 +21,9 @@ const (
 type NewMoonshotProviderOption func(*moonshotProvider)
 
 // WithNewMoonshotProviderBaseURL overrides the base URL. Intended for tests.
-func WithNewMoonshotProviderBaseURL(u string) NewMoonshotProviderOption { return func(p *moonshotProvider) { p.baseURL = u } }
+func WithNewMoonshotProviderBaseURL(u string) NewMoonshotProviderOption {
+	return func(p *moonshotProvider) { p.baseURL = u }
+}
 
 // WithNewMoonshotProviderHTTPClient overrides the HTTP client. Intended for tests.
 func WithNewMoonshotProviderHTTPClient(c *http.Client) NewMoonshotProviderOption {

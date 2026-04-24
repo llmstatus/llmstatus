@@ -13,6 +13,19 @@ public APIs must add an entry under `## [Unreleased]`.
 ### Fixed
 - Add missing `internal/api/websocket.go` (WebSocket Hub/Client types) omitted from prior commits, causing all PR CI runs to fail with undefined symbols
 - Fix `otprl.RedisLimiter.Allow`: use `SetArgs` method instead of incorrect `Set` call for NX+TTL semantics
+- Fix `FixtureProvider` missing `ProbeScope: "global"` field, causing all integration tests to fail with `providers_probe_scope_check` constraint violation
+- Fix all `gofmt`/`goimports` formatting issues across 20+ Go files
+- Add `statusOngoing`, `statusOperational`, `statusDown`, `statusDegraded`, `severityMajor` constants in `providers.go` to satisfy `goconst`
+- Fix `errcheck` violations in `websocket.go`/`websocket_test.go`: handle `conn.Close` and deadline error returns
+- Fix `errcheck` violations in `auth/oauth.go`, `email/client.go`, `notifier/webhook.go`: `defer resp.Body.Close()` annotated
+- Add `//nolint:gosec` for G706 log-injection false positives (structured logging, not string formatting) and G115 int32 conversion
+- Add `//nolint:unparam` for test helper functions where fixed-value params are intentional
+- Remove always-nil `error` return from `handleSubscription` in `realtime.go`
+- Add package-level and exported-symbol doc comments to satisfy `revive` across 8 packages
+- Fix TypeScript `no-explicit-any` errors in `lib/types.ts`, `lib/optimistic-updates.ts`, `lib/performance.ts`, `lib/swr-config.tsx`, `__tests__/lib/websocket.test.ts`, `tests/e2e/real-time-updates.spec.ts`
+- Fix `jest.setup.js` to use ES module import instead of `require()`
+- Fix `react/no-unescaped-entities` in `app/methodology/page.tsx`
+- Add `eslint-disable` for intentional `setState` in `ProbeTimestamp.tsx` effect
 
 ### Added (LLMS-045)
 - Fixed host port assignments for all dev services (avoid conflicts on this host): db→15432, influx→18086, ingest→18080, api→18081, Next.js dev→13000

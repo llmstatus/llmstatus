@@ -32,7 +32,9 @@ export function SWRProvider({ children }: SWRProviderProps) {
 }
 
 // SWR middleware to integrate with real-time updates
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function realtimeMiddleware(useSWRNext: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (key: string, fetcher: any, config: any) => {
     const swr = useSWRNext(key, fetcher, config)
 

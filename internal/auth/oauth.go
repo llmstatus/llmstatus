@@ -12,6 +12,7 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+// GoogleConfig returns OAuth2 config for Google provider.
 func GoogleConfig(clientID, clientSecret, redirectURL string) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     clientID,
@@ -22,6 +23,7 @@ func GoogleConfig(clientID, clientSecret, redirectURL string) *oauth2.Config {
 	}
 }
 
+// GitHubConfig returns OAuth2 config for GitHub provider.
 func GitHubConfig(clientID, clientSecret, redirectURL string) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     clientID,
@@ -43,7 +45,7 @@ func FetchGoogleUser(ctx context.Context, cfg *oauth2.Config, code string) (sub,
 	if err != nil {
 		return "", "", fmt.Errorf("google userinfo: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	var info struct {
 		Sub   string `json:"sub"`
 		Email string `json:"email"`
@@ -69,7 +71,7 @@ func FetchGitHubUser(ctx context.Context, cfg *oauth2.Config, code string) (sub,
 	if err != nil {
 		return "", "", fmt.Errorf("github user: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	var user struct {
 		ID    int64  `json:"id"`
 		Email string `json:"email"`
@@ -90,7 +92,7 @@ func FetchGitHubUser(ctx context.Context, cfg *oauth2.Config, code string) (sub,
 	if err != nil {
 		return sub, "", fmt.Errorf("github emails: %w", err)
 	}
-	defer resp2.Body.Close()
+	defer resp2.Body.Close() //nolint:errcheck
 	body, _ := io.ReadAll(resp2.Body)
 	var emails []struct {
 		Email   string `json:"email"`

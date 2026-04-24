@@ -1,16 +1,25 @@
 import { WebSocketClient } from '@/lib/websocket'
 
+type EventCallback = (data?: Event | MessageEvent) => void
+
 describe('WebSocketClient', () => {
-  let mockWS: any
-  let originalWebSocket: any
+  let mockWS: {
+    send: jest.Mock
+    close: jest.Mock
+    addEventListener: jest.Mock
+    removeEventListener: jest.Mock
+    readyState: number
+    _triggerEvent: (event: string, data?: Event | MessageEvent) => void
+  }
+  let originalWebSocket: typeof global.WebSocket
 
   beforeEach(() => {
-    const eventListeners: { [key: string]: Function[] } = {}
+    const eventListeners: Record<string, EventCallback[]> = {}
 
     mockWS = {
       send: jest.fn(),
       close: jest.fn(),
-      addEventListener: jest.fn((event: string, callback: Function) => {
+      addEventListener: jest.fn((event: string, callback: EventCallback) => {
         if (!eventListeners[event]) {
           eventListeners[event] = []
         }
@@ -23,7 +32,7 @@ describe('WebSocketClient', () => {
       }),
       removeEventListener: jest.fn(),
       readyState: 1, // OPEN
-      _triggerEvent: (event: string, data?: any) => {
+      _triggerEvent: (event: string, data?: Event | MessageEvent) => {
         if (eventListeners[event]) {
           eventListeners[event].forEach(callback => callback(data))
         }
@@ -31,8 +40,9 @@ describe('WebSocketClient', () => {
     }
 
     originalWebSocket = global.WebSocket
-    // Mock WebSocket constructor and constants
-    const MockWebSocket = jest.fn(() => mockWS) as any
+    const MockWebSocket = jest.fn(() => mockWS) as unknown as typeof WebSocket & {
+      OPEN: number; CLOSED: number; CONNECTING: number; CLOSING: number
+    }
     MockWebSocket.OPEN = 1
     MockWebSocket.CLOSED = 3
     MockWebSocket.CONNECTING = 0

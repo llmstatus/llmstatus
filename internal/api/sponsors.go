@@ -85,9 +85,9 @@ func (s *Server) registerSponsor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sp, err := s.store.CreateSponsor(r.Context(), pgstore.CreateSponsorParams{
-		ID:     body.ID,
-		UserID: claims.UserID,
-		Name:   body.Name,
+		ID:         body.ID,
+		UserID:     claims.UserID,
+		Name:       body.Name,
 		WebsiteUrl: nullText(body.WebsiteURL),
 		LogoUrl:    nullText(body.LogoURL),
 	})
@@ -121,11 +121,11 @@ func (s *Server) getSponsorMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type keyOut struct {
-		ProviderID      string `json:"provider_id"`
-		KeyHint         string `json:"key_hint"`
-		Active          bool   `json:"active"`
-		LastVerifiedAt  any    `json:"last_verified_at"`
-		LastError       any    `json:"last_error"`
+		ProviderID     string `json:"provider_id"`
+		KeyHint        string `json:"key_hint"`
+		Active         bool   `json:"active"`
+		LastVerifiedAt any    `json:"last_verified_at"`
+		LastError      any    `json:"last_error"`
 	}
 	keyList := make([]keyOut, len(keys))
 	for i, k := range keys {

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestProviderSubscription(t *testing.T) {
@@ -19,8 +18,7 @@ func TestProviderSubscription(t *testing.T) {
 		Topic: "provider:openai",
 	}
 
-	err := handleSubscription(client, msg)
-	require.NoError(t, err)
+	handleSubscription(client, msg)
 	assert.True(t, client.subscriptions["provider:openai"])
 }
 
@@ -36,8 +34,7 @@ func TestProviderUnsubscription(t *testing.T) {
 		Type:  "subscribe",
 		Topic: "provider:openai",
 	}
-	err := handleSubscription(client, subMsg)
-	require.NoError(t, err)
+	handleSubscription(client, subMsg)
 	assert.True(t, client.subscriptions["provider:openai"])
 
 	// Unsubscribe
@@ -45,8 +42,7 @@ func TestProviderUnsubscription(t *testing.T) {
 		Type:  "unsubscribe",
 		Topic: "provider:openai",
 	}
-	err = handleSubscription(client, unsubMsg)
-	require.NoError(t, err)
+	handleSubscription(client, unsubMsg)
 	assert.False(t, client.subscriptions["provider:openai"])
 }
 
@@ -69,8 +65,7 @@ func TestBroadcastToTopic(t *testing.T) {
 		Type:  "subscribe",
 		Topic: "provider:openai",
 	}
-	err := handleSubscription(client, msg)
-	require.NoError(t, err)
+	handleSubscription(client, msg)
 
 	// Broadcast to topic
 	update := ProviderStatusUpdate{
@@ -102,8 +97,7 @@ func TestMultipleSubscriptions(t *testing.T) {
 			Type:  "subscribe",
 			Topic: topic,
 		}
-		err := handleSubscription(client, msg)
-		require.NoError(t, err)
+		handleSubscription(client, msg)
 	}
 
 	for _, topic := range topics {
@@ -123,9 +117,7 @@ func TestInvalidSubscriptionType(t *testing.T) {
 		Topic: "provider:openai",
 	}
 
-	// Spec requires ignoring invalid types and returning nil
-	err := handleSubscription(client, msg)
-	assert.NoError(t, err)
-	// Invalid type should be ignored, no subscription created
+	// Spec requires ignoring invalid types — no subscription created
+	handleSubscription(client, msg)
 	assert.False(t, client.subscriptions["provider:openai"])
 }

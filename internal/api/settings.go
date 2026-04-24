@@ -50,7 +50,7 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.auth.Store.UpdateUserSettings(r.Context(), pgstore.UpdateUserSettingsParams{
 		ID:         claims.UserID,
-		DigestHour: int32(digestHour),
+		DigestHour: int32(digestHour), //nolint:gosec
 		Timezone:   timezone,
 	}); err != nil {
 		writeError(w, http.StatusInternalServerError, "could not update settings")

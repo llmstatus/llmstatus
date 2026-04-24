@@ -10,6 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// OTP rate-limit parameters.
 const (
 	MaxAttempts = 3
 	Window      = 10 * time.Minute
@@ -27,10 +28,12 @@ type RedisLimiter struct {
 	rdb *redis.Client
 }
 
+// NewRedis creates a Redis-backed rate limiter.
 func NewRedis(rdb *redis.Client) *RedisLimiter {
 	return &RedisLimiter{rdb: rdb}
 }
 
+// Allow checks and records an OTP attempt for the email address.
 func (r *RedisLimiter) Allow(ctx context.Context, email string) (bool, time.Duration, error) {
 	key := otpKey(email)
 
@@ -67,10 +70,12 @@ type MemoryLimiter struct {
 	counts map[string]int
 }
 
+// NewMemory creates an in-memory rate limiter for tests.
 func NewMemory() *MemoryLimiter {
 	return &MemoryLimiter{counts: make(map[string]int)}
 }
 
+// Allow checks and records an OTP attempt for the email address.
 func (m *MemoryLimiter) Allow(_ context.Context, email string) (bool, time.Duration, error) {
 	m.counts[email]++
 	if m.counts[email] > MaxAttempts {

@@ -82,8 +82,8 @@ func statusColor(status string) string {
 // x/y/width values here are in 10× units (1 SVG unit = 10 displayed pixels).
 func renderBadge(label, message, color string) string {
 	const (
-		hPx  = 20  // badge height in display pixels
-		padU = 50  // horizontal padding in 10× units (= 5px each side)
+		hPx  = 20 // badge height in display pixels
+		padU = 50 // horizontal padding in 10× units (= 5px each side)
 	)
 
 	labelU := badgeTextWidth(label) + padU*2

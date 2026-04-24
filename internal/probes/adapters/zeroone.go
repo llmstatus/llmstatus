@@ -21,7 +21,9 @@ const (
 type NewZeroOneProviderOption func(*zerooneProvider)
 
 // WithNewZeroOneProviderBaseURL overrides the base URL. Intended for tests.
-func WithNewZeroOneProviderBaseURL(u string) NewZeroOneProviderOption { return func(p *zerooneProvider) { p.baseURL = u } }
+func WithNewZeroOneProviderBaseURL(u string) NewZeroOneProviderOption {
+	return func(p *zerooneProvider) { p.baseURL = u }
+}
 
 // WithNewZeroOneProviderHTTPClient overrides the HTTP client. Intended for tests.
 func WithNewZeroOneProviderHTTPClient(c *http.Client) NewZeroOneProviderOption {

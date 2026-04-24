@@ -1,3 +1,4 @@
+// Package email provides a simple HTTP-based email sending client.
 package email
 
 import (
@@ -16,6 +17,7 @@ type Sender interface {
 	Send(ctx context.Context, msg Message) error
 }
 
+// Client sends transactional emails via HTTP.
 type Client struct {
 	apiKey  string
 	from    string
@@ -23,6 +25,7 @@ type Client struct {
 	http    *http.Client
 }
 
+// New creates an email client from environment config.
 func New(apiKey, from string) *Client {
 	return &Client{
 		apiKey:  apiKey,
@@ -42,6 +45,7 @@ func NewWithBaseURL(baseURL, apiKey, from string) *Client {
 	}
 }
 
+// Message holds the fields for an outbound email.
 type Message struct {
 	To      string
 	Subject string
@@ -49,6 +53,7 @@ type Message struct {
 	Text    string
 }
 
+// Send delivers a single email message.
 func (c *Client) Send(ctx context.Context, msg Message) error {
 	payload := map[string]any{
 		"from":    c.from,
@@ -72,7 +77,7 @@ func (c *Client) Send(ctx context.Context, msg Message) error {
 	if err != nil {
 		return fmt.Errorf("email: send: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("email: resend returned %d", resp.StatusCode)
 	}

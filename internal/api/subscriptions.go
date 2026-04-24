@@ -183,14 +183,14 @@ func (s *Server) handleDeleteSubscription(w http.ResponseWriter, r *http.Request
 // ---- helpers ---------------------------------------------------------------
 
 type subscriptionJSON struct {
-	ID          int64   `json:"id"`
-	ProviderID  string  `json:"provider_id"`
-	ProviderName string `json:"provider_name,omitempty"`
-	MinSeverity string  `json:"min_severity"`
-	EmailAlerts bool    `json:"email_alerts"`
-	EmailDigest bool    `json:"email_digest"`
-	WebhookURL  *string `json:"webhook_url"`
-	RSSURL      string  `json:"rss_url"`
+	ID           int64   `json:"id"`
+	ProviderID   string  `json:"provider_id"`
+	ProviderName string  `json:"provider_name,omitempty"`
+	MinSeverity  string  `json:"min_severity"`
+	EmailAlerts  bool    `json:"email_alerts"`
+	EmailDigest  bool    `json:"email_digest"`
+	WebhookURL   *string `json:"webhook_url"`
+	RSSURL       string  `json:"rss_url"`
 }
 
 func subscriptionResponse(s pgstore.Subscription, providerName string) subscriptionJSON {
