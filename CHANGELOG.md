@@ -10,6 +10,10 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Fixed
+- Add missing `internal/api/websocket.go` (WebSocket Hub/Client types) omitted from prior commits, causing all PR CI runs to fail with undefined symbols
+- Fix `otprl.RedisLimiter.Allow`: use `SetArgs` method instead of incorrect `Set` call for NX+TTL semantics
+
 ### Added (LLMS-045)
 - Fixed host port assignments for all dev services (avoid conflicts on this host): db→15432, influx→18086, ingest→18080, api→18081, Next.js dev→13000
 - `web/.env.local.example` added — copy to `web/.env.local` before running `npm run dev`

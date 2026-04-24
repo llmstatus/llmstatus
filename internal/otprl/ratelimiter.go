@@ -34,11 +34,11 @@ func NewRedis(rdb *redis.Client) *RedisLimiter {
 func (r *RedisLimiter) Allow(ctx context.Context, email string) (bool, time.Duration, error) {
 	key := otpKey(email)
 
-	// Use Set with NX option instead of deprecated SetNX (as of Redis 2.6.12).
+	// SetArgs with NX sets the key only if it does not exist yet.
 	// This initialises the counter at 0 with TTL on the very first request.
 	// INCR is then always safe: if the key was just created we increment to 1;
 	// if it already existed we increment the existing counter.
-	r.rdb.Set(ctx, key, 0, redis.SetArgs{
+	r.rdb.SetArgs(ctx, key, 0, redis.SetArgs{
 		Mode: "nx",
 		TTL:  Window,
 	})
