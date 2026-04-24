@@ -52,4 +52,13 @@ pnpm-debug.log*
 
 # Docker
 docker-compose.override.yml
-api
+
+# Go compiled binaries (build artifacts — never commit)
+/api
+/detector
+/ingest
+/migrate
+/prober
+
+# Ansible production inventory (contains live IPs — use hosts.yml.example as template)
+deploy/ansible/inventories/prod/hosts.yml
