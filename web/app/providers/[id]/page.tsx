@@ -2,10 +2,12 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { getProvider, getProviderHistory, ApiNotFoundError } from "@/lib/api";
+import { getProvider, getProviderHistory, getReportHistogram, ApiNotFoundError } from "@/lib/api";
 import { StatusPill } from "@/components/StatusPill";
 import { IncidentCard } from "@/components/IncidentCard";
 import { ModelStatsTable } from "@/components/ModelStatsTable";
+import { UserReportHistogram } from "@/components/UserReportHistogram";
+import { ReportButton } from "@/components/ReportButton";
 import { HistorySection } from "./HistorySection";
 
 export const revalidate = 60;
@@ -47,6 +49,7 @@ export default async function ProviderPage({ params }: Props) {
 
   // History is best-effort — the client component handles empty state.
   const history = await getProviderHistory(id, "30d").catch(() => null);
+  const reportBuckets = await getReportHistogram(id).catch(() => null);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -115,6 +118,21 @@ export default async function ProviderPage({ params }: Props) {
           </div>
         </section>
       )}
+
+      {/* Community reports */}
+      <section className="mb-8 rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
+            User Reports
+          </h2>
+          <ReportButton providerId={id} providerName={provider.name} />
+        </div>
+        {reportBuckets && reportBuckets.length > 0 ? (
+          <UserReportHistogram buckets={reportBuckets} />
+        ) : (
+          <p className="text-xs text-[var(--ink-500)]">No report data available.</p>
+        )}
+      </section>
 
       {/* History charts with window selector (client component) */}
       <HistorySection providerId={id} initialHistory={history} />

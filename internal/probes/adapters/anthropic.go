@@ -93,17 +93,13 @@ func (p *anthropicProvider) ProbeLightInference(ctx context.Context, model strin
 	return r, nil
 }
 
-func (p *anthropicProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: anthropicProviderID, ProbeType: "quality"}
-}
-
+// ProbeEmbedding: Anthropic has no embeddings API.
 func (p *anthropicProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
 	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: anthropicProviderID, ProbeType: "embedding"}
 }
 
-func (p *anthropicProvider) ProbeStreaming(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: anthropicProviderID, ProbeType: "streaming"}
-}
+// ProbeQuality and ProbeStreaming are in anthropic_quality.go and
+// anthropic_streaming.go respectively.
 
 // ---- request / response types -----------------------------------------------
 
@@ -155,6 +151,7 @@ func (p *anthropicProvider) buildLightRequest(ctx context.Context, model string)
 	req.Header.Set("x-api-key", p.apiKey)
 	req.Header.Set("anthropic-version", anthropicVersion)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", probeUserAgent)
 	return req, nil
 }
 

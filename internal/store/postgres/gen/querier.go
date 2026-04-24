@@ -44,6 +44,12 @@ type Querier interface {
 	GetUserByOAuth(ctx context.Context, arg GetUserByOAuthParams) (User, error)
 	IsAlertSent(ctx context.Context, arg IsAlertSentParams) (bool, error)
 	IsDigestSent(ctx context.Context, arg IsDigestSentParams) (bool, error)
+	// ============================================================
+	// user_reports (LLMS-048)
+	// ============================================================
+	// Inserts a report only when no report from the same ip_hash exists for the
+	// same provider within the last 5 minutes (server-side dedup).
+	InsertUserReport(ctx context.Context, arg InsertUserReportParams) error
 	ListActiveProviders(ctx context.Context) ([]Provider, error)
 	ListActiveSponsorKeys(ctx context.Context) ([]SponsorKey, error)
 	ListActiveSponsors(ctx context.Context) ([]Sponsor, error)
@@ -92,6 +98,9 @@ type Querier interface {
 	// auth (LLMS-049)
 	// ============================================================
 	UpsertUser(ctx context.Context, email string) (User, error)
+	// Returns 24 hourly buckets for the given provider, oldest first.
+	// Buckets with zero reports are included via generate_series.
+	UserReportHistogram(ctx context.Context, providerID string) ([]UserReportHistogramRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

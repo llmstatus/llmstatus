@@ -146,18 +146,103 @@ func TestAnthropic_ProbeLightInference_ContextCancelled(t *testing.T) {
 	}
 }
 
-func TestAnthropic_UnsupportedProbes(t *testing.T) {
+func TestAnthropic_ProbeEmbeddingNotSupported(t *testing.T) {
 	p := NewAnthropicProvider("sk-ant-fake", "node-1")
-	ctx := context.Background()
+	_, err := p.ProbeEmbedding(context.Background(), "m")
+	if !probes.IsNotSupported(err) {
+		t.Errorf("ProbeEmbedding: want ErrNotSupported, got %T: %v", err, err)
+	}
+}
 
-	if _, err := p.ProbeQuality(ctx, "m"); err == nil {
-		t.Error("ProbeQuality: expected ErrNotSupported")
+func TestAnthropic_ProbeQuality(t *testing.T) {
+	cases := []struct {
+		name         string
+		httpStatus   int
+		fixture      string
+		wantSuccess  bool
+		wantErrClass probes.ErrorClass
+	}{
+		{"success", http.StatusOK, "messages_quality_200.json", true, probes.ErrorClassNone},
+		{"mismatch", http.StatusOK, "messages_quality_mismatch_200.json", false, probes.ErrorClassQualityMismatch},
+		{"auth", http.StatusUnauthorized, "messages_401.json", false, probes.ErrorClassAuth},
+		{"rate_limit", http.StatusTooManyRequests, "messages_429.json", false, probes.ErrorClassRateLimit},
 	}
-	if _, err := p.ProbeEmbedding(ctx, "m"); err == nil {
-		t.Error("ProbeEmbedding: expected ErrNotSupported")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			body := mustReadAnthropicFixture(t, tc.fixture)
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/messages" {
+					t.Errorf("path: got %q, want /messages", r.URL.Path)
+				}
+				if r.Header.Get("User-Agent") != probeUserAgent {
+					t.Errorf("User-Agent: got %q, want %q", r.Header.Get("User-Agent"), probeUserAgent)
+				}
+				w.WriteHeader(tc.httpStatus)
+				_, _ = w.Write(body)
+			}))
+			t.Cleanup(srv.Close)
+
+			p := NewAnthropicProvider("sk-ant-fake", "node-eu", WithAnthropicBaseURL(srv.URL))
+			r, err := p.ProbeQuality(context.Background(), "claude-haiku-4-5-20251001")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if r.ProbeType != "quality" {
+				t.Errorf("ProbeType: got %q, want quality", r.ProbeType)
+			}
+			if r.Success != tc.wantSuccess {
+				t.Errorf("Success: got %v, want %v", r.Success, tc.wantSuccess)
+			}
+			if r.ErrorClass != tc.wantErrClass {
+				t.Errorf("ErrorClass: got %q, want %q", r.ErrorClass, tc.wantErrClass)
+			}
+		})
 	}
-	if _, err := p.ProbeStreaming(ctx, "m"); err == nil {
-		t.Error("ProbeStreaming: expected ErrNotSupported")
+}
+
+func TestAnthropic_ProbeStreaming(t *testing.T) {
+	fixture := mustReadAnthropicFixture(t, "messages_stream_200.txt")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(fixture)
+	}))
+	t.Cleanup(srv.Close)
+
+	p := NewAnthropicProvider("sk-ant-fake", "node-eu", WithAnthropicBaseURL(srv.URL))
+	r, err := p.ProbeStreaming(context.Background(), "claude-haiku-4-5-20251001")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if r.ProbeType != "streaming" {
+		t.Errorf("ProbeType: got %q, want streaming", r.ProbeType)
+	}
+	if !r.Success {
+		t.Errorf("expected Success=true, ErrorClass=%q", r.ErrorClass)
+	}
+	if r.DurationMs < 0 {
+		t.Errorf("DurationMs negative: %d", r.DurationMs)
+	}
+}
+
+func TestAnthropic_ProbeStreaming_Empty(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"))
+	}))
+	t.Cleanup(srv.Close)
+
+	p := NewAnthropicProvider("sk-ant-fake", "node-1", WithAnthropicBaseURL(srv.URL))
+	r, err := p.ProbeStreaming(context.Background(), "claude-haiku-4-5-20251001")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if r.Success {
+		t.Error("expected Success=false for empty stream")
+	}
+	if r.ErrorClass != probes.ErrorClassMalformedBody {
+		t.Errorf("ErrorClass: got %q, want malformed_body", r.ErrorClass)
 	}
 }
 

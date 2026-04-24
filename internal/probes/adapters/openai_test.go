@@ -2,7 +2,6 @@ package adapters
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -136,21 +135,143 @@ func TestOpenAI_ProbeLightInference_ContextCancelled(t *testing.T) {
 	}
 }
 
-func TestOpenAI_UnsupportedProbes(t *testing.T) {
-	p := NewOpenAIProvider("sk-fake", "node-1")
+func TestOpenAI_ProbeQuality(t *testing.T) {
+	cases := []struct {
+		name         string
+		httpStatus   int
+		fixture      string
+		wantSuccess  bool
+		wantErrClass probes.ErrorClass
+	}{
+		{"success", http.StatusOK, "chat_completions_quality_200.json", true, probes.ErrorClassNone},
+		{"mismatch", http.StatusOK, "chat_completions_quality_mismatch_200.json", false, probes.ErrorClassQualityMismatch},
+		{"auth", http.StatusUnauthorized, "chat_completions_401.json", false, probes.ErrorClassAuth},
+		{"rate_limit", http.StatusTooManyRequests, "chat_completions_429.json", false, probes.ErrorClassRateLimit},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			body := mustReadFixture(t, tc.fixture)
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/chat/completions" {
+					t.Errorf("path: got %q, want /chat/completions", r.URL.Path)
+				}
+				if r.Header.Get("User-Agent") != probeUserAgent {
+					t.Errorf("User-Agent: got %q, want %q", r.Header.Get("User-Agent"), probeUserAgent)
+				}
+				w.WriteHeader(tc.httpStatus)
+				_, _ = w.Write(body)
+			}))
+			t.Cleanup(srv.Close)
 
-	_, err := p.ProbeQuality(context.Background(), "gpt-4o-mini")
-	var errNotSupported *probes.ErrNotSupported
-	if !errors.As(err, &errNotSupported) {
-		t.Errorf("ProbeQuality: want *ErrNotSupported, got %T: %v", err, err)
+			p := NewOpenAIProvider("sk-fake", "node-1", WithOpenAIBaseURL(srv.URL))
+			r, err := p.ProbeQuality(context.Background(), "gpt-4o-mini")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if r.ProbeType != "quality" {
+				t.Errorf("ProbeType: got %q, want quality", r.ProbeType)
+			}
+			if r.Success != tc.wantSuccess {
+				t.Errorf("Success: got %v, want %v", r.Success, tc.wantSuccess)
+			}
+			if r.ErrorClass != tc.wantErrClass {
+				t.Errorf("ErrorClass: got %q, want %q", r.ErrorClass, tc.wantErrClass)
+			}
+		})
 	}
-	_, err = p.ProbeEmbedding(context.Background(), "gpt-4o-mini")
-	if !errors.As(err, &errNotSupported) {
-		t.Errorf("ProbeEmbedding: want *ErrNotSupported, got %T: %v", err, err)
+}
+
+func TestOpenAI_ProbeEmbedding(t *testing.T) {
+	cases := []struct {
+		name         string
+		httpStatus   int
+		fixture      string
+		wantSuccess  bool
+		wantErrClass probes.ErrorClass
+	}{
+		{"success", http.StatusOK, "embeddings_200.json", true, probes.ErrorClassNone},
+		{"auth", http.StatusUnauthorized, "chat_completions_401.json", false, probes.ErrorClassAuth},
 	}
-	_, err = p.ProbeStreaming(context.Background(), "gpt-4o-mini")
-	if !errors.As(err, &errNotSupported) {
-		t.Errorf("ProbeStreaming: want *ErrNotSupported, got %T: %v", err, err)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			body := mustReadFixture(t, tc.fixture)
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/embeddings" {
+					t.Errorf("path: got %q, want /embeddings", r.URL.Path)
+				}
+				w.WriteHeader(tc.httpStatus)
+				_, _ = w.Write(body)
+			}))
+			t.Cleanup(srv.Close)
+
+			p := NewOpenAIProvider("sk-fake", "node-1", WithOpenAIBaseURL(srv.URL))
+			r, err := p.ProbeEmbedding(context.Background(), "gpt-4o-mini")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if r.ProbeType != "embedding" {
+				t.Errorf("ProbeType: got %q, want embedding", r.ProbeType)
+			}
+			if r.Model != openaiEmbeddingModel {
+				t.Errorf("Model: got %q, want %q", r.Model, openaiEmbeddingModel)
+			}
+			if r.Success != tc.wantSuccess {
+				t.Errorf("Success: got %v, want %v", r.Success, tc.wantSuccess)
+			}
+			if r.ErrorClass != tc.wantErrClass {
+				t.Errorf("ErrorClass: got %q, want %q", r.ErrorClass, tc.wantErrClass)
+			}
+			if tc.wantSuccess && r.TokensIn == 0 {
+				t.Error("expected non-zero TokensIn on success")
+			}
+		})
+	}
+}
+
+func TestOpenAI_ProbeStreaming(t *testing.T) {
+	fixture := mustReadFixture(t, "chat_completions_stream_200.txt")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(fixture)
+	}))
+	t.Cleanup(srv.Close)
+
+	p := NewOpenAIProvider("sk-fake", "node-1", WithOpenAIBaseURL(srv.URL))
+	r, err := p.ProbeStreaming(context.Background(), "gpt-4o-mini")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if r.ProbeType != "streaming" {
+		t.Errorf("ProbeType: got %q, want streaming", r.ProbeType)
+	}
+	if !r.Success {
+		t.Errorf("expected Success=true, ErrorClass=%q", r.ErrorClass)
+	}
+	if r.DurationMs < 0 {
+		t.Errorf("DurationMs negative: %d", r.DurationMs)
+	}
+}
+
+func TestOpenAI_ProbeStreaming_Empty(t *testing.T) {
+	// A stream that sends [DONE] without any content token is a failure.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("data: [DONE]\n\n"))
+	}))
+	t.Cleanup(srv.Close)
+
+	p := NewOpenAIProvider("sk-fake", "node-1", WithOpenAIBaseURL(srv.URL))
+	r, err := p.ProbeStreaming(context.Background(), "gpt-4o-mini")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if r.Success {
+		t.Error("expected Success=false for empty stream")
+	}
+	if r.ErrorClass != probes.ErrorClassMalformedBody {
+		t.Errorf("ErrorClass: got %q, want malformed_body", r.ErrorClass)
 	}
 }
 

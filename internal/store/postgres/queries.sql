@@ -142,6 +142,39 @@ SET description    = $2,
 WHERE id = $1;
 
 -- ============================================================
+-- user_reports (LLMS-048)
+-- ============================================================
+
+-- name: InsertUserReport :exec
+-- Inserts a report only when no report from the same ip_hash exists for the
+-- same provider within the last 5 minutes (server-side dedup).
+INSERT INTO user_reports (provider_id, ip_hash)
+SELECT $1, $2
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_reports
+    WHERE provider_id = $1
+      AND ip_hash     = $2
+      AND created_at  > NOW() - INTERVAL '5 minutes'
+);
+
+-- name: UserReportHistogram :many
+-- Returns 24 hourly buckets for the given provider, oldest first.
+-- Buckets with zero reports are included via generate_series.
+SELECT
+    gs.bucket,
+    COALESCE(COUNT(r.id), 0)::BIGINT AS count
+FROM generate_series(
+    date_trunc('hour', NOW() - INTERVAL '23 hours'),
+    date_trunc('hour', NOW()),
+    INTERVAL '1 hour'
+) AS gs(bucket)
+LEFT JOIN user_reports r
+    ON r.provider_id = $1
+    AND date_trunc('hour', r.created_at) = gs.bucket
+GROUP BY gs.bucket
+ORDER BY gs.bucket;
+
+-- ============================================================
 -- auth (LLMS-049)
 -- ============================================================
 

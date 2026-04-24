@@ -114,6 +114,14 @@ func (f *fakeStore) GetIncidentBySlug(_ context.Context, slug string) (pgstore.I
 	return pgstore.Incident{}, pgx.ErrNoRows
 }
 
+func (f *fakeStore) InsertUserReport(_ context.Context, _ pgstore.InsertUserReportParams) error {
+	return f.err
+}
+
+func (f *fakeStore) UserReportHistogram(_ context.Context, _ string) ([]pgstore.UserReportHistogramRow, error) {
+	return nil, f.err
+}
+
 func (f *fakeStore) ListActiveSponsors(_ context.Context) ([]pgstore.Sponsor, error) {
 	return nil, f.err
 }

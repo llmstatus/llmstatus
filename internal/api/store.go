@@ -20,6 +20,8 @@ type Store interface {
 	ListIncidentsByStatus(ctx context.Context, arg pgstore.ListIncidentsByStatusParams) ([]pgstore.Incident, error)
 	GetIncidentByID(ctx context.Context, id uuid.UUID) (pgstore.Incident, error)
 	GetIncidentBySlug(ctx context.Context, slug string) (pgstore.Incident, error)
+	InsertUserReport(ctx context.Context, arg pgstore.InsertUserReportParams) error
+	UserReportHistogram(ctx context.Context, providerID string) ([]pgstore.UserReportHistogramRow, error)
 
 	// Sponsors
 	ListActiveSponsors(ctx context.Context) ([]pgstore.Sponsor, error)
