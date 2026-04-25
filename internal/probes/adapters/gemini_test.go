@@ -28,7 +28,7 @@ func TestGemini_Identity(t *testing.T) {
 	if got := p.ID(); got != "google_gemini" {
 		t.Errorf("ID: got %q, want google_gemini", got)
 	}
-	if got := p.Models(); len(got) == 0 || got[0] != "gemini-2.0-flash" {
+	if got := p.Models(); len(got) == 0 || got[0] != "gemini-2.5-flash" {
 		t.Errorf("Models: got %v", got)
 	}
 }
@@ -61,7 +61,7 @@ func TestGemini_ProbeLightInference(t *testing.T) {
 			t.Cleanup(srv.Close)
 
 			p := NewGeminiProvider("fake-key", "node-1", WithGeminiBaseURL(srv.URL))
-			r, err := p.ProbeLightInference(context.Background(), "gemini-2.0-flash")
+			r, err := p.ProbeLightInference(context.Background(), "gemini-2.5-flash")
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -92,7 +92,7 @@ func TestGemini_Timeout(t *testing.T) {
 		WithGeminiBaseURL(srv.URL),
 		WithGeminiHTTPClient(&http.Client{Timeout: 30 * time.Millisecond}),
 	)
-	r, err := p.ProbeLightInference(context.Background(), "gemini-2.0-flash")
+	r, err := p.ProbeLightInference(context.Background(), "gemini-2.5-flash")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
