@@ -1,0 +1,3 @@
+ALTER TABLE users DROP COLUMN is_admin;
+ALTER TABLE sponsors DROP COLUMN status;
+ALTER TABLE sponsors ALTER COLUMN active SET DEFAULT TRUE;

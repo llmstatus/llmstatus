@@ -126,8 +126,16 @@ func (f *fakeStore) ListActiveSponsors(_ context.Context) ([]pgstore.Sponsor, er
 	return nil, f.err
 }
 
+func (f *fakeStore) ListPendingSponsors(_ context.Context) ([]pgstore.Sponsor, error) {
+	return nil, f.err
+}
+
 func (f *fakeStore) CreateSponsor(_ context.Context, arg pgstore.CreateSponsorParams) (pgstore.Sponsor, error) {
 	return pgstore.Sponsor{}, f.err
+}
+
+func (f *fakeStore) GetSponsorByID(_ context.Context, _ string) (pgstore.Sponsor, error) {
+	return pgstore.Sponsor{}, pgx.ErrNoRows
 }
 
 func (f *fakeStore) GetSponsorByUserID(_ context.Context, userID int64) (pgstore.Sponsor, error) {
@@ -135,6 +143,14 @@ func (f *fakeStore) GetSponsorByUserID(_ context.Context, userID int64) (pgstore
 }
 
 func (f *fakeStore) UpdateSponsor(_ context.Context, arg pgstore.UpdateSponsorParams) (pgstore.Sponsor, error) {
+	return pgstore.Sponsor{}, f.err
+}
+
+func (f *fakeStore) ApproveSponsor(_ context.Context, _ string) (pgstore.Sponsor, error) {
+	return pgstore.Sponsor{}, f.err
+}
+
+func (f *fakeStore) RejectSponsor(_ context.Context, _ string) (pgstore.Sponsor, error) {
 	return pgstore.Sponsor{}, f.err
 }
 

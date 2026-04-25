@@ -12,6 +12,7 @@ import (
 )
 
 type Querier interface {
+	ApproveSponsor(ctx context.Context, id string) (Sponsor, error)
 	// Finds a valid (unused, unexpired) token for the user and marks it used.
 	ConsumeOTPToken(ctx context.Context, arg ConsumeOTPTokenParams) (OtpToken, error)
 	// ============================================================
@@ -42,14 +43,14 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	GetUserByOAuth(ctx context.Context, arg GetUserByOAuthParams) (User, error)
-	IsAlertSent(ctx context.Context, arg IsAlertSentParams) (bool, error)
-	IsDigestSent(ctx context.Context, arg IsDigestSentParams) (bool, error)
 	// ============================================================
 	// user_reports (LLMS-048)
 	// ============================================================
 	// Inserts a report only when no report from the same ip_hash exists for the
 	// same provider within the last 5 minutes (server-side dedup).
 	InsertUserReport(ctx context.Context, arg InsertUserReportParams) error
+	IsAlertSent(ctx context.Context, arg IsAlertSentParams) (bool, error)
+	IsDigestSent(ctx context.Context, arg IsDigestSentParams) (bool, error)
 	ListActiveProviders(ctx context.Context) ([]Provider, error)
 	ListActiveSponsorKeys(ctx context.Context) ([]SponsorKey, error)
 	ListActiveSponsors(ctx context.Context) ([]Sponsor, error)
@@ -60,6 +61,7 @@ type Querier interface {
 	ListIncidentsByStatus(ctx context.Context, arg ListIncidentsByStatusParams) ([]Incident, error)
 	ListIncidentsUpdatedSince(ctx context.Context, updatedAt pgtype.Timestamptz) ([]Incident, error)
 	ListModelsByProvider(ctx context.Context, providerID string) ([]Model, error)
+	ListPendingSponsors(ctx context.Context) ([]Sponsor, error)
 	ListProviders(ctx context.Context) ([]Provider, error)
 	// Returns active providers visible to a probe node with the given scope.
 	// 'global' providers are probed by every node; 'intl'/'cn' are scope-specific.
@@ -80,6 +82,7 @@ type Querier interface {
 	LogAlert(ctx context.Context, arg LogAlertParams) error
 	LogDigest(ctx context.Context, arg LogDigestParams) error
 	MarkUserVerified(ctx context.Context, id int64) error
+	RejectSponsor(ctx context.Context, id string) (Sponsor, error)
 	ResolveIncident(ctx context.Context, arg ResolveIncidentParams) error
 	SetIncidentDescription(ctx context.Context, arg SetIncidentDescriptionParams) error
 	SetProviderActive(ctx context.Context, arg SetProviderActiveParams) error

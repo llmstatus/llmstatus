@@ -17,6 +17,7 @@ interface Sponsor {
   logo_url: string | null;
   tier: string;
   active: boolean;
+  status: string;
 }
 
 interface SponsorKey {
@@ -81,6 +82,14 @@ export default async function SponsorDashboardPage() {
             can add API keys for providers you want to support.
           </p>
           <RegisterForm apiToken={session.token} />
+        </div>
+      ) : me.sponsor.status === "pending" ? (
+        <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] p-6">
+          <h2 className="mb-1 text-base font-semibold text-[var(--ink-100)]">Application under review</h2>
+          <p className="text-sm text-[var(--ink-400)]">
+            Your sponsor application for <strong>{me.sponsor.name}</strong> is pending admin approval.
+            You&#39;ll receive an email once a decision has been made.
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-8">

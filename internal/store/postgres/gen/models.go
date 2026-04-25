@@ -98,6 +98,7 @@ type Sponsor struct {
 	Tier       string             `json:"tier"`
 	Active     bool               `json:"active"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	Status     string             `json:"status"`
 }
 
 type SponsorKey struct {
@@ -131,6 +132,7 @@ type User struct {
 	Timezone   string             `json:"timezone"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 	VerifiedAt pgtype.Timestamptz `json:"verified_at"`
+	IsAdmin    bool               `json:"is_admin"`
 }
 
 type UserReport struct {

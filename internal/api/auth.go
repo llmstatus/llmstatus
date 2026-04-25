@@ -191,6 +191,7 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 		"email":       user.Email,
 		"digest_hour": user.DigestHour,
 		"timezone":    user.Timezone,
+		"is_admin":    user.IsAdmin,
 	})
 }
 
