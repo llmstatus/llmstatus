@@ -173,6 +173,18 @@ func (s *Server) getProvider(w http.ResponseWriter, r *http.Request) {
 	modelByModel, sparklines := s.loadModelLiveStats(r.Context())
 	ps := toProviderSummary(p, ongoingIncidentMap(activeIncs))
 	ps.ModelStats = buildModelStats(id, models, modelByModel, sparklines)
+	if s.liveStats != nil {
+		if stats, err := s.liveStats.AllProviderLiveStats(r.Context()); err == nil {
+			for _, st := range stats {
+				if st.ProviderID == id {
+					u, p95 := st.Uptime24h, st.P95Ms
+					ps.Uptime24h = &u
+					ps.P95Ms = &p95
+					break
+				}
+			}
+		}
+	}
 
 	detail := providerDetail{
 		providerSummary:  ps,
