@@ -103,12 +103,14 @@ func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
 
 	summaries := make([]providerSummary, 0, len(providers))
 	for _, p := range providers {
-		ps := toProviderSummary(p, incByProvider)
-		if st, ok := live.byProvider[p.ID]; ok {
-			u, p95 := st[0], st[1]
-			ps.Uptime24h = &u
-			ps.P95Ms = &p95
+		st, hasData := live.byProvider[p.ID]
+		if !hasData {
+			continue // skip providers with no probe data yet
 		}
+		ps := toProviderSummary(p, incByProvider)
+		u, p95 := st[0], st[1]
+		ps.Uptime24h = &u
+		ps.P95Ms = &p95
 		ps.ModelStats = buildModelStats(p.ID, modelsByProvider[p.ID], live.byModel, live.sparklines)
 		summaries = append(summaries, ps)
 	}
