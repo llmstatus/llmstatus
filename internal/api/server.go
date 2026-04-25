@@ -14,6 +14,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/llmstatus/llmstatus/internal/email"
 	"github.com/llmstatus/llmstatus/internal/keyenc"
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
@@ -35,6 +36,7 @@ type Server struct {
 	limiter   *RateLimiter      // optional; nil → no rate limiting
 	auth      *AuthConfig       // optional; nil → auth routes return 501
 	keyEnc    *keyenc.Encrypter // optional; nil → sponsor key endpoints return 503
+	mailer    email.Sender      // optional; nil → admin approval emails skipped
 	hub       *Hub              // WebSocket hub for real-time updates
 	mux       *http.ServeMux
 	handler   http.Handler // mux optionally wrapped with limiter middleware
@@ -53,6 +55,11 @@ func WithAuth(cfg *AuthConfig) func(*Server) {
 // WithKeyEncrypter enables sponsor API key storage.
 func WithKeyEncrypter(enc *keyenc.Encrypter) func(*Server) {
 	return func(s *Server) { s.keyEnc = enc }
+}
+
+// WithEmailSender enables transactional emails (sponsor approval notifications).
+func WithEmailSender(m email.Sender) func(*Server) {
+	return func(s *Server) { s.mailer = m }
 }
 
 // New creates a Server and registers all routes. Pass functional options
@@ -122,6 +129,11 @@ func (s *Server) registerRoutes() {
 		s.mux.HandleFunc("PATCH /v1/sponsor/me", s.updateSponsorMe)
 		s.mux.HandleFunc("PUT /v1/sponsor/me/keys/{provider_id}", s.upsertSponsorKey)
 		s.mux.HandleFunc("DELETE /v1/sponsor/me/keys/{provider_id}", s.deleteSponsorKey)
+
+		// Admin
+		s.mux.HandleFunc("GET /v1/admin/sponsors", s.adminListSponsors)
+		s.mux.HandleFunc("POST /v1/admin/sponsors/{id}/approve", s.adminApproveSponsor)
+		s.mux.HandleFunc("POST /v1/admin/sponsors/{id}/reject", s.adminRejectSponsor)
 	}
 }
 

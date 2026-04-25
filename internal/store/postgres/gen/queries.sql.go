@@ -13,6 +13,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const approveSponsor = `-- name: ApproveSponsor :one
+UPDATE sponsors SET status = 'approved', active = TRUE WHERE id = $1 RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status
+`
+
+func (q *Queries) ApproveSponsor(ctx context.Context, id string) (Sponsor, error) {
+	row := q.db.QueryRow(ctx, approveSponsor, id)
+	var i Sponsor
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.WebsiteUrl,
+		&i.LogoUrl,
+		&i.Tier,
+		&i.Active,
+		&i.CreatedAt,
+		&i.Status,
+	)
+	return i, err
+}
+
 const consumeOTPToken = `-- name: ConsumeOTPToken :one
 UPDATE otp_tokens
 SET used_at = NOW()
@@ -148,7 +169,7 @@ const createSponsor = `-- name: CreateSponsor :one
 
 INSERT INTO sponsors (id, user_id, name, website_url, logo_url, tier)
 VALUES ($1, $2, $3, $4, $5, 'standard')
-RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at
+RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status
 `
 
 type CreateSponsorParams struct {
@@ -178,6 +199,7 @@ func (q *Queries) CreateSponsor(ctx context.Context, arg CreateSponsorParams) (S
 		&i.Tier,
 		&i.Active,
 		&i.CreatedAt,
+		&i.Status,
 	)
 	return i, err
 }
@@ -404,7 +426,7 @@ func (q *Queries) GetProvider(ctx context.Context, id string) (Provider, error) 
 }
 
 const getSponsorByID = `-- name: GetSponsorByID :one
-SELECT id, user_id, name, website_url, logo_url, tier, active, created_at FROM sponsors WHERE id = $1
+SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status FROM sponsors WHERE id = $1
 `
 
 func (q *Queries) GetSponsorByID(ctx context.Context, id string) (Sponsor, error) {
@@ -419,12 +441,13 @@ func (q *Queries) GetSponsorByID(ctx context.Context, id string) (Sponsor, error
 		&i.Tier,
 		&i.Active,
 		&i.CreatedAt,
+		&i.Status,
 	)
 	return i, err
 }
 
 const getSponsorByUserID = `-- name: GetSponsorByUserID :one
-SELECT id, user_id, name, website_url, logo_url, tier, active, created_at FROM sponsors WHERE user_id = $1
+SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status FROM sponsors WHERE user_id = $1
 `
 
 func (q *Queries) GetSponsorByUserID(ctx context.Context, userID int64) (Sponsor, error) {
@@ -439,6 +462,7 @@ func (q *Queries) GetSponsorByUserID(ctx context.Context, userID int64) (Sponsor
 		&i.Tier,
 		&i.Active,
 		&i.CreatedAt,
+		&i.Status,
 	)
 	return i, err
 }
@@ -464,7 +488,7 @@ func (q *Queries) GetSubscription(ctx context.Context, id int64) (Subscription, 
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, digest_hour, timezone, created_at, verified_at FROM users WHERE email = $1
+SELECT id, email, digest_hour, timezone, created_at, verified_at, is_admin FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -477,12 +501,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Timezone,
 		&i.CreatedAt,
 		&i.VerifiedAt,
+		&i.IsAdmin,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, digest_hour, timezone, created_at, verified_at FROM users WHERE id = $1
+SELECT id, email, digest_hour, timezone, created_at, verified_at, is_admin FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
@@ -495,12 +520,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 		&i.Timezone,
 		&i.CreatedAt,
 		&i.VerifiedAt,
+		&i.IsAdmin,
 	)
 	return i, err
 }
 
 const getUserByOAuth = `-- name: GetUserByOAuth :one
-SELECT u.id, u.email, u.digest_hour, u.timezone, u.created_at, u.verified_at FROM users u
+SELECT u.id, u.email, u.digest_hour, u.timezone, u.created_at, u.verified_at, u.is_admin FROM users u
 JOIN oauth_accounts o ON o.user_id = u.id
 WHERE o.provider = $1 AND o.sub = $2
 `
@@ -520,8 +546,36 @@ func (q *Queries) GetUserByOAuth(ctx context.Context, arg GetUserByOAuthParams) 
 		&i.Timezone,
 		&i.CreatedAt,
 		&i.VerifiedAt,
+		&i.IsAdmin,
 	)
 	return i, err
+}
+
+const insertUserReport = `-- name: InsertUserReport :exec
+
+INSERT INTO user_reports (provider_id, ip_hash)
+SELECT $1, $2
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_reports
+    WHERE provider_id = $1
+      AND ip_hash     = $2
+      AND created_at  > NOW() - INTERVAL '5 minutes'
+)
+`
+
+type InsertUserReportParams struct {
+	ProviderID string `json:"provider_id"`
+	IpHash     string `json:"ip_hash"`
+}
+
+// ============================================================
+// user_reports (LLMS-048)
+// ============================================================
+// Inserts a report only when no report from the same ip_hash exists for the
+// same provider within the last 5 minutes (server-side dedup).
+func (q *Queries) InsertUserReport(ctx context.Context, arg InsertUserReportParams) error {
+	_, err := q.db.Exec(ctx, insertUserReport, arg.ProviderID, arg.IpHash)
+	return err
 }
 
 const isAlertSent = `-- name: IsAlertSent :one
@@ -571,33 +625,6 @@ func (q *Queries) IsDigestSent(ctx context.Context, arg IsDigestSentParams) (boo
 	var sent bool
 	err := row.Scan(&sent)
 	return sent, err
-}
-
-const insertUserReport = `-- name: InsertUserReport :exec
-
-INSERT INTO user_reports (provider_id, ip_hash)
-SELECT $1, $2
-WHERE NOT EXISTS (
-    SELECT 1 FROM user_reports
-    WHERE provider_id = $1
-      AND ip_hash     = $2
-      AND created_at  > NOW() - INTERVAL '5 minutes'
-)
-`
-
-type InsertUserReportParams struct {
-	ProviderID string `json:"provider_id"`
-	IpHash     string `json:"ip_hash"`
-}
-
-// ============================================================
-// user_reports (LLMS-048)
-// ============================================================
-// Inserts a report only when no report from the same ip_hash exists for the
-// same provider within the last 5 minutes (server-side dedup).
-func (q *Queries) InsertUserReport(ctx context.Context, arg InsertUserReportParams) error {
-	_, err := q.db.Exec(ctx, insertUserReport, arg.ProviderID, arg.IpHash)
-	return err
 }
 
 const listActiveProviders = `-- name: ListActiveProviders :many
@@ -675,7 +702,7 @@ func (q *Queries) ListActiveSponsorKeys(ctx context.Context) ([]SponsorKey, erro
 }
 
 const listActiveSponsors = `-- name: ListActiveSponsors :many
-SELECT id, user_id, name, website_url, logo_url, tier, active, created_at FROM sponsors WHERE active = TRUE ORDER BY tier DESC, created_at ASC
+SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status FROM sponsors WHERE status = 'approved' ORDER BY tier DESC, created_at ASC
 `
 
 func (q *Queries) ListActiveSponsors(ctx context.Context) ([]Sponsor, error) {
@@ -696,6 +723,7 @@ func (q *Queries) ListActiveSponsors(ctx context.Context) ([]Sponsor, error) {
 			&i.Tier,
 			&i.Active,
 			&i.CreatedAt,
+			&i.Status,
 		); err != nil {
 			return nil, err
 		}
@@ -986,6 +1014,40 @@ func (q *Queries) ListModelsByProvider(ctx context.Context, providerID string) (
 	return items, nil
 }
 
+const listPendingSponsors = `-- name: ListPendingSponsors :many
+SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status FROM sponsors WHERE status = 'pending' ORDER BY created_at ASC
+`
+
+func (q *Queries) ListPendingSponsors(ctx context.Context) ([]Sponsor, error) {
+	rows, err := q.db.Query(ctx, listPendingSponsors)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Sponsor{}
+	for rows.Next() {
+		var i Sponsor
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.WebsiteUrl,
+			&i.LogoUrl,
+			&i.Tier,
+			&i.Active,
+			&i.CreatedAt,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listProviders = `-- name: ListProviders :many
 SELECT id, name, category, base_url, auth_type, status_page_url, documentation_url, region, added_at, active, config, probe_scope FROM providers
 ORDER BY name
@@ -1256,7 +1318,7 @@ func (q *Queries) ListSubscriptionsForProvider(ctx context.Context, providerID s
 
 const listUsersForDigest = `-- name: ListUsersForDigest :many
 
-SELECT DISTINCT u.id, u.email, u.digest_hour, u.timezone, u.created_at, u.verified_at
+SELECT DISTINCT u.id, u.email, u.digest_hour, u.timezone, u.created_at, u.verified_at, u.is_admin
 FROM users u
 JOIN subscriptions s ON s.user_id = u.id
 WHERE s.email_digest = TRUE
@@ -1282,6 +1344,7 @@ func (q *Queries) ListUsersForDigest(ctx context.Context) ([]User, error) {
 			&i.Timezone,
 			&i.CreatedAt,
 			&i.VerifiedAt,
+			&i.IsAdmin,
 		); err != nil {
 			return nil, err
 		}
@@ -1338,6 +1401,27 @@ UPDATE users SET verified_at = NOW() WHERE id = $1 AND verified_at IS NULL
 func (q *Queries) MarkUserVerified(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, markUserVerified, id)
 	return err
+}
+
+const rejectSponsor = `-- name: RejectSponsor :one
+UPDATE sponsors SET status = 'rejected', active = FALSE WHERE id = $1 RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status
+`
+
+func (q *Queries) RejectSponsor(ctx context.Context, id string) (Sponsor, error) {
+	row := q.db.QueryRow(ctx, rejectSponsor, id)
+	var i Sponsor
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.WebsiteUrl,
+		&i.LogoUrl,
+		&i.Tier,
+		&i.Active,
+		&i.CreatedAt,
+		&i.Status,
+	)
+	return i, err
 }
 
 const resolveIncident = `-- name: ResolveIncident :exec
@@ -1426,7 +1510,7 @@ const updateSponsor = `-- name: UpdateSponsor :one
 UPDATE sponsors
 SET name = $2, website_url = $3, logo_url = $4
 WHERE id = $1
-RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at
+RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status
 `
 
 type UpdateSponsorParams struct {
@@ -1453,6 +1537,7 @@ func (q *Queries) UpdateSponsor(ctx context.Context, arg UpdateSponsorParams) (S
 		&i.Tier,
 		&i.Active,
 		&i.CreatedAt,
+		&i.Status,
 	)
 	return i, err
 }
@@ -1711,7 +1796,7 @@ const upsertUser = `-- name: UpsertUser :one
 INSERT INTO users (email)
 VALUES ($1)
 ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
-RETURNING id, email, digest_hour, timezone, created_at, verified_at
+RETURNING id, email, digest_hour, timezone, created_at, verified_at, is_admin
 `
 
 // ============================================================
@@ -1727,6 +1812,7 @@ func (q *Queries) UpsertUser(ctx context.Context, email string) (User, error) {
 		&i.Timezone,
 		&i.CreatedAt,
 		&i.VerifiedAt,
+		&i.IsAdmin,
 	)
 	return i, err
 }

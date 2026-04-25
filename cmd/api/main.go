@@ -80,6 +80,7 @@ func main() {
 
 	if authCfg, ok := buildAuthConfig(store); ok {
 		opts = append(opts, api.WithAuth(authCfg))
+		opts = append(opts, api.WithEmailSender(authCfg.Email))
 	}
 
 	if hexKey := os.Getenv("SPONSOR_KEY_ENCRYPTION_KEY"); hexKey != "" {

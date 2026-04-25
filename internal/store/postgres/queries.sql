@@ -345,7 +345,16 @@ WHERE id = $1
 RETURNING *;
 
 -- name: ListActiveSponsors :many
-SELECT * FROM sponsors WHERE active = TRUE ORDER BY tier DESC, created_at ASC;
+SELECT * FROM sponsors WHERE status = 'approved' ORDER BY tier DESC, created_at ASC;
+
+-- name: ListPendingSponsors :many
+SELECT * FROM sponsors WHERE status = 'pending' ORDER BY created_at ASC;
+
+-- name: ApproveSponsor :one
+UPDATE sponsors SET status = 'approved', active = TRUE WHERE id = $1 RETURNING *;
+
+-- name: RejectSponsor :one
+UPDATE sponsors SET status = 'rejected', active = FALSE WHERE id = $1 RETURNING *;
 
 -- ── Sponsor keys ──────────────────────────────────────────────────────────
 

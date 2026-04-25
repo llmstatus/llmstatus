@@ -25,9 +25,13 @@ type Store interface {
 
 	// Sponsors
 	ListActiveSponsors(ctx context.Context) ([]pgstore.Sponsor, error)
+	ListPendingSponsors(ctx context.Context) ([]pgstore.Sponsor, error)
 	CreateSponsor(ctx context.Context, arg pgstore.CreateSponsorParams) (pgstore.Sponsor, error)
+	GetSponsorByID(ctx context.Context, id string) (pgstore.Sponsor, error)
 	GetSponsorByUserID(ctx context.Context, userID int64) (pgstore.Sponsor, error)
 	UpdateSponsor(ctx context.Context, arg pgstore.UpdateSponsorParams) (pgstore.Sponsor, error)
+	ApproveSponsor(ctx context.Context, id string) (pgstore.Sponsor, error)
+	RejectSponsor(ctx context.Context, id string) (pgstore.Sponsor, error)
 	ListSponsorKeys(ctx context.Context, sponsorID string) ([]pgstore.SponsorKey, error)
 	UpsertSponsorKey(ctx context.Context, arg pgstore.UpsertSponsorKeyParams) (pgstore.SponsorKey, error)
 	DeleteSponsorKey(ctx context.Context, arg pgstore.DeleteSponsorKeyParams) error
