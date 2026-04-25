@@ -55,6 +55,17 @@ resource "aws_security_group" "this" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  dynamic "ingress" {
+    for_each = length(var.probe_node_cidrs) > 0 ? [1] : []
+    content {
+      description = "Postgres from probe nodes"
+      from_port   = 15432
+      to_port     = 15432
+      protocol    = "tcp"
+      cidr_blocks = var.probe_node_cidrs
+    }
+  }
+
   egress {
     from_port   = 0
     to_port     = 0

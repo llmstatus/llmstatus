@@ -16,7 +16,13 @@ module "main_server" {
   environment         = var.environment
   ssh_public_key      = var.ssh_public_key
   data_volume_size_gb = 80
-  tags                = local.tags
+  probe_node_cidrs = [
+    "${module.probe_us_east_1.public_ip}/32",
+    "${module.probe_ap_northeast_1.public_ip}/32",
+    "${module.probe_ap_southeast_1.public_ip}/32",
+    "${module.probe_eu_central_1.public_ip}/32",
+  ]
+  tags = local.tags
 }
 
 # ── AWS probe: us-east-1 (near Google / AWS Bedrock) ────────────────────────

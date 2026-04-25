@@ -39,7 +39,7 @@
 
 # ── Build prober binary ───────────────────────────────────────────────────
 - name: build prober
-  command: /usr/local/go/bin/go build -o {{ app_dir }}/llmstatus-prober ./cmd/prober
+  command: /usr/local/go/bin/go build -tags livekeys -o {{ app_dir }}/llmstatus-prober ./cmd/prober
   args:
     chdir: "{{ app_dir }}"
   become_user: ubuntu
