@@ -12,6 +12,14 @@
     port: "443"
     proto: tcp
 
+- name: allow Postgres from probe nodes
+  ufw:
+    rule: allow
+    port: "15432"
+    proto: tcp
+    src: "{{ item }}"
+  loop: "{{ probe_node_ips }}"
+
 # ── Docker ────────────────────────────────────────────────────────────────
 - name: add Docker GPG key
   apt_key:

@@ -38,7 +38,7 @@ server {
 
     # ── Ingest API (probe nodes push here with INGEST_SECRET header) ──────
     location /ingest/ {
-        proxy_pass http://127.0.0.1:18080;
+        proxy_pass http://127.0.0.1:18080/;
         proxy_read_timeout 10s;
     }
 

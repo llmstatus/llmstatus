@@ -19,6 +19,12 @@ variable "data_volume_size_gb" {
   default     = 80
 }
 
+variable "probe_node_cidrs" {
+  description = "CIDR blocks for probe nodes allowed to reach Postgres port 15432"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   type    = map(string)
   default = {}
