@@ -119,7 +119,9 @@ func loadProviderConfigs(ctx context.Context, pool *pgxpool.Pool, regionID strin
 
 		modelIDs := make([]string, 0, len(models))
 		for _, m := range models {
-			modelIDs = append(modelIDs, m.ModelID)
+			if m.Active {
+				modelIDs = append(modelIDs, m.ModelID)
+			}
 		}
 
 		if len(modelIDs) == 0 {
