@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProviderSummary } from "@/lib/api";
 
@@ -14,10 +15,20 @@ const SELECT_CLS =
 
 export function CompareSelector({ providers, a, b }: Props) {
   const router = useRouter();
+  const [selA, setSelA] = useState(a);
+  const [selB, setSelB] = useState(b);
 
-  function navigate(nextA: string, nextB: string) {
-    if (nextA && nextB) {
-      router.push(`/compare?a=${encodeURIComponent(nextA)}&b=${encodeURIComponent(nextB)}`);
+  function handleA(value: string) {
+    setSelA(value);
+    if (value && selB) {
+      router.push(`/compare?a=${encodeURIComponent(value)}&b=${encodeURIComponent(selB)}`);
+    }
+  }
+
+  function handleB(value: string) {
+    setSelB(value);
+    if (selA && value) {
+      router.push(`/compare?a=${encodeURIComponent(selA)}&b=${encodeURIComponent(value)}`);
     }
   }
 
@@ -25,8 +36,8 @@ export function CompareSelector({ providers, a, b }: Props) {
     <div className="flex flex-wrap items-center gap-3">
       <select
         className={SELECT_CLS}
-        value={a}
-        onChange={(e) => navigate(e.target.value, b)}
+        value={selA}
+        onChange={(e) => handleA(e.target.value)}
         aria-label="First provider"
       >
         <option value="">Select provider…</option>
@@ -37,8 +48,8 @@ export function CompareSelector({ providers, a, b }: Props) {
       <span className="text-sm text-[var(--ink-400)]">vs</span>
       <select
         className={SELECT_CLS}
-        value={b}
-        onChange={(e) => navigate(a, e.target.value)}
+        value={selB}
+        onChange={(e) => handleB(e.target.value)}
         aria-label="Second provider"
       >
         <option value="">Select provider…</option>
