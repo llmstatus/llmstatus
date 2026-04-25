@@ -30,6 +30,9 @@ type openaiStreamChunk struct {
 // time. A stream that ends with [DONE] before producing any content token is
 // classified as ErrorClassMalformedBody.
 func (p *openaiProvider) ProbeStreaming(ctx context.Context, model string) (probes.ProbeResult, error) {
+	if isOpenAIEmbeddingModel(model) {
+		return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: "streaming"}
+	}
 	started := time.Now()
 	r := probes.ProbeResult{
 		ProviderID: openaiProviderID,

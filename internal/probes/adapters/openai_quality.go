@@ -23,6 +23,9 @@ const (
 // expected token. A 200 response whose content does not contain the expected
 // word is classified as ErrorClassQualityMismatch.
 func (p *openaiProvider) ProbeQuality(ctx context.Context, model string) (probes.ProbeResult, error) {
+	if isOpenAIEmbeddingModel(model) {
+		return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: "quality"}
+	}
 	started := time.Now()
 	r := probes.ProbeResult{
 		ProviderID: openaiProviderID,
