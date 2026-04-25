@@ -140,6 +140,10 @@ services:
       INFLUX_DATABASE: ${INFLUX_DATABASE:-probes}
       API_ADDR: ":8081"
       API_RATE_LIMIT: ${API_RATE_LIMIT:-60}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-prod}
+      INTERNAL_SECRET: ${INTERNAL_SECRET:-dev-internal-secret}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@llmstatus.io}
     depends_on:
       db:
         condition: service_healthy
@@ -184,6 +188,12 @@ services:
     environment:
       API_URL: http://api:8081
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:13000}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-prod}
+      INTERNAL_SECRET: ${INTERNAL_SECRET:-dev-internal-secret}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
     depends_on:
       api:
         condition: service_healthy
