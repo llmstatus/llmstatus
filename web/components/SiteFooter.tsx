@@ -15,6 +15,8 @@ export function SiteFooter({ message = DEFAULT_MESSAGE }: Props) {
         <div className="flex items-center gap-4">
           <Link href="/about" className="hover:text-[var(--ink-200)] transition-colors">About</Link>
           <Link href="/methodology" className="hover:text-[var(--ink-200)] transition-colors">Methodology</Link>
+          <Link href="/privacy" className="hover:text-[var(--ink-200)] transition-colors">Privacy</Link>
+          <Link href="/tos" className="hover:text-[var(--ink-200)] transition-colors">Terms</Link>
           <Link href="/api/feed" className="hover:text-[var(--ink-200)] transition-colors" aria-label="RSS feed">RSS</Link>
         </div>
       </div>
