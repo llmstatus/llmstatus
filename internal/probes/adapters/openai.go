@@ -76,7 +76,14 @@ func (p *openaiProvider) Models() []string { return []string{openaiLightModel} }
 // malformed body): those are carried in the result's ErrorClass.
 // It only returns a non-nil error for programmer / environment bugs
 // (context cancelled, marshalling failure).
+func isOpenAIEmbeddingModel(model string) bool {
+	return strings.Contains(model, "embedding")
+}
+
 func (p *openaiProvider) ProbeLightInference(ctx context.Context, model string) (probes.ProbeResult, error) {
+	if isOpenAIEmbeddingModel(model) {
+		return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: "light_inference"}
+	}
 	started := time.Now()
 	r := probes.ProbeResult{
 		ProviderID: openaiProviderID,
