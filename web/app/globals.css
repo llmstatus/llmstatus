@@ -114,3 +114,30 @@ html, body {
 .input-field:focus {
   border-color: var(--ink-400);
 }
+
+/* ── Heartbeat logo animation ─────────────────────────────────────────── */
+@keyframes heartbeat {
+  0%, 50%, 100% { transform: scale(1); opacity: 0.85; }
+  38%           { transform: scale(1.55); opacity: 1; }
+  44%           { transform: scale(0.9); opacity: 0.9; }
+}
+
+@keyframes beat-ring {
+  0%, 38%, 100% { transform: scale(1); opacity: 0; }
+  40%           { transform: scale(1); opacity: 0.45; }
+  65%           { transform: scale(2.6); opacity: 0; }
+}
+
+.beat {
+  animation: heartbeat 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: transform;
+}
+
+.beat-ring {
+  animation: beat-ring 2.4s ease-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat, .beat-ring { animation: none; }
+}
