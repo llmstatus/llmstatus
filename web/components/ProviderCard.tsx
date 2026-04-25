@@ -1,28 +1,29 @@
 import Link from "next/link";
-import type { ProviderSummary, ModelStat } from "@/lib/api";
+import type { ProviderSummary, ProviderStatus } from "@/lib/api";
 import { LatencySparkline } from "./LatencySparkline";
+import { aggregateSparklines } from "@/lib/sparkline";
 
 // ── Status ─────────────────────────────────────────────────────────────────
 
-const STATUS_PILL: Record<string, string> = {
+const STATUS_PILL: Record<ProviderStatus, string> = {
   operational: "bg-[var(--signal-ok-bg)] text-[var(--signal-ok)]",
   degraded:    "bg-[var(--signal-warn-bg)] text-[var(--signal-warn)]",
   down:        "bg-[var(--signal-down-bg)] text-[var(--signal-down)]",
 };
 
-const STATUS_DOT: Record<string, string> = {
+const STATUS_DOT: Record<ProviderStatus, string> = {
   operational: "bg-[var(--signal-ok)]",
   degraded:    "bg-[var(--signal-warn)]",
   down:        "bg-[var(--signal-down)]",
 };
 
-const STATUS_ACCENT: Record<string, string> = {
+const STATUS_ACCENT: Record<ProviderStatus, string> = {
   operational: "shadow-[inset_3px_0_0_var(--signal-ok)]",
   degraded:    "shadow-[inset_3px_0_0_var(--signal-warn)]",
   down:        "shadow-[inset_3px_0_0_var(--signal-down)]",
 };
 
-const STATUS_COLOR: Record<string, string> = {
+const STATUS_COLOR: Record<ProviderStatus, string> = {
   operational: "var(--signal-ok)",
   degraded:    "var(--signal-warn)",
   down:        "var(--signal-down)",
@@ -34,23 +35,6 @@ function uptimeColor(u: number): string {
   if (u >= 0.995) return "text-[var(--signal-ok)]";
   if (u >= 0.95)  return "text-[var(--signal-warn)]";
   return "text-[var(--signal-down)]";
-}
-
-// ── Aggregate sparklines across all models ──────────────────────────────────
-
-function aggregateSparklines(modelStats: ModelStat[]): number[] {
-  const BUCKETS = 60;
-  const sums = new Array<number>(BUCKETS).fill(0);
-  const counts = new Array<number>(BUCKETS).fill(0);
-  for (const m of modelStats) {
-    for (let i = 0; i < BUCKETS; i++) {
-      if (m.sparkline[i] > 0) {
-        sums[i] += m.sparkline[i];
-        counts[i]++;
-      }
-    }
-  }
-  return sums.map((s, i) => (counts[i] > 0 ? s / counts[i] : 0));
 }
 
 // ── Provider card ───────────────────────────────────────────────────────────

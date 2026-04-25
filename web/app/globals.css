@@ -134,6 +134,10 @@ html, body {
 }
 
 .beat-ring {
-  animation: beat-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: beat-ring 2.4s ease-out infinite;
   will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat, .beat-ring { animation: none; }
 }

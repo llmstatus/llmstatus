@@ -1,24 +1,16 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import type { ProviderSummary, ModelStat } from "@/lib/api";
+import type { ProviderSummary } from "@/lib/api";
 import { StatusPill } from "./StatusPill";
 import { LatencySparkline } from "./LatencySparkline";
+import { aggregateSparklines } from "@/lib/sparkline";
 
-function aggregateSparklines(modelStats: ModelStat[]): number[] {
-  const BUCKETS = 60;
-  const sums = new Array<number>(BUCKETS).fill(0);
-  const counts = new Array<number>(BUCKETS).fill(0);
-  for (const m of modelStats) {
-    for (let i = 0; i < BUCKETS; i++) {
-      if (m.sparkline[i] > 0) {
-        sums[i] += m.sparkline[i];
-        counts[i]++;
-      }
-    }
-  }
-  return sums.map((s, i) => (counts[i] > 0 ? s / counts[i] : 0));
-}
+const STATUS_SPARKLINE_COLOR: Record<string, string> = {
+  operational: "var(--signal-ok)",
+  degraded:    "var(--signal-warn)",
+  down:        "var(--signal-down)",
+};
 
 const CATEGORY_LABEL: Record<string, string> = {
   official: "Official",
@@ -178,6 +170,7 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
                   width={80}
                   height={22}
                   area
+                  color={STATUS_SPARKLINE_COLOR[p.current_status] ?? "var(--viz-1)"}
                 />
               </td>
               <td className="px-4 py-3 text-right">
