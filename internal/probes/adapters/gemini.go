@@ -16,7 +16,7 @@ import (
 const (
 	geminiDefaultBaseURL = "https://generativelanguage.googleapis.com"
 	geminiProviderID     = "google_gemini"
-	geminiLightModel     = "gemini-2.0-flash"
+	geminiLightModel     = "gemini-2.5-flash"
 	geminiLightProbeType = "light_inference"
 	geminiErrorDetailMax = 200
 )
