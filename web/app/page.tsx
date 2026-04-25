@@ -69,15 +69,15 @@ export default async function HomePage() {
           backgroundSize: "8px 8px",
         }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--signal-amber)] mb-4">
           llmstatus.io
         </p>
-        <h1 className="text-3xl font-semibold text-[var(--ink-100)] leading-tight mb-3">
+        <h1 className="text-4xl font-semibold text-[var(--ink-100)] leading-tight mb-4">
           Independent real-time monitoring
           <br />
           for the AI infrastructure.
         </h1>
-        <p className="text-sm text-[var(--ink-400)] leading-relaxed">
+        <p className="text-base text-[var(--ink-400)] leading-relaxed">
           Measured from 7 global locations.
           <br />
           Not scraped from official status pages.
@@ -85,7 +85,7 @@ export default async function HomePage() {
       </div>
 
       <div className="mb-6">
-        <p className={`text-sm font-medium ${summaryColor}`}>{summaryText}</p>
+        <p className={`text-base font-medium ${summaryColor}`}>{summaryText}</p>
       </div>
 
       {/* Recent incidents — shown only when data exists */}

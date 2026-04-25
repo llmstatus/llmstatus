@@ -1,8 +1,24 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import type { ProviderSummary } from "@/lib/api";
+import type { ProviderSummary, ModelStat } from "@/lib/api";
 import { StatusPill } from "./StatusPill";
+import { LatencySparkline } from "./LatencySparkline";
+
+function aggregateSparklines(modelStats: ModelStat[]): number[] {
+  const BUCKETS = 60;
+  const sums = new Array<number>(BUCKETS).fill(0);
+  const counts = new Array<number>(BUCKETS).fill(0);
+  for (const m of modelStats) {
+    for (let i = 0; i < BUCKETS; i++) {
+      if (m.sparkline[i] > 0) {
+        sums[i] += m.sparkline[i];
+        counts[i]++;
+      }
+    }
+  }
+  return sums.map((s, i) => (counts[i] > 0 ? s / counts[i] : 0));
+}
 
 const CATEGORY_LABEL: Record<string, string> = {
   official: "Official",
@@ -120,6 +136,9 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
             <th className={`${thCls} text-right`} onClick={() => handleSort("p95")}>
               <SortIcon col="p95" active={sortKey} dir={sortDir} /> p95
             </th>
+            <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+              Trend
+            </th>
             <th className={`${thCls} text-right`} onClick={() => handleSort("status")}>
               <SortIcon col="status" active={sortKey} dir={sortDir} /> Status
             </th>
@@ -152,6 +171,14 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
               </td>
               <td className="px-4 py-3 text-right font-mono text-[var(--ink-200)]">
                 {formatP95(p.p95_ms)}
+              </td>
+              <td className="px-4 py-3 text-right">
+                <LatencySparkline
+                  data={aggregateSparklines(p.model_stats ?? [])}
+                  width={80}
+                  height={22}
+                  area
+                />
               </td>
               <td className="px-4 py-3 text-right">
                 <StatusPill status={p.current_status} />

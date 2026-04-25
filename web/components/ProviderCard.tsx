@@ -2,25 +2,33 @@ import Link from "next/link";
 import type { ProviderSummary, ModelStat } from "@/lib/api";
 import { LatencySparkline } from "./LatencySparkline";
 
-// ── Status pill ────────────────────────────────────────────────────────────
+// ── Status ─────────────────────────────────────────────────────────────────
 
-const STATUS_STYLES = {
+const STATUS_PILL: Record<string, string> = {
   operational: "bg-[var(--signal-ok-bg)] text-[var(--signal-ok)]",
   degraded:    "bg-[var(--signal-warn-bg)] text-[var(--signal-warn)]",
   down:        "bg-[var(--signal-down-bg)] text-[var(--signal-down)]",
-} as const;
+};
 
-function StatusPill({ status }: { status: string }) {
-  const cls = STATUS_STYLES[status as keyof typeof STATUS_STYLES]
-    ?? "bg-[var(--canvas-overlay)] text-[var(--ink-400)]";
-  return (
-    <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
-      {status}
-    </span>
-  );
-}
+const STATUS_DOT: Record<string, string> = {
+  operational: "bg-[var(--signal-ok)]",
+  degraded:    "bg-[var(--signal-warn)]",
+  down:        "bg-[var(--signal-down)]",
+};
 
-// ── Stat cell ──────────────────────────────────────────────────────────────
+const STATUS_ACCENT: Record<string, string> = {
+  operational: "shadow-[inset_3px_0_0_var(--signal-ok)]",
+  degraded:    "shadow-[inset_3px_0_0_var(--signal-warn)]",
+  down:        "shadow-[inset_3px_0_0_var(--signal-down)]",
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  operational: "var(--signal-ok)",
+  degraded:    "var(--signal-warn)",
+  down:        "var(--signal-down)",
+};
+
+// ── Uptime color ────────────────────────────────────────────────────────────
 
 function uptimeColor(u: number): string {
   if (u >= 0.995) return "text-[var(--signal-ok)]";
@@ -28,21 +36,7 @@ function uptimeColor(u: number): string {
   return "text-[var(--signal-down)]";
 }
 
-function StatCell({ label, value, colorClass }: { label: string; value: string; colorClass?: string }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-500)]">
-        {label}
-      </span>
-      <span className={`text-sm font-mono tabular-nums ${colorClass ?? "text-[var(--ink-300)]"}`}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-// ── Provider-level sparkline ───────────────────────────────────────────────
-// Average non-zero avg_ms values across all models per time bucket.
+// ── Aggregate sparklines across all models ──────────────────────────────────
 
 function aggregateSparklines(modelStats: ModelStat[]): number[] {
   const BUCKETS = 60;
@@ -59,13 +53,9 @@ function aggregateSparklines(modelStats: ModelStat[]): number[] {
   return sums.map((s, i) => (counts[i] > 0 ? s / counts[i] : 0));
 }
 
-// ── Provider card ──────────────────────────────────────────────────────────
+// ── Provider card ───────────────────────────────────────────────────────────
 
-interface Props {
-  provider: ProviderSummary;
-}
-
-export function ProviderCard({ provider: p }: Props) {
+export function ProviderCard({ provider: p }: { provider: ProviderSummary }) {
   const uptime = p.uptime_24h !== undefined
     ? (p.uptime_24h * 100).toFixed(1) + "%"
     : "—";
@@ -79,46 +69,77 @@ export function ProviderCard({ provider: p }: Props) {
   const modelNames = (p.model_stats ?? []).map((m) => m.display_name);
   const sparkline = aggregateSparklines(p.model_stats ?? []);
 
+  const pillCls = STATUS_PILL[p.current_status] ?? "bg-[var(--canvas-overlay)] text-[var(--ink-400)]";
+  const dotCls  = STATUS_DOT[p.current_status]  ?? "bg-[var(--ink-500)]";
+  const accentCls = STATUS_ACCENT[p.current_status] ?? "";
+  const sparkColor = STATUS_COLOR[p.current_status] ?? "var(--viz-1)";
+
   return (
     <Link
       href={`/providers/${p.id}`}
-      className="flex flex-col rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)]
-                 hover:border-[var(--ink-500)] hover:bg-[var(--canvas-overlay)]
-                 transition-colors"
+      className={`flex flex-col rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)]
+                  hover:border-[var(--ink-500)] hover:bg-[var(--canvas-overlay)]
+                  transition-colors ${accentCls}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <span className="text-sm font-semibold text-[var(--ink-100)]">{p.name}</span>
-        <StatusPill status={p.current_status} />
+      <div className="flex items-center justify-between px-4 py-3.5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${dotCls}`} />
+          <span className="text-base font-semibold text-[var(--ink-100)] truncate">{p.name}</span>
+        </div>
+        <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${pillCls}`}>
+          {p.current_status}
+        </span>
       </div>
 
-      {/* Stats + sparkline */}
-      <div className="flex items-end gap-4 border-t border-[var(--ink-600)] px-4 py-3">
-        <StatCell
-          label="Uptime 24h"
-          value={uptime}
-          colorClass={p.uptime_24h !== undefined ? uptimeColor(p.uptime_24h) : "text-[var(--ink-500)]"}
+      {/* Sparkline — full width, taller, area fill */}
+      <div className="px-4 pb-2">
+        <LatencySparkline
+          data={sparkline}
+          width={300}
+          height={48}
+          className="w-full"
+          area
+          color={sparkColor}
         />
-        <StatCell label="p95" value={p95} />
-        <div className="flex-1">
-          <LatencySparkline data={sparkline} width={200} height={28} className="w-full" />
+      </div>
+
+      {/* Stats row */}
+      <div className="flex items-center gap-6 border-t border-[var(--ink-600)] px-4 py-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-500)]">
+            Uptime 24h
+          </span>
+          <span className={`text-base font-mono tabular-nums font-semibold ${
+            p.uptime_24h !== undefined ? uptimeColor(p.uptime_24h) : "text-[var(--ink-500)]"
+          }`}>
+            {uptime}
+          </span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-500)]">
+            p95 Latency
+          </span>
+          <span className="text-base font-mono tabular-nums font-semibold text-[var(--ink-200)]">
+            {p95}
+          </span>
         </div>
       </div>
 
       {/* Model tags */}
       {modelNames.length > 0 && (
-        <div className="flex flex-wrap gap-1 border-t border-[var(--ink-600)] px-4 pb-3 pt-2">
+        <div className="flex flex-wrap gap-1 border-t border-[var(--ink-600)] px-4 pb-3 pt-2.5">
           {modelNames.slice(0, 4).map((name) => (
             <span
               key={name}
-              className="rounded bg-[var(--canvas-overlay)] px-1.5 py-0.5 text-[10px] text-[var(--ink-500)]"
+              className="rounded bg-[var(--canvas-overlay)] px-2 py-0.5 text-[11px] text-[var(--ink-400)]"
             >
               {name}
             </span>
           ))}
           {modelNames.length > 4 && (
-            <span className="px-1 py-0.5 text-[10px] text-[var(--ink-600)]">
-              +{modelNames.length - 4} more
+            <span className="px-1 py-0.5 text-[11px] text-[var(--ink-600)]">
+              +{modelNames.length - 4}
             </span>
           )}
         </div>

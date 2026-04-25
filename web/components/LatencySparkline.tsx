@@ -1,29 +1,24 @@
 interface Props {
-  data: number[];   // 60 avg_ms values; 0 means no data
+  data: number[];
   width?: number;
   height?: number;
-  className?: string; // applied to the <svg> element; use "w-full" to fill container
+  className?: string;
+  area?: boolean;
+  color?: string;
 }
 
-// buildPath converts 60 avg_ms values into an SVG path string.
-// Zero values are treated as gaps (M move instead of L line).
-function buildPath(data: number[], w: number, h: number): string {
+function buildLinePath(data: number[], w: number, h: number): string {
   const valid = data.filter((v) => v > 0);
   if (valid.length === 0) return "";
 
   const max = Math.max(...valid);
-  const pad = 2; // vertical padding in px
-
+  const pad = 2;
   let d = "";
   let prevHadData = false;
 
   for (let i = 0; i < data.length; i++) {
     const x = ((i / (data.length - 1)) * w).toFixed(1);
-    if (data[i] <= 0) {
-      prevHadData = false;
-      continue;
-    }
-    // Invert Y: higher latency = lower on the chart (nearer the bottom).
+    if (data[i] <= 0) { prevHadData = false; continue; }
     const y = (h - pad - ((data[i] / max) * (h - pad * 2))).toFixed(1);
     d += prevHadData ? `L${x} ${y}` : `M${x} ${y}`;
     prevHadData = true;
@@ -31,11 +26,56 @@ function buildPath(data: number[], w: number, h: number): string {
   return d;
 }
 
-export function LatencySparkline({ data, width = 88, height = 28, className }: Props) {
-  const d = buildPath(data, width, height);
-  if (!d) {
-    return <span className="text-[10px] text-[var(--ink-500)]">no data</span>;
+function buildAreaPaths(data: number[], w: number, h: number): string {
+  const valid = data.filter((v) => v > 0);
+  if (valid.length === 0) return "";
+
+  const max = Math.max(...valid);
+  const pad = 2;
+
+  const segments: { x: number; y: number }[][] = [];
+  let cur: { x: number; y: number }[] = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const x = (i / (data.length - 1)) * w;
+    if (data[i] <= 0) {
+      if (cur.length > 0) { segments.push(cur); cur = []; }
+      continue;
+    }
+    const y = h - pad - ((data[i] / max) * (h - pad * 2));
+    cur.push({ x, y });
   }
+  if (cur.length > 0) segments.push(cur);
+
+  return segments
+    .filter((s) => s.length >= 2)
+    .map((seg) => {
+      const first = seg[0];
+      const last = seg[seg.length - 1];
+      let p = `M${first.x.toFixed(1)} ${h}L${first.x.toFixed(1)} ${first.y.toFixed(1)}`;
+      for (let i = 1; i < seg.length; i++) {
+        p += `L${seg[i].x.toFixed(1)} ${seg[i].y.toFixed(1)}`;
+      }
+      p += `L${last.x.toFixed(1)} ${h}Z`;
+      return p;
+    })
+    .join(" ");
+}
+
+export function LatencySparkline({
+  data,
+  width = 88,
+  height = 28,
+  className,
+  area = false,
+  color = "var(--viz-1)",
+}: Props) {
+  const lineD = buildLinePath(data, width, height);
+  if (!lineD) {
+    return <span className="text-[11px] text-[var(--ink-500)]">no data</span>;
+  }
+
+  const areaD = area ? buildAreaPaths(data, width, height) : "";
 
   return (
     <svg
@@ -46,14 +86,25 @@ export function LatencySparkline({ data, width = 88, height = 28, className }: P
       className={className}
       aria-hidden="true"
     >
+      {area && (
+        <defs>
+          <linearGradient id="sp-area-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      )}
+      {area && areaD && (
+        <path d={areaD} fill="url(#sp-area-grad)" />
+      )}
       <path
-        d={d}
+        d={lineD}
         fill="none"
-        stroke="var(--viz-1)"
+        stroke={color}
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
-        opacity="0.85"
+        opacity="0.9"
       />
     </svg>
   );
