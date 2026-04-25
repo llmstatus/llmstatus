@@ -39,13 +39,20 @@
 
 # ── Build prober binary ───────────────────────────────────────────────────
 - name: build prober
-  command: /usr/local/go/bin/go build -o /usr/local/bin/llmstatus-prober ./cmd/prober
+  command: /usr/local/go/bin/go build -o {{ app_dir }}/llmstatus-prober ./cmd/prober
   args:
     chdir: "{{ app_dir }}"
   become_user: ubuntu
   environment:
     HOME: /home/ubuntu
     GOPATH: /home/ubuntu/go
+
+- name: install prober binary
+  copy:
+    src: "{{ app_dir }}/llmstatus-prober"
+    dest: /usr/local/bin/llmstatus-prober
+    mode: "0755"
+    remote_src: true
 
 # ── Prober env and service ────────────────────────────────────────────────
 - name: deploy prober env file
