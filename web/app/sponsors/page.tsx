@@ -25,6 +25,14 @@ async function fetchSponsors(): Promise<Sponsor[]> {
   }
 }
 
+function safeHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
 const TIER_ORDER = ["platinum", "gold", "silver"] as const;
 type Tier = (typeof TIER_ORDER)[number];
 
@@ -36,15 +44,18 @@ const TIER_LABEL: Record<Tier, string> = {
 
 const TIER_ACCENT: Record<Tier, string> = {
   platinum: "var(--ink-100)",
-  gold: "#b8922e",
-  silver: "#7a8899",
+  gold: "var(--signal-amber)",
+  silver: "var(--ink-300)",
 };
+
+const KNOWN_TIERS = new Set<string>(TIER_ORDER);
 
 export default async function SponsorsPage() {
   const all = await fetchSponsors();
   const byTier = Object.fromEntries(
     TIER_ORDER.map((t) => [t, all.filter((s) => s.tier === t)])
   ) as Record<Tier, Sponsor[]>;
+  const legacy = all.filter((s) => !KNOWN_TIERS.has(s.tier));
 
   return (
     <main className="flex-1 mx-auto w-full max-w-3xl px-6 py-10">
@@ -61,6 +72,19 @@ export default async function SponsorsPage() {
           sponsors={byTier[tier]}
         />
       ))}
+
+      {legacy.length > 0 && (
+        <section className="mb-10">
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-[var(--ink-400)]">
+            Partners
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {legacy.map((sp) => (
+              <SponsorCard key={sp.id} sponsor={sp} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="rounded-lg border border-[var(--signal-amber)] bg-[var(--canvas-raised)] p-6 mt-4">
         <h2 className="mb-2 text-base font-semibold text-[var(--ink-100)]">Become a Sponsor</h2>
@@ -81,16 +105,13 @@ export default async function SponsorsPage() {
 }
 
 function TierSection({ tier, sponsors }: { tier: Tier; sponsors: Sponsor[] }) {
-  const accent = TIER_ACCENT[tier];
-  const label = TIER_LABEL[tier];
-
   return (
     <section className="mb-10">
       <h2
         className="mb-4 text-xs font-semibold uppercase tracking-widest"
-        style={{ color: accent }}
+        style={{ color: TIER_ACCENT[tier] }}
       >
-        {label}
+        {TIER_LABEL[tier]}
       </h2>
 
       {sponsors.length > 0 ? (
@@ -120,6 +141,8 @@ function PlaceholderSlot({ tier }: { tier: Tier }) {
 }
 
 function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
+  const hostname = sponsor.website_url ? safeHostname(sponsor.website_url) : null;
+
   const inner = (
     <div className="flex gap-4 rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] p-4 hover:border-[var(--ink-400)] transition-colors h-full">
       {sponsor.logo_url ? (
@@ -136,9 +159,9 @@ function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
       )}
       <div className="min-w-0">
         <p className="text-sm font-semibold text-[var(--ink-100)]">{sponsor.name}</p>
-        {sponsor.website_url && (
+        {hostname && (
           <p className="text-xs text-[var(--ink-500)] mt-0.5 truncate">
-            {new URL(sponsor.website_url).hostname}
+            {hostname}
           </p>
         )}
         {sponsor.tagline && (

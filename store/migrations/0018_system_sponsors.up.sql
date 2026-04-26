@@ -1,4 +1,4 @@
--- 0018_system_sponsors.sql — system-level sponsors and tier restructure (LLMS-XXX)
+-- 0018_system_sponsors.sql — system-level sponsors and tier restructure
 --
 -- Changes:
 --   1. user_id becomes nullable so system sponsors need no user account.

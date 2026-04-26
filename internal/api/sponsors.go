@@ -62,7 +62,7 @@ func (s *Server) listSponsors(w http.ResponseWriter, r *http.Request) {
 			IsSystem:   sp.IsSystem,
 		}
 	}
-	writeJSON(w, http.StatusOK, out)
+	writeJSON(w, http.StatusOK, coalesceSlice(out))
 }
 
 // ── Auth-required ─────────────────────────────────────────────────────────
