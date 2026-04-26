@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"time"
 
@@ -59,48 +58,22 @@ func (p *mistralProvider) ID() string       { return mistralProviderID }
 func (p *mistralProvider) Models() []string { return []string{mistralLightModel} }
 
 func (p *mistralProvider) ProbeLightInference(ctx context.Context, model string) (probes.ProbeResult, error) {
-	started := time.Now()
-	r := probes.ProbeResult{
-		ProviderID: mistralProviderID,
-		Model:      model,
-		ProbeType:  mistralLightProbeType,
-		StartedAt:  started.UTC(),
-		RegionID:   p.region,
-	}
-
-	req, err := p.buildRequest(ctx, model)
-	if err != nil {
-		r.DurationMs = time.Since(started).Milliseconds()
-		r.ErrorClass = probes.ErrorClassUnknown
-		r.ErrorDetail = truncate(err.Error(), mistralErrorDetailMax)
-		return r, err
-	}
-
-	resp, err := p.client.Do(req)
-	r.DurationMs = time.Since(started).Milliseconds()
-	if err != nil {
-		r.ErrorClass = classifyNetError(err)
-		r.ErrorDetail = truncate(err.Error(), mistralErrorDetailMax)
-		return r, nil
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	r.HTTPStatus = resp.StatusCode
-	body, _ := io.ReadAll(resp.Body)
-	// Mistral uses OpenAI-compatible response envelope for 2xx; errors are a
-	// flat {"message": "..."} object (see docs/known-quirks.md).
-	classifyMistralResponse(&r, resp.StatusCode, body)
-	return r, nil
+	return runLightProbe(ctx, p.client, model, lightProbeConfig{
+		providerID:   mistralProviderID,
+		probeType:    mistralLightProbeType,
+		errorMax:     mistralErrorDetailMax,
+		region:       p.region,
+		buildRequest: p.buildRequest,
+		classifyResp: classifyMistralResponse,
+	})
 }
 
 func (p *mistralProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {
 	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: mistralProviderID, ProbeType: "quality"}
 }
-
 func (p *mistralProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
 	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: mistralProviderID, ProbeType: "embedding"}
 }
-
 func (p *mistralProvider) ProbeStreaming(_ context.Context, _ string) (probes.ProbeResult, error) {
 	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: mistralProviderID, ProbeType: "streaming"}
 }

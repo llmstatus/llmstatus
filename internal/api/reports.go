@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
 

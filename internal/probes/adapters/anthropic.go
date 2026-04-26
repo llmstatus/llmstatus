@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"time"
 
@@ -61,45 +60,19 @@ func (p *anthropicProvider) ID() string       { return anthropicProviderID }
 func (p *anthropicProvider) Models() []string { return []string{anthropicLightModel} }
 
 func (p *anthropicProvider) ProbeLightInference(ctx context.Context, model string) (probes.ProbeResult, error) {
-	started := time.Now()
-	r := probes.ProbeResult{
-		ProviderID: anthropicProviderID,
-		Model:      model,
-		ProbeType:  anthropicLightProbeType,
-		StartedAt:  started.UTC(),
-		RegionID:   p.region,
-	}
-
-	req, err := p.buildLightRequest(ctx, model)
-	if err != nil {
-		r.DurationMs = time.Since(started).Milliseconds()
-		r.ErrorClass = probes.ErrorClassUnknown
-		r.ErrorDetail = truncate(err.Error(), anthropicErrorDetailMax)
-		return r, err
-	}
-
-	resp, err := p.client.Do(req)
-	r.DurationMs = time.Since(started).Milliseconds()
-	if err != nil {
-		r.ErrorClass = classifyNetError(err)
-		r.ErrorDetail = truncate(err.Error(), anthropicErrorDetailMax)
-		return r, nil
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	r.HTTPStatus = resp.StatusCode
-	body, _ := io.ReadAll(resp.Body)
-	classifyAnthropicResponse(&r, resp.StatusCode, body)
-	return r, nil
+	return runLightProbe(ctx, p.client, model, lightProbeConfig{
+		providerID:   anthropicProviderID,
+		probeType:    anthropicLightProbeType,
+		errorMax:     anthropicErrorDetailMax,
+		region:       p.region,
+		buildRequest: p.buildLightRequest,
+		classifyResp: classifyAnthropicResponse,
+	})
 }
 
-// ProbeEmbedding: Anthropic has no embeddings API.
 func (p *anthropicProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
 	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: anthropicProviderID, ProbeType: "embedding"}
 }
-
-// ProbeQuality and ProbeStreaming are in anthropic_quality.go and
-// anthropic_streaming.go respectively.
 
 // ---- request / response types -----------------------------------------------
 
@@ -151,7 +124,6 @@ func (p *anthropicProvider) buildLightRequest(ctx context.Context, model string)
 	req.Header.Set("x-api-key", p.apiKey)
 	req.Header.Set("anthropic-version", anthropicVersion)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", probeUserAgent)
 	return req, nil
 }
 
