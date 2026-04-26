@@ -35,7 +35,7 @@ function DiscordIcon() {
 
 export function SiteFooter({ message = DEFAULT_MESSAGE }: Props) {
   return (
-    <footer className="border-t border-[var(--ink-600)] px-6 py-4">
+    <footer className="border-t border-[var(--ink-600)] px-6 py-4 mt-12">
       <div className="mx-auto max-w-4xl flex items-center justify-between text-xs text-[var(--ink-400)]">
         <span>{message}</span>
         <div className="flex items-center gap-4">
