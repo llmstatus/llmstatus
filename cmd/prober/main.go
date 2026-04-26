@@ -34,7 +34,7 @@ func main() {
 	regionID := requireEnv("REGION_ID")
 	dbURL := requireEnv("DATABASE_URL")
 
-	interval := envDuration("PROBE_INTERVAL", 60*time.Second)
+	interval := envDuration("PROBE_INTERVAL", 300*time.Second)
 	timeout := envDuration("PROBE_TIMEOUT", 30*time.Second)
 	concurrency := envInt("PROBE_CONCURRENCY", 8)
 

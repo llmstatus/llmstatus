@@ -38,7 +38,7 @@ type Querier interface {
 	// ============================================================
 	GetProvider(ctx context.Context, id string) (Provider, error)
 	GetSponsorByID(ctx context.Context, id string) (Sponsor, error)
-	GetSponsorByUserID(ctx context.Context, userID int64) (Sponsor, error)
+	GetSponsorByUserID(ctx context.Context, userID pgtype.Int8) (Sponsor, error)
 	GetSubscription(ctx context.Context, id int64) (Subscription, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)

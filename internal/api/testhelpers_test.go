@@ -138,7 +138,7 @@ func (f *fakeStore) GetSponsorByID(_ context.Context, _ string) (pgstore.Sponsor
 	return pgstore.Sponsor{}, pgx.ErrNoRows
 }
 
-func (f *fakeStore) GetSponsorByUserID(_ context.Context, userID int64) (pgstore.Sponsor, error) {
+func (f *fakeStore) GetSponsorByUserID(_ context.Context, userID pgtype.Int8) (pgstore.Sponsor, error) {
 	return pgstore.Sponsor{}, pgx.ErrNoRows
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
@@ -28,7 +29,7 @@ type Store interface {
 	ListPendingSponsors(ctx context.Context) ([]pgstore.Sponsor, error)
 	CreateSponsor(ctx context.Context, arg pgstore.CreateSponsorParams) (pgstore.Sponsor, error)
 	GetSponsorByID(ctx context.Context, id string) (pgstore.Sponsor, error)
-	GetSponsorByUserID(ctx context.Context, userID int64) (pgstore.Sponsor, error)
+	GetSponsorByUserID(ctx context.Context, userID pgtype.Int8) (pgstore.Sponsor, error)
 	UpdateSponsor(ctx context.Context, arg pgstore.UpdateSponsorParams) (pgstore.Sponsor, error)
 	ApproveSponsor(ctx context.Context, id string) (pgstore.Sponsor, error)
 	RejectSponsor(ctx context.Context, id string) (pgstore.Sponsor, error)
