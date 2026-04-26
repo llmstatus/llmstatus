@@ -45,7 +45,10 @@ export async function handleGetProviderStatus(
     return formatProviderDetail(detail);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
-      const all = await client.listProviders().catch(() => []);
+      const all = await client.listProviders().catch((e: unknown) => {
+        console.error("[llmstatus-mcp] failed to fetch provider list for 404 hint:", e);
+        return [];
+      });
       const ids = all.map((p) => p.id).join(", ");
       return `Provider "${id}" not found.${ids ? ` Valid IDs: ${ids}` : ""}`;
     }

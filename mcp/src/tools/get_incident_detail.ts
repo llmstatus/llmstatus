@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { LLMStatusClient } from "../client.js";
+import { ApiError } from "../types.js";
 import type { IncidentResponse } from "../types.js";
 
 export const TOOL_NAME = "get_incident_detail";
@@ -31,6 +32,13 @@ export async function handleGetIncidentDetail(
   id: string,
   client: LLMStatusClient
 ): Promise<string> {
-  const inc = await client.getIncident(id);
-  return formatIncident(inc);
+  try {
+    const inc = await client.getIncident(id);
+    return formatIncident(inc);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return `Incident "${id}" not found. Use list_active_incidents to see current incidents.`;
+    }
+    throw err;
+  }
 }
