@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -59,36 +58,14 @@ func (p *geminiProvider) ID() string       { return geminiProviderID }
 func (p *geminiProvider) Models() []string { return []string{geminiLightModel} }
 
 func (p *geminiProvider) ProbeLightInference(ctx context.Context, model string) (probes.ProbeResult, error) {
-	started := time.Now()
-	r := probes.ProbeResult{
-		ProviderID: geminiProviderID,
-		Model:      model,
-		ProbeType:  geminiLightProbeType,
-		StartedAt:  started.UTC(),
-		RegionID:   p.region,
-	}
-
-	req, err := p.buildRequest(ctx, model)
-	if err != nil {
-		r.DurationMs = time.Since(started).Milliseconds()
-		r.ErrorClass = probes.ErrorClassUnknown
-		r.ErrorDetail = truncate(err.Error(), geminiErrorDetailMax)
-		return r, err
-	}
-
-	resp, err := p.client.Do(req)
-	r.DurationMs = time.Since(started).Milliseconds()
-	if err != nil {
-		r.ErrorClass = classifyNetError(err)
-		r.ErrorDetail = truncate(err.Error(), geminiErrorDetailMax)
-		return r, nil
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	r.HTTPStatus = resp.StatusCode
-	body, _ := io.ReadAll(resp.Body)
-	classifyGeminiResponse(&r, resp.StatusCode, body)
-	return r, nil
+	return runLightProbe(ctx, p.client, model, lightProbeConfig{
+		providerID:   geminiProviderID,
+		probeType:    geminiLightProbeType,
+		errorMax:     geminiErrorDetailMax,
+		region:       p.region,
+		buildRequest: p.buildRequest,
+		classifyResp: classifyGeminiResponse,
+	})
 }
 
 func (p *geminiProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {

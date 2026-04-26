@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"time"
 
@@ -54,36 +53,14 @@ func (p *cohereProvider) ID() string       { return cohereProviderID }
 func (p *cohereProvider) Models() []string { return []string{cohereLightModel} }
 
 func (p *cohereProvider) ProbeLightInference(ctx context.Context, model string) (probes.ProbeResult, error) {
-	started := time.Now()
-	r := probes.ProbeResult{
-		ProviderID: cohereProviderID,
-		Model:      model,
-		ProbeType:  cohereLightProbeType,
-		StartedAt:  started.UTC(),
-		RegionID:   p.region,
-	}
-
-	req, err := p.buildRequest(ctx, model)
-	if err != nil {
-		r.DurationMs = time.Since(started).Milliseconds()
-		r.ErrorClass = probes.ErrorClassUnknown
-		r.ErrorDetail = truncate(err.Error(), cohereErrorDetailMax)
-		return r, err
-	}
-
-	resp, err := p.client.Do(req)
-	r.DurationMs = time.Since(started).Milliseconds()
-	if err != nil {
-		r.ErrorClass = classifyNetError(err)
-		r.ErrorDetail = truncate(err.Error(), cohereErrorDetailMax)
-		return r, nil
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	r.HTTPStatus = resp.StatusCode
-	body, _ := io.ReadAll(resp.Body)
-	classifyCohereResponse(&r, resp.StatusCode, body)
-	return r, nil
+	return runLightProbe(ctx, p.client, model, lightProbeConfig{
+		providerID:   cohereProviderID,
+		probeType:    cohereLightProbeType,
+		errorMax:     cohereErrorDetailMax,
+		region:       p.region,
+		buildRequest: p.buildRequest,
+		classifyResp: classifyCohereResponse,
+	})
 }
 
 func (p *cohereProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {

@@ -10,6 +10,10 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Changed (LLMS-070 cont.)
+- Eliminate `dupl` violations: extract `openAICompatProvider` + `newOpenAICompatProvider` (compat_provider.go) reducing 13 identical provider files from ~67 to ~28 lines; extract `runLightProbe` (probe_exec.go) to deduplicate the `ProbeLightInference` skeleton in Anthropic, Cohere, Gemini, Mistral; convert DeepSeek to pure-compat adapter
+- Fix goimports separator in `internal/api/reports.go`
+
 ### Changed (LLMS-070)
 - Refactor 7 production functions exceeding cyclomatic complexity 10: `handleCreateSubscription`, `handleUpdateSubscription`, `handleOAuthUpsert`, `AllModelSparklines`, `ProviderRegionStats`, `cmd/migrate main`, `cmd/api main`; extract helpers `fetchOwnedSub`, `mergeSubFields`, `resolveEmailPrefs`, `classifySubCreateError`, `decodeOAuthBody`, `indexSparklinesFromRows`, `foldRegionRows`, `newMigrator`, `closeMigrator`, `runDown`, `runForce`, `buildAuthConfig`, `runServer`
 - All extracted helpers are ≤ 7 complexity; no behaviour changes
