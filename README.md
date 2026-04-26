@@ -2,6 +2,13 @@
 
 > Independent real-time monitoring for the AI infrastructure.
 
+[![Anthropic status](https://llmstatus.io/badge/anthropic.svg)](https://llmstatus.io/providers/anthropic)
+[![OpenAI status](https://llmstatus.io/badge/openai.svg)](https://llmstatus.io/providers/openai)
+[![Google Gemini status](https://llmstatus.io/badge/google_gemini.svg)](https://llmstatus.io/providers/google_gemini)
+[![DeepSeek status](https://llmstatus.io/badge/deepseek.svg)](https://llmstatus.io/providers/deepseek)
+[![Mistral AI status](https://llmstatus.io/badge/mistral.svg)](https://llmstatus.io/providers/mistral)
+[![Groq status](https://llmstatus.io/badge/groq.svg)](https://llmstatus.io/providers/groq)
+
 `[` **[llmstatus.io](https://llmstatus.io)** `]` observes 40+ AI API providers
 in real time. We measure what actually happens when you call these APIs,
 from seven geographic locations — we do not scrape official status pages.
