@@ -37,56 +37,42 @@ import {
   TOOL_SCHEMA as CMP_SCHEMA,
   handleCompareProviders,
 } from "./tools/compare_providers.js";
-import { ApiError } from "./types.js";
 
 const client = new LLMStatusClient();
 const server = new McpServer({ name: "llmstatus", version: "1.0.0" });
 
-function wrapError(err: unknown): string {
-  if (err instanceof ApiError) return err.message;
-  if (err instanceof Error) return err.message;
-  return "An unexpected error occurred.";
+type ToolResult = { content: [{ type: "text"; text: string }]; isError?: boolean };
+
+async function callTool(work: Promise<string>): Promise<ToolResult> {
+  try {
+    return { content: [{ type: "text", text: await work }] };
+  } catch (err) {
+    const text = err instanceof Error ? err.message : "An unexpected error occurred.";
+    return { content: [{ type: "text", text }], isError: true };
+  }
 }
 
-server.tool(LIST_PROVIDERS, LP_DESC, {}, async () => ({
-  content: [{ type: "text" as const, text: await handleListProviders(client).catch(wrapError) }],
-}));
+server.tool(LIST_PROVIDERS, LP_DESC, {}, () => callTool(handleListProviders(client)));
 
-server.tool(GET_PROVIDER_STATUS, GPS_DESC, GPS_SCHEMA, async ({ id }) => ({
-  content: [
-    { type: "text" as const, text: await handleGetProviderStatus(id, client).catch(wrapError) },
-  ],
-}));
+server.tool(GET_PROVIDER_STATUS, GPS_DESC, GPS_SCHEMA, ({ id }) =>
+  callTool(handleGetProviderStatus(id, client)),
+);
 
-server.tool(LIST_INCIDENTS, LI_DESC, LI_SCHEMA, async ({ provider_id }) => ({
-  content: [
-    {
-      type: "text" as const,
-      text: await handleListActiveIncidents(provider_id, client).catch(wrapError),
-    },
-  ],
-}));
+server.tool(LIST_INCIDENTS, LI_DESC, LI_SCHEMA, ({ provider_id }) =>
+  callTool(handleListActiveIncidents(provider_id, client)),
+);
 
-server.tool(GET_INCIDENT, GI_DESC, GI_SCHEMA, async ({ id }) => ({
-  content: [
-    { type: "text" as const, text: await handleGetIncidentDetail(id, client).catch(wrapError) },
-  ],
-}));
+server.tool(GET_INCIDENT, GI_DESC, GI_SCHEMA, ({ id }) =>
+  callTool(handleGetIncidentDetail(id, client)),
+);
 
-server.tool(GET_HISTORY, GH_DESC, GH_SCHEMA, async ({ id, window }) => ({
-  content: [
-    {
-      type: "text" as const,
-      text: await handleGetProviderHistory(id, window ?? "30d", client).catch(wrapError),
-    },
-  ],
-}));
+server.tool(GET_HISTORY, GH_DESC, GH_SCHEMA, ({ id, window }) =>
+  callTool(handleGetProviderHistory(id, window ?? "30d", client)),
+);
 
-server.tool(COMPARE, CMP_DESC, CMP_SCHEMA, async ({ ids }) => ({
-  content: [
-    { type: "text" as const, text: await handleCompareProviders(ids, client).catch(wrapError) },
-  ],
-}));
+server.tool(COMPARE, CMP_DESC, CMP_SCHEMA, ({ ids }) =>
+  callTool(handleCompareProviders(ids, client)),
+);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

@@ -4,8 +4,7 @@
   "description": "MCP server for llmstatus.io — query AI provider status from Claude and Cursor",
   "type": "module",
   "bin": {
-    "llmstatus-mcp": "./dist/index.js",
-    "mcp": "./dist/index.js"
+    "llmstatus-mcp": "./dist/index.js"
   },
   "files": [
     "dist"
