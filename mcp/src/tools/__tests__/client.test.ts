@@ -53,6 +53,23 @@ describe("LLMStatusClient.listProviders", () => {
       expect(err).toHaveProperty("status", 0);
     }
   });
+
+  it("throws ApiError when response body is not valid JSON", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw new SyntaxError("Unexpected token");
+      },
+    });
+    const client = new LLMStatusClient("http://localhost");
+    try {
+      await client.listProviders();
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError);
+    }
+  });
 });
 
 describe("LLMStatusClient.listIncidents", () => {

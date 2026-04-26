@@ -38,7 +38,15 @@ export class LLMStatusClient {
         `llmstatus.io returned HTTP ${response.status}.${response.status === 404 ? " Resource not found." : " Please try again shortly."}`
       );
     }
-    const envelope = (await response.json()) as ApiEnvelope<T>;
+    let envelope: ApiEnvelope<T>;
+    try {
+      envelope = (await response.json()) as ApiEnvelope<T>;
+    } catch {
+      throw new ApiError(
+        response.status,
+        `llmstatus.io returned unparseable response (HTTP ${response.status}).`
+      );
+    }
     return envelope.data;
   }
 
@@ -54,7 +62,8 @@ export class LLMStatusClient {
     const qs = new URLSearchParams();
     if (params.status) qs.set("status", params.status);
     if (params.limit != null) qs.set("limit", String(params.limit));
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    const q = qs.toString();
+    const suffix = q ? `?${q}` : "";
     return this.fetchJSON<IncidentResponse[]>(`/v1/incidents${suffix}`);
   }
 
