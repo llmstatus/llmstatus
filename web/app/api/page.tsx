@@ -6,12 +6,12 @@ export const dynamic = "force-static";
 export const metadata: Metadata = {
   title: "API Documentation",
   description:
-    "Public REST API for llmstatus.io — access real-time AI provider status, " +
-    "uptime history, incident data, SVG badges, and RSS feeds.",
+    "Public REST API and MCP server for llmstatus.io — access real-time AI provider status, " +
+    "uptime history, and incident data from your code or directly inside Claude and Cursor.",
   openGraph: {
     title: "API Documentation — llmstatus.io",
     description:
-      "Public REST API for AI provider status, uptime history, incidents, badges, and RSS.",
+      "REST API and MCP server for AI provider status, uptime history, incidents, badges, and RSS.",
   },
 };
 
@@ -99,16 +99,136 @@ export default function ApiPage() {
           API
         </p>
         <h1 className="text-2xl font-semibold text-[var(--ink-100)] mb-3">
-          Public REST API
+          Public API
         </h1>
         <p className="text-sm text-[var(--ink-400)] leading-relaxed max-w-xl">
-          Free, unauthenticated, read-only. Returns real-time AI provider status,
-          uptime history, and incident data.
+          Two ways to access llmstatus.io data: a REST API for code integration,
+          and an MCP server so AI assistants like Claude and Cursor can query
+          provider status directly. Both are free and require no authentication.
         </p>
       </div>
 
+      {/* MCP */}
+      <Section title="MCP server (Claude · Cursor · any MCP host)">
+        <p className="text-sm text-[var(--ink-400)] leading-relaxed mb-6 max-w-2xl">
+          The <code className="font-mono text-[var(--ink-300)]">@llmstatus/mcp</code> package
+          exposes llmstatus.io data as{" "}
+          <a
+            href="https://modelcontextprotocol.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--ink-300)] underline underline-offset-2 hover:text-[var(--ink-100)] transition-colors"
+          >
+            MCP tools
+          </a>
+          . Once configured, you can ask your AI assistant questions like
+          &ldquo;Is OpenAI down right now?&rdquo; or &ldquo;Compare Anthropic and Groq latency&rdquo;
+          and it will call the tool and answer inline. No API key required.
+        </p>
+
+        {/* Installation */}
+        <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-6">
+          <div className="px-4 py-3 border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+              Claude Desktop — <code className="font-mono normal-case tracking-normal text-[var(--ink-300)]">~/Library/Application Support/Claude/claude_desktop_config.json</code>
+            </span>
+          </div>
+          <div className="px-4 py-4">
+            <pre className="text-[11px] font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`{
+  "mcpServers": {
+    "llmstatus": {
+      "command": "npx",
+      "args": ["-y", "@llmstatus/mcp"]
+    }
+  }
+}`}</pre>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-6">
+          <div className="px-4 py-3 border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+              Cursor — <code className="font-mono normal-case tracking-normal text-[var(--ink-300)]">.cursor/mcp.json</code>
+            </span>
+          </div>
+          <div className="px-4 py-4">
+            <pre className="text-[11px] font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`{
+  "mcpServers": {
+    "llmstatus": {
+      "command": "npx",
+      "args": ["-y", "@llmstatus/mcp"]
+    }
+  }
+}`}</pre>
+          </div>
+        </div>
+
+        {/* Tools table */}
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-3">
+          Available tools
+        </p>
+        <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-6">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
+                <th className="text-left px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] w-48">
+                  Tool
+                </th>
+                <th className="text-left px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+                  What it returns
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--ink-600)]">
+              {[
+                {
+                  name: "list_providers",
+                  desc: "All monitored providers with current status, 24h uptime, and p95 latency",
+                },
+                {
+                  name: "get_provider_status",
+                  desc: "Full detail for one provider — models, active incidents, region stats",
+                },
+                {
+                  name: "list_active_incidents",
+                  desc: "All ongoing incidents, optionally filtered to one provider",
+                },
+                {
+                  name: "get_incident_detail",
+                  desc: "Full timeline and description for one incident (by UUID or slug)",
+                },
+                {
+                  name: "get_provider_history",
+                  desc: "Uptime and latency history for a provider over 24h, 7d, or 30d",
+                },
+                {
+                  name: "compare_providers",
+                  desc: "Side-by-side uptime and latency table for 2–5 providers",
+                },
+              ].map(({ name, desc }) => (
+                <tr key={name} className="hover:bg-[var(--canvas-sunken)] transition-colors">
+                  <td className="px-4 py-3 align-top">
+                    <code className="font-mono text-[12px] text-[var(--signal-amber)]">{name}</code>
+                  </td>
+                  <td className="px-4 py-3 align-top text-[var(--ink-400)] text-sm">{desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="text-xs text-[var(--ink-400)] leading-relaxed border-l-2 border-[var(--ink-600)] pl-3">
+          The MCP server is a thin stdio wrapper — it calls{" "}
+          <code className="font-mono text-[var(--ink-300)]">api.llmstatus.io</code> and formats
+          responses as plain text. Override the base URL for local development:{" "}
+          <code className="font-mono text-[var(--ink-300)]">
+            {`"env": { "LLMSTATUS_API_BASE": "http://localhost:8080" }`}
+          </code>
+        </p>
+      </Section>
+
       {/* Overview */}
-      <Section title="Overview">
+      <Section title="REST API — overview">
         <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4 space-y-3 text-sm mb-6">
           <div className="flex gap-4">
             <span className="text-[var(--ink-400)] w-28 shrink-0">Base URL</span>
