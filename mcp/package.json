@@ -1,0 +1,35 @@
+{
+  "name": "@llmstatus/mcp",
+  "version": "1.0.0",
+  "description": "MCP server for llmstatus.io — query AI provider status from Claude and Cursor",
+  "type": "module",
+  "bin": {
+    "llmstatus-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/llmstatus/llmstatus"
+  }
+}

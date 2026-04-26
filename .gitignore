@@ -66,3 +66,6 @@ deploy/ansible/inventories/prod/hosts.yml
 
 # Ansible vault (plain-text secrets — keep locally, never commit unencrypted)
 deploy/ansible/group_vars/all/vault.yml
+
+# Git worktrees (local dev isolation — never commit worktree contents)
+.worktrees/
