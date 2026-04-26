@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultInterval     = 60 * time.Second
+	defaultInterval     = 300 * time.Second
 	defaultProbeTimeout = 30 * time.Second
 	defaultConcurrency  = 8
 )

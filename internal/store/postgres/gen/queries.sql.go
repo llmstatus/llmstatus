@@ -14,7 +14,7 @@ import (
 )
 
 const approveSponsor = `-- name: ApproveSponsor :one
-UPDATE sponsors SET status = 'approved', active = TRUE WHERE id = $1 RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status
+UPDATE sponsors SET status = 'approved', active = TRUE WHERE id = $1 RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status, is_system, tagline
 `
 
 func (q *Queries) ApproveSponsor(ctx context.Context, id string) (Sponsor, error) {
@@ -30,6 +30,8 @@ func (q *Queries) ApproveSponsor(ctx context.Context, id string) (Sponsor, error
 		&i.Active,
 		&i.CreatedAt,
 		&i.Status,
+		&i.IsSystem,
+		&i.Tagline,
 	)
 	return i, err
 }
@@ -169,12 +171,12 @@ const createSponsor = `-- name: CreateSponsor :one
 
 INSERT INTO sponsors (id, user_id, name, website_url, logo_url, tier)
 VALUES ($1, $2, $3, $4, $5, 'standard')
-RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status
+RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status, is_system, tagline
 `
 
 type CreateSponsorParams struct {
 	ID         string      `json:"id"`
-	UserID     int64       `json:"user_id"`
+	UserID     pgtype.Int8 `json:"user_id"`
 	Name       string      `json:"name"`
 	WebsiteUrl pgtype.Text `json:"website_url"`
 	LogoUrl    pgtype.Text `json:"logo_url"`
@@ -200,6 +202,8 @@ func (q *Queries) CreateSponsor(ctx context.Context, arg CreateSponsorParams) (S
 		&i.Active,
 		&i.CreatedAt,
 		&i.Status,
+		&i.IsSystem,
+		&i.Tagline,
 	)
 	return i, err
 }
@@ -426,7 +430,7 @@ func (q *Queries) GetProvider(ctx context.Context, id string) (Provider, error) 
 }
 
 const getSponsorByID = `-- name: GetSponsorByID :one
-SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status FROM sponsors WHERE id = $1
+SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status, is_system, tagline FROM sponsors WHERE id = $1
 `
 
 func (q *Queries) GetSponsorByID(ctx context.Context, id string) (Sponsor, error) {
@@ -442,15 +446,17 @@ func (q *Queries) GetSponsorByID(ctx context.Context, id string) (Sponsor, error
 		&i.Active,
 		&i.CreatedAt,
 		&i.Status,
+		&i.IsSystem,
+		&i.Tagline,
 	)
 	return i, err
 }
 
 const getSponsorByUserID = `-- name: GetSponsorByUserID :one
-SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status FROM sponsors WHERE user_id = $1
+SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status, is_system, tagline FROM sponsors WHERE user_id = $1
 `
 
-func (q *Queries) GetSponsorByUserID(ctx context.Context, userID int64) (Sponsor, error) {
+func (q *Queries) GetSponsorByUserID(ctx context.Context, userID pgtype.Int8) (Sponsor, error) {
 	row := q.db.QueryRow(ctx, getSponsorByUserID, userID)
 	var i Sponsor
 	err := row.Scan(
@@ -463,6 +469,8 @@ func (q *Queries) GetSponsorByUserID(ctx context.Context, userID int64) (Sponsor
 		&i.Active,
 		&i.CreatedAt,
 		&i.Status,
+		&i.IsSystem,
+		&i.Tagline,
 	)
 	return i, err
 }
@@ -702,7 +710,7 @@ func (q *Queries) ListActiveSponsorKeys(ctx context.Context) ([]SponsorKey, erro
 }
 
 const listActiveSponsors = `-- name: ListActiveSponsors :many
-SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status FROM sponsors WHERE status = 'approved' ORDER BY tier DESC, created_at ASC
+SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status, is_system, tagline FROM sponsors WHERE status = 'approved' ORDER BY tier DESC, created_at ASC
 `
 
 func (q *Queries) ListActiveSponsors(ctx context.Context) ([]Sponsor, error) {
@@ -724,6 +732,8 @@ func (q *Queries) ListActiveSponsors(ctx context.Context) ([]Sponsor, error) {
 			&i.Active,
 			&i.CreatedAt,
 			&i.Status,
+			&i.IsSystem,
+			&i.Tagline,
 		); err != nil {
 			return nil, err
 		}
@@ -1015,7 +1025,7 @@ func (q *Queries) ListModelsByProvider(ctx context.Context, providerID string) (
 }
 
 const listPendingSponsors = `-- name: ListPendingSponsors :many
-SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status FROM sponsors WHERE status = 'pending' ORDER BY created_at ASC
+SELECT id, user_id, name, website_url, logo_url, tier, active, created_at, status, is_system, tagline FROM sponsors WHERE status = 'pending' ORDER BY created_at ASC
 `
 
 func (q *Queries) ListPendingSponsors(ctx context.Context) ([]Sponsor, error) {
@@ -1037,6 +1047,8 @@ func (q *Queries) ListPendingSponsors(ctx context.Context) ([]Sponsor, error) {
 			&i.Active,
 			&i.CreatedAt,
 			&i.Status,
+			&i.IsSystem,
+			&i.Tagline,
 		); err != nil {
 			return nil, err
 		}
@@ -1404,7 +1416,7 @@ func (q *Queries) MarkUserVerified(ctx context.Context, id int64) error {
 }
 
 const rejectSponsor = `-- name: RejectSponsor :one
-UPDATE sponsors SET status = 'rejected', active = FALSE WHERE id = $1 RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status
+UPDATE sponsors SET status = 'rejected', active = FALSE WHERE id = $1 RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status, is_system, tagline
 `
 
 func (q *Queries) RejectSponsor(ctx context.Context, id string) (Sponsor, error) {
@@ -1420,6 +1432,8 @@ func (q *Queries) RejectSponsor(ctx context.Context, id string) (Sponsor, error)
 		&i.Active,
 		&i.CreatedAt,
 		&i.Status,
+		&i.IsSystem,
+		&i.Tagline,
 	)
 	return i, err
 }
@@ -1510,7 +1524,7 @@ const updateSponsor = `-- name: UpdateSponsor :one
 UPDATE sponsors
 SET name = $2, website_url = $3, logo_url = $4
 WHERE id = $1
-RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status
+RETURNING id, user_id, name, website_url, logo_url, tier, active, created_at, status, is_system, tagline
 `
 
 type UpdateSponsorParams struct {
@@ -1538,6 +1552,8 @@ func (q *Queries) UpdateSponsor(ctx context.Context, arg UpdateSponsorParams) (S
 		&i.Active,
 		&i.CreatedAt,
 		&i.Status,
+		&i.IsSystem,
+		&i.Tagline,
 	)
 	return i, err
 }

@@ -214,7 +214,7 @@ services:
     environment:
       DATABASE_URL: postgres://llmstatus:${POSTGRES_PASSWORD:-llmstatus}@db:5432/llmstatus?sslmode=disable
       REGION_ID: ${REGION_ID:-local-dev}
-      PROBE_INTERVAL: ${PROBE_INTERVAL:-60s}
+      PROBE_INTERVAL: ${PROBE_INTERVAL:-300s}
       PROBE_TIMEOUT: ${PROBE_TIMEOUT:-30s}
       PROBE_CONCURRENCY: ${PROBE_CONCURRENCY:-4}
       INGEST_URL: http://ingest:8080/v1/probe

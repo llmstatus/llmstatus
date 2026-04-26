@@ -44,10 +44,15 @@ func (s *Server) adminListSponsors(w http.ResponseWriter, r *http.Request) {
 		LogoURL    *string `json:"logo_url,omitempty"`
 		Tier       string  `json:"tier"`
 		Status     string  `json:"status"`
-		UserID     int64   `json:"user_id"`
+		UserID     *int64  `json:"user_id,omitempty"`
+		IsSystem   bool    `json:"is_system"`
 	}
 	out := make([]sponsorOut, len(rows))
 	for i, sp := range rows {
+		var uid *int64
+		if sp.UserID.Valid {
+			uid = &sp.UserID.Int64
+		}
 		out[i] = sponsorOut{
 			ID:         sp.ID,
 			Name:       sp.Name,
@@ -55,7 +60,8 @@ func (s *Server) adminListSponsors(w http.ResponseWriter, r *http.Request) {
 			LogoURL:    textVal(sp.LogoUrl),
 			Tier:       sp.Tier,
 			Status:     sp.Status,
-			UserID:     sp.UserID,
+			UserID:     uid,
+			IsSystem:   sp.IsSystem,
 		}
 	}
 	writeJSON(w, http.StatusOK, coalesceSlice(out))
@@ -72,7 +78,9 @@ func (s *Server) adminApproveSponsor(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "sponsor not found")
 		return
 	}
-	s.sendSponsorStatusEmail(r, sp.UserID, sp.Name, "approved")
+	if sp.UserID.Valid {
+		s.sendSponsorStatusEmail(r, sp.UserID.Int64, sp.Name, "approved")
+	}
 	writeJSON(w, http.StatusOK, sp)
 }
 
@@ -87,7 +95,9 @@ func (s *Server) adminRejectSponsor(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "sponsor not found")
 		return
 	}
-	s.sendSponsorStatusEmail(r, sp.UserID, sp.Name, "rejected")
+	if sp.UserID.Valid {
+		s.sendSponsorStatusEmail(r, sp.UserID.Int64, sp.Name, "rejected")
+	}
 	writeJSON(w, http.StatusOK, sp)
 }
 

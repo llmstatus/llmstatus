@@ -91,7 +91,7 @@ type Provider struct {
 
 type Sponsor struct {
 	ID         string             `json:"id"`
-	UserID     int64              `json:"user_id"`
+	UserID     pgtype.Int8        `json:"user_id"`
 	Name       string             `json:"name"`
 	WebsiteUrl pgtype.Text        `json:"website_url"`
 	LogoUrl    pgtype.Text        `json:"logo_url"`
@@ -99,6 +99,8 @@ type Sponsor struct {
 	Active     bool               `json:"active"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 	Status     string             `json:"status"`
+	IsSystem   bool               `json:"is_system"`
+	Tagline    pgtype.Text        `json:"tagline"`
 }
 
 type SponsorKey struct {

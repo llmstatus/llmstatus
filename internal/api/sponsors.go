@@ -16,6 +16,10 @@ func nullText(s string) pgtype.Text {
 	return pgtype.Text{String: s, Valid: s != ""}
 }
 
+func userIDParam(id int64) pgtype.Int8 {
+	return pgtype.Int8{Int64: id, Valid: true}
+}
+
 var slugRe = regexp.MustCompile(`^[a-z0-9-]{2,40}$`)
 
 // ── Public ────────────────────────────────────────────────────────────────
@@ -32,26 +36,33 @@ func (s *Server) listSponsors(w http.ResponseWriter, r *http.Request) {
 		Name       string  `json:"name"`
 		WebsiteURL *string `json:"website_url,omitempty"`
 		LogoURL    *string `json:"logo_url,omitempty"`
+		Tagline    *string `json:"tagline,omitempty"`
 		Tier       string  `json:"tier"`
+		IsSystem   bool    `json:"is_system"`
 	}
 	out := make([]sponsorOut, len(rows))
 	for i, sp := range rows {
-		var website, logo *string
+		var website, logo, tagline *string
 		if sp.WebsiteUrl.Valid {
 			website = &sp.WebsiteUrl.String
 		}
 		if sp.LogoUrl.Valid {
 			logo = &sp.LogoUrl.String
 		}
+		if sp.Tagline.Valid {
+			tagline = &sp.Tagline.String
+		}
 		out[i] = sponsorOut{
 			ID:         sp.ID,
 			Name:       sp.Name,
 			WebsiteURL: website,
 			LogoURL:    logo,
+			Tagline:    tagline,
 			Tier:       sp.Tier,
+			IsSystem:   sp.IsSystem,
 		}
 	}
-	writeJSON(w, http.StatusOK, out)
+	writeJSON(w, http.StatusOK, coalesceSlice(out))
 }
 
 // ── Auth-required ─────────────────────────────────────────────────────────
@@ -87,7 +98,7 @@ func (s *Server) registerSponsor(w http.ResponseWriter, r *http.Request) {
 
 	sp, err := s.store.CreateSponsor(r.Context(), pgstore.CreateSponsorParams{
 		ID:         body.ID,
-		UserID:     claims.UserID,
+		UserID:     userIDParam(claims.UserID),
 		Name:       body.Name,
 		WebsiteUrl: nullText(body.WebsiteURL),
 		LogoUrl:    nullText(body.LogoURL),
@@ -110,7 +121,7 @@ func (s *Server) getSponsorMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sp, err := s.store.GetSponsorByUserID(r.Context(), claims.UserID)
+	sp, err := s.store.GetSponsorByUserID(r.Context(), userIDParam(claims.UserID))
 	if err != nil {
 		writeError(w, http.StatusNotFound, "no sponsor profile found")
 		return
@@ -160,7 +171,7 @@ func (s *Server) updateSponsorMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sp, err := s.store.GetSponsorByUserID(r.Context(), claims.UserID)
+	sp, err := s.store.GetSponsorByUserID(r.Context(), userIDParam(claims.UserID))
 	if err != nil {
 		writeError(w, http.StatusNotFound, "no sponsor profile found")
 		return
@@ -204,7 +215,7 @@ func (s *Server) upsertSponsorKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sp, err := s.store.GetSponsorByUserID(r.Context(), claims.UserID)
+	sp, err := s.store.GetSponsorByUserID(r.Context(), userIDParam(claims.UserID))
 	if err != nil {
 		writeError(w, http.StatusNotFound, "no sponsor profile found")
 		return
@@ -259,7 +270,7 @@ func (s *Server) deleteSponsorKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sp, err := s.store.GetSponsorByUserID(r.Context(), claims.UserID)
+	sp, err := s.store.GetSponsorByUserID(r.Context(), userIDParam(claims.UserID))
 	if err != nil {
 		writeError(w, http.StatusNotFound, "no sponsor profile found")
 		return
