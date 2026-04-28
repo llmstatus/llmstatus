@@ -80,7 +80,7 @@ func (s *Server) getGlobalFeed(w http.ResponseWriter, r *http.Request) {
 	providers, _ := s.store.ListActiveProviders(r.Context())
 	names := providerNameMap(providers)
 
-	base := siteBase(r)
+	base := s.siteBase(r)
 	writeFeed(w, feedData{
 		Title:         "llmstatus.io — All Incidents",
 		Link:          base,
@@ -116,7 +116,7 @@ func (s *Server) getProviderFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	base := siteBase(r)
+	base := s.siteBase(r)
 	writeFeed(w, feedData{
 		Title:         p.Name + " — Incidents | llmstatus.io",
 		Link:          base + "/providers/" + p.ID,
@@ -171,9 +171,13 @@ func providerNameMap(providers []pgstore.Provider) map[string]string {
 	return m
 }
 
-// siteBase constructs the scheme+host base URL, honouring X-Forwarded-Proto
-// set by nginx in production.
-func siteBase(r *http.Request) string {
+// siteBase returns the canonical scheme+host base URL for use in feed links.
+// When s.siteURL is configured it is returned directly; otherwise the URL is
+// reconstructed from X-Forwarded-Proto and Host headers (nginx sets both in prod).
+func (s *Server) siteBase(r *http.Request) string {
+	if s.siteURL != "" {
+		return s.siteURL
+	}
 	scheme := r.Header.Get("X-Forwarded-Proto")
 	if scheme == "" {
 		if r.TLS != nil {

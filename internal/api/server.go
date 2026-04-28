@@ -38,6 +38,7 @@ type Server struct {
 	keyEnc    *keyenc.Encrypter // optional; nil → sponsor key endpoints return 503
 	mailer    email.Sender      // optional; nil → admin approval emails skipped
 	hub       *Hub              // WebSocket hub for real-time updates
+	siteURL   string            // optional; overrides header-derived base URL in feed/badge links
 	mux       *http.ServeMux
 	handler   http.Handler // mux optionally wrapped with limiter middleware
 }
@@ -60,6 +61,12 @@ func WithKeyEncrypter(enc *keyenc.Encrypter) func(*Server) {
 // WithEmailSender enables transactional emails (sponsor approval notifications).
 func WithEmailSender(m email.Sender) func(*Server) {
 	return func(s *Server) { s.mailer = m }
+}
+
+// WithSiteURL sets the canonical public base URL used in feed and badge links.
+// When set it takes precedence over Host/X-Forwarded-* header reconstruction.
+func WithSiteURL(u string) func(*Server) {
+	return func(s *Server) { s.siteURL = u }
 }
 
 // New creates a Server and registers all routes. Pass functional options

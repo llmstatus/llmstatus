@@ -139,6 +139,7 @@ services:
       INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
       INFLUX_DATABASE: ${INFLUX_DATABASE:-probes}
       API_ADDR: ":8081"
+      SITE_URL: ${SITE_URL:-https://llmstatus.io}
       API_RATE_LIMIT: ${API_RATE_LIMIT:-60}
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-prod}
       INTERNAL_SECRET: ${INTERNAL_SECRET:-dev-internal-secret}
