@@ -76,6 +76,7 @@ func main() {
 		api.WithHistoryReader(historyReader),
 		api.WithLiveStatsReader(historyReader),
 		api.WithRateLimiter(limiter),
+		api.WithSiteURL(envOr("SITE_URL", "https://llmstatus.io")),
 	}
 
 	if authCfg, ok := buildAuthConfig(store); ok {
