@@ -10,7 +10,7 @@ export function UserReportHistogram({ buckets }: Props) {
 
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between text-[10px] text-[var(--ink-500)]">
+      <div className="mb-1.5 flex items-center justify-between text-xs text-[var(--ink-500)]">
         <span>Community reports — last 24 hours</span>
         <span>{total} total</span>
       </div>
@@ -33,7 +33,7 @@ export function UserReportHistogram({ buckets }: Props) {
                 className={[
                   "w-full rounded-sm transition-colors",
                   b.count === 0
-                    ? "bg-[var(--ink-700)]"
+                    ? "bg-[var(--ink-600)]"
                     : b.count >= max * 0.6
                     ? "bg-[var(--signal-down)]"
                     : "bg-[var(--signal-warn)]",
@@ -44,7 +44,7 @@ export function UserReportHistogram({ buckets }: Props) {
           );
         })}
       </div>
-      <div className="mt-1 flex justify-between text-[9px] text-[var(--ink-600)]">
+      <div className="mt-1 flex justify-between text-xs text-[var(--ink-500)]">
         <span>24h ago</span>
         <span>now</span>
       </div>

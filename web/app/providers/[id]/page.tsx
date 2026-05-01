@@ -147,13 +147,13 @@ export default async function ProviderPage({ params }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--ink-600)]">
-                  <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-500)]">
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.1em] text-[var(--ink-400)]">
                     Probe region
                   </th>
-                  <th className="px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-500)]">
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-[0.1em] text-[var(--ink-400)]">
                     Uptime 24h
                   </th>
-                  <th className="px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-500)]">
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-[0.1em] text-[var(--ink-400)]">
                     p95 latency
                   </th>
                 </tr>
@@ -187,12 +187,12 @@ export default async function ProviderPage({ params }: Props) {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-[3px]">
                             <span className={`h-2 w-2 flex-shrink-0 rounded-full ${dotColor}`} />
-                            <span className="font-mono text-[12px] text-[var(--ink-300)]">
+                            <span className="font-mono text-sm text-[var(--ink-300)]">
                               {reg.region_id}
                             </span>
                           </div>
                         </td>
-                        <td className={`px-4 py-3 text-right font-mono tabular-nums text-[12px] ${uptimeColor}`}>
+                        <td className={`px-4 py-3 text-right font-mono tabular-nums text-sm ${uptimeColor}`}>
                           {(reg.uptime_24h * 100).toFixed(1)}%
                         </td>
                         <td className="px-4 py-3">
@@ -203,7 +203,7 @@ export default async function ProviderPage({ params }: Props) {
                                 style={{ width: `${barWidth}%` }}
                               />
                             </div>
-                            <span className="w-12 text-right font-mono tabular-nums text-[12px] text-[var(--ink-400)]">
+                            <span className="w-12 text-right font-mono tabular-nums text-sm text-[var(--ink-400)]">
                               {p95}
                             </span>
                           </div>

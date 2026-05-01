@@ -84,7 +84,7 @@ export default async function ChinaPage() {
           backgroundSize: "8px 8px",
         }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
           China view
         </p>
         <h1 className="text-3xl font-semibold text-[var(--ink-100)] leading-tight mb-3">

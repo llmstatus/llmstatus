@@ -105,7 +105,7 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
   }
 
   const thCls =
-    "px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] " +
+    "px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] " +
     "cursor-pointer select-none hover:text-[var(--ink-200)] transition-colors";
 
   return (
@@ -116,10 +116,10 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
             <th className={`${thCls} text-left`} onClick={() => handleSort("name")}>
               Provider <SortIcon col="name" active={sortKey} dir={sortDir} />
             </th>
-            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
               Category
             </th>
-            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
               Region
             </th>
             <th className={`${thCls} text-right`} onClick={() => handleSort("uptime")}>
@@ -128,7 +128,7 @@ export function ProviderTable({ providers }: { providers: ProviderSummary[] }) {
             <th className={`${thCls} text-right`} onClick={() => handleSort("p95")}>
               <SortIcon col="p95" active={sortKey} dir={sortDir} /> p95
             </th>
-            <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
               Trend
             </th>
             <th className={`${thCls} text-right`} onClick={() => handleSort("status")}>

@@ -10,6 +10,15 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Changed (UI overhaul)
+- Lighten canvas color tokens: base `#0D1117`, raised `#161D28`, overlay `#1C2638` — increases card-to-background contrast and makes the dark theme feel less cave-dark
+- Raise ink-400 (`#7B8899`) and ink-500 (`#4D5B6C`) for readable secondary text; ink-600 borders now `#2D3A4A`
+- Eliminate all sub-12px text across the UI: replace `text-[10px]`/`text-[11px]` with `text-xs` (12px) across all components and pages
+- Lighten hero subtitle from `ink-400` to `ink-300` for better contrast
+- Scale up hero h1 to `text-4xl sm:text-5xl` for stronger visual impact
+- Fix undefined `--ink-700` CSS variable reference in `UserReportHistogram` (no-data bar was transparent); use `--ink-600`
+- Bring histogram axis labels up from `text-[9px]` to `text-xs`
+
 ### Changed (LLMS-070 cont.)
 - Eliminate `dupl` violations: extract `openAICompatProvider` + `newOpenAICompatProvider` (compat_provider.go) reducing 13 identical provider files from ~67 to ~28 lines; extract `runLightProbe` (probe_exec.go) to deduplicate the `ProbeLightInference` skeleton in Anthropic, Cohere, Gemini, Mistral; convert DeepSeek to pure-compat adapter
 - Fix goimports separator in `internal/api/reports.go`

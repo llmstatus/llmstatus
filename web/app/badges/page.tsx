@@ -47,7 +47,7 @@ function BadgeRow({ name, id }: { name: string; id: string }) {
         <div className="flex items-center gap-4 flex-wrap">
           {styles.map(({ key, label }) => (
             <div key={key} className="flex flex-col gap-1.5 items-start">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+              <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
                 {label}
               </span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -70,7 +70,7 @@ function BadgeRow({ name, id }: { name: string; id: string }) {
         return (
           <div key={key} className="border-t border-[var(--ink-600)]">
             <div className="px-4 py-2 bg-[var(--canvas-sunken)]">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-300)]">
+              <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-300)]">
                 {label} style
               </span>
             </div>
@@ -90,12 +90,12 @@ function CodeSnippet({ label, code }: { label: string; code: string }) {
   return (
     <div className="px-4 py-3">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+        <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
           {label}
         </span>
         <CopyButton text={code} />
       </div>
-      <pre className="text-[11px] font-mono text-[var(--ink-300)] break-all whitespace-pre-wrap leading-relaxed">
+      <pre className="text-xs font-mono text-[var(--ink-300)] break-all whitespace-pre-wrap leading-relaxed">
         {code}
       </pre>
     </div>
@@ -108,7 +108,7 @@ export default async function BadgesPage() {
   return (
     <main className="flex-1 mx-auto w-full max-w-4xl px-6">
       <div className="py-10 mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
           Badges
         </p>
         <h1 className="text-2xl font-semibold text-[var(--ink-100)] mb-3">
@@ -137,7 +137,7 @@ export default async function BadgesPage() {
       {/* RSS feeds section */}
       <div className="mt-16 mb-16">
         <div className="mb-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
             RSS Feeds
           </p>
           <h2 className="text-xl font-semibold text-[var(--ink-100)] mb-2">
@@ -157,12 +157,12 @@ export default async function BadgesPage() {
             </div>
             <div className="px-4 py-3">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
                   Feed URL
                 </span>
                 <CopyButton text={`${SITE_URL}/api/feed`} />
               </div>
-              <pre className="text-[11px] font-mono text-[var(--ink-300)] break-all whitespace-pre-wrap leading-relaxed">
+              <pre className="text-xs font-mono text-[var(--ink-300)] break-all whitespace-pre-wrap leading-relaxed">
                 {SITE_URL}/api/feed
               </pre>
             </div>
@@ -180,12 +180,12 @@ export default async function BadgesPage() {
                 </div>
                 <div className="px-4 py-3">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+                    <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
                       Feed URL
                     </span>
                     <CopyButton text={`${SITE_URL}/api/feed/${p.id}`} />
                   </div>
-                  <pre className="text-[11px] font-mono text-[var(--ink-300)] break-all whitespace-pre-wrap leading-relaxed">
+                  <pre className="text-xs font-mono text-[var(--ink-300)] break-all whitespace-pre-wrap leading-relaxed">
                     {SITE_URL}/api/feed/{p.id}
                   </pre>
                 </div>

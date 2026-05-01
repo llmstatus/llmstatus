@@ -18,7 +18,7 @@ export function CopyButton({ text }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className="text-[10px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded border border-[var(--ink-600)] text-[var(--ink-300)] hover:text-[var(--ink-100)] hover:border-[var(--ink-500)] transition-colors"
+      className="text-xs font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded border border-[var(--ink-600)] text-[var(--ink-300)] hover:text-[var(--ink-100)] hover:border-[var(--ink-500)] transition-colors"
     >
       {copied ? "Copied" : "Copy"}
     </button>

@@ -17,7 +17,7 @@ function FilterChip({ label, active, onClick }: FilterChipProps) {
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1 rounded text-[11px] font-semibold uppercase tracking-[0.08em] border transition-colors ${
+      className={`px-3 py-1 rounded text-xs font-semibold uppercase tracking-[0.08em] border transition-colors ${
         active
           ? "bg-[var(--canvas-overlay)] border-[var(--ink-400)] text-[var(--ink-100)]"
           : "border-[var(--ink-600)] text-[var(--ink-400)] hover:text-[var(--ink-200)] hover:border-[var(--ink-500)]"
@@ -36,7 +36,7 @@ interface FilterRowProps {
 function FilterRow({ label, children }: FilterRowProps) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] w-20 shrink-0">
+      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] w-20 shrink-0">
         {label}
       </span>
       {children}

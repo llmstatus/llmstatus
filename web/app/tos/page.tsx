@@ -29,7 +29,7 @@ export default function TosPage() {
   return (
     <main className="flex-1 mx-auto w-full max-w-2xl px-6 py-12">
       <div className="mb-12">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
           llmstatus.io
         </p>
         <h1 className="text-3xl font-semibold text-[var(--ink-100)] leading-tight mb-4">
