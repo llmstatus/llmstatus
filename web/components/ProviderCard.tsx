@@ -71,7 +71,7 @@ export function ProviderCard({ provider: p }: { provider: ProviderSummary }) {
           <span className={`w-2 h-2 rounded-full shrink-0 ${dotCls}`} />
           <span className="text-base font-semibold text-[var(--ink-100)] truncate">{p.name}</span>
         </div>
-        <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${pillCls}`}>
+        <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${pillCls}`}>
           {p.current_status}
         </span>
       </div>
@@ -91,7 +91,7 @@ export function ProviderCard({ provider: p }: { provider: ProviderSummary }) {
       {/* Stats row */}
       <div className="flex items-center gap-6 border-t border-[var(--ink-600)] px-4 py-3">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-500)]">
+          <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--ink-400)]">
             Uptime 24h
           </span>
           <span className={`text-base font-mono tabular-nums font-semibold ${
@@ -101,7 +101,7 @@ export function ProviderCard({ provider: p }: { provider: ProviderSummary }) {
           </span>
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-500)]">
+          <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--ink-400)]">
             p95 Latency
           </span>
           <span className="text-base font-mono tabular-nums font-semibold text-[var(--ink-200)]">
@@ -116,13 +116,13 @@ export function ProviderCard({ provider: p }: { provider: ProviderSummary }) {
           {modelNames.slice(0, 4).map((name) => (
             <span
               key={name}
-              className="rounded bg-[var(--canvas-overlay)] px-2 py-0.5 text-[11px] text-[var(--ink-400)]"
+              className="rounded bg-[var(--canvas-overlay)] px-2 py-0.5 text-xs text-[var(--ink-400)]"
             >
               {name}
             </span>
           ))}
           {modelNames.length > 4 && (
-            <span className="px-1 py-0.5 text-[11px] text-[var(--ink-600)]">
+            <span className="px-1 py-0.5 text-xs text-[var(--ink-500)]">
               +{modelNames.length - 4}
             </span>
           )}

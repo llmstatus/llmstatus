@@ -4,18 +4,18 @@
 /* Brand system — BRAND_SYSTEM.md §4 */
 :root {
   /* Canvas */
-  --canvas-base:    #0A0E14;
-  --canvas-raised:  #0F141B;
-  --canvas-sunken:  #060A10;
-  --canvas-overlay: #151B24;
+  --canvas-base:    #0D1117;
+  --canvas-raised:  #161D28;
+  --canvas-sunken:  #090D14;
+  --canvas-overlay: #1C2638;
 
   /* Ink */
   --ink-100: #E8ECF1;
   --ink-200: #C1C8D4;
   --ink-300: #8B94A3;
-  --ink-400: #5A6472;
-  --ink-500: #3C4452;
-  --ink-600: #242B36;
+  --ink-400: #7B8899;
+  --ink-500: #4D5B6C;
+  --ink-600: #2D3A4A;
 
   /* Signals */
   --signal-ok:       #5EEAD4;

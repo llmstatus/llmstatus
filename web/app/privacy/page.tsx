@@ -39,7 +39,7 @@ export default function PrivacyPage() {
   return (
     <main className="flex-1 mx-auto w-full max-w-2xl px-6 py-12">
       <div className="mb-12">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
           llmstatus.io
         </p>
         <h1 className="text-3xl font-semibold text-[var(--ink-100)] leading-tight mb-4">
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
         </p>
 
         <div className="border border-[var(--ink-600)] divide-y divide-[var(--ink-600)] mt-4">
-          <div className="px-4 py-2 grid grid-cols-3 gap-4 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-400)]">
+          <div className="px-4 py-2 grid grid-cols-3 gap-4 text-xs font-semibold uppercase tracking-wide text-[var(--ink-400)]">
             <span>Data</span>
             <span>Source</span>
             <span>Why</span>

@@ -22,7 +22,7 @@ export default async function ProvidersPage() {
   return (
     <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
       <div className="mb-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
           Providers
         </p>
         <h1 className="text-2xl font-semibold text-[var(--ink-100)] mb-2">

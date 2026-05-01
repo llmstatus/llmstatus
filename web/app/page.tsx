@@ -72,12 +72,12 @@ export default async function HomePage() {
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--signal-amber)] mb-4">
           llmstatus.io
         </p>
-        <h1 className="text-4xl font-semibold text-[var(--ink-100)] leading-tight mb-4">
+        <h1 className="text-4xl sm:text-5xl font-semibold text-[var(--ink-100)] leading-tight mb-4">
           Independent real-time monitoring
           <br />
           for the AI infrastructure.
         </h1>
-        <p className="text-base text-[var(--ink-400)] leading-relaxed">
+        <p className="text-base text-[var(--ink-300)] leading-relaxed">
           Measured from 7 global locations.
           <br />
           Not scraped from official status pages.

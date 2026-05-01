@@ -24,7 +24,7 @@ export function StatusPill({ status }: { status: ProviderStatus }) {
   return (
     <span className={`inline-flex items-center gap-2 ${text}`}>
       <span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden="true" />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.05em]">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-[0.05em]">{label}</span>
     </span>
   );
 }

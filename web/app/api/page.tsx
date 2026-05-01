@@ -32,7 +32,7 @@ function Endpoint({ method, path, description, params, example, note }: Endpoint
     <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-6">
       {/* Method + path header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
-        <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--signal-ok)]">
+        <span className="font-mono text-xs font-bold uppercase tracking-widest text-[var(--signal-ok)]">
           {method}
         </span>
         <code className="font-mono text-sm text-[var(--ink-100)]">{path}</code>
@@ -43,7 +43,7 @@ function Endpoint({ method, path, description, params, example, note }: Endpoint
 
         {params && params.length > 0 && (
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-2">
               Parameters
             </p>
             <div className="space-y-1">
@@ -59,12 +59,12 @@ function Endpoint({ method, path, description, params, example, note }: Endpoint
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
               Example
             </p>
             <CopyButton text={example} />
           </div>
-          <pre className="rounded bg-[var(--canvas-sunken)] border border-[var(--ink-600)] px-3 py-3 text-[11px] font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">
+          <pre className="rounded bg-[var(--canvas-sunken)] border border-[var(--ink-600)] px-3 py-3 text-xs font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">
             {example}
           </pre>
         </div>
@@ -82,7 +82,7 @@ function Endpoint({ method, path, description, params, example, note }: Endpoint
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-12">
-      <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+      <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
         {title}
       </h2>
       {children}
@@ -95,7 +95,7 @@ export default function ApiPage() {
     <main className="flex-1 mx-auto w-full max-w-4xl px-6 py-10">
       {/* Header */}
       <div className="mb-10">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
           API
         </p>
         <h1 className="text-2xl font-semibold text-[var(--ink-100)] mb-3">
@@ -129,12 +129,12 @@ export default function ApiPage() {
         {/* Installation */}
         <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-6">
           <div className="px-4 py-3 border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
               Claude Desktop — <code className="font-mono normal-case tracking-normal text-[var(--ink-300)]">~/Library/Application Support/Claude/claude_desktop_config.json</code>
             </span>
           </div>
           <div className="px-4 py-4">
-            <pre className="text-[11px] font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`{
+            <pre className="text-xs font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`{
   "mcpServers": {
     "llmstatus": {
       "command": "npx",
@@ -147,12 +147,12 @@ export default function ApiPage() {
 
         <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-6">
           <div className="px-4 py-3 border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
               Cursor — <code className="font-mono normal-case tracking-normal text-[var(--ink-300)]">.cursor/mcp.json</code>
             </span>
           </div>
           <div className="px-4 py-4">
-            <pre className="text-[11px] font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`{
+            <pre className="text-xs font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`{
   "mcpServers": {
     "llmstatus": {
       "command": "npx",
@@ -164,17 +164,17 @@ export default function ApiPage() {
         </div>
 
         {/* Tools table */}
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-3">
           Available tools
         </p>
         <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-6">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
-                <th className="text-left px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] w-48">
+                <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] w-48">
                   Tool
                 </th>
-                <th className="text-left px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+                <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
                   What it returns
                 </th>
               </tr>
@@ -253,10 +253,10 @@ export default function ApiPage() {
         </div>
 
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-2">
             Response envelope
           </p>
-          <pre className="rounded bg-[var(--canvas-sunken)] border border-[var(--ink-600)] px-3 py-3 text-[11px] font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`{
+          <pre className="rounded bg-[var(--canvas-sunken)] border border-[var(--ink-600)] px-3 py-3 text-xs font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`{
   "data": { ... },
   "meta": {
     "generated_at": "2026-04-18T10:00:00Z",
@@ -266,10 +266,10 @@ export default function ApiPage() {
         </div>
 
         <div className="mt-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)] mb-2">
             Rate limit headers
           </p>
-          <pre className="rounded bg-[var(--canvas-sunken)] border border-[var(--ink-600)] px-3 py-3 text-[11px] font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`X-RateLimit-Limit: 60
+          <pre className="rounded bg-[var(--canvas-sunken)] border border-[var(--ink-600)] px-3 py-3 text-xs font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`X-RateLimit-Limit: 60
 X-RateLimit-Remaining: 58
 X-RateLimit-Reset: 1745136060
 # 429 response includes:
@@ -459,7 +459,7 @@ curl "${BASE}/badge/openai.svg?style=detailed"
       {/* Errors */}
       <Section title="Error responses">
         <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4 space-y-4">
-          <pre className="text-[11px] font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`# 404 Not Found
+          <pre className="text-xs font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`# 404 Not Found
 { "error": "not found" }
 
 # 429 Too Many Requests

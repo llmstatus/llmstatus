@@ -40,7 +40,7 @@ export function ProbeTimestamp({ iso, prefix }: Props) {
     <time
       dateTime={iso}
       title={new Date(iso).toUTCString()}
-      className="text-[11px] text-[var(--ink-400)]"
+      className="text-xs text-[var(--ink-400)]"
     >
       {prefix ? `${prefix} ${label}` : label}
     </time>

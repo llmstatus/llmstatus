@@ -9,7 +9,7 @@ export default function ErrorPage({
 }) {
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--signal-amber)] mb-4">
         Error
       </p>
       <h1 className="text-2xl font-semibold text-[var(--ink-100)] mb-3">

@@ -76,7 +76,7 @@ export function LatencySparkline({
 }: Props) {
   const lineD = buildLinePath(data, width, height);
   if (!lineD) {
-    return <span className="text-[11px] text-[var(--ink-500)]">no data</span>;
+    return <span className="text-xs text-[var(--ink-500)]">no data</span>;
   }
 
   const areaD = area ? buildAreaPaths(data, width, height) : "";
