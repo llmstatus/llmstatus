@@ -8,6 +8,7 @@
 # FIXED HOST PORTS (do not change — chosen to avoid conflicts on this host):
 #   db       — PostgreSQL 17        host:15432 → container:5432
 #   influx   — InfluxDB 3 Core      host:18086 → container:8181
+#   redis    — Redis 7               host:16379 → container:6379
 #   ingest   — probe ingest API     host:18080 → container:8080
 #   api      — public read API      host:18081 → container:8081
 #   web      — Next.js frontend     host:13000 → container:3000
@@ -63,6 +64,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: llmstatus-redis
+    restart: unless-stopped
+    volumes:
+      - ${REDIS_DATA_DIR:-./data/redis}:/data
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ── one-shot migration runner ───────────────────────────────────────────────
 
@@ -145,10 +160,13 @@ services:
       INTERNAL_SECRET: ${INTERNAL_SECRET:-dev-internal-secret}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@llmstatus.io}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     depends_on:
       db:
         condition: service_healthy
       influx:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "18081:8081"
