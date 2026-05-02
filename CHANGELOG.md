@@ -10,6 +10,9 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Fixed
+- Add Redis 7 service to docker-compose; wire api healthcheck dependency — `REDIS_URL` was set in the Ansible env template but no Redis container existed, causing OTP rate limiting to silently fail on first use
+
 ### Changed (UI overhaul)
 - Lighten canvas color tokens: base `#0D1117`, raised `#161D28`, overlay `#1C2638` — increases card-to-background contrast and makes the dark theme feel less cave-dark
 - Raise ink-400 (`#7B8899`) and ink-500 (`#4D5B6C`) for readable secondary text; ink-600 borders now `#2D3A4A`
