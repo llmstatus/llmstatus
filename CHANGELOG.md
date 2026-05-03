@@ -13,6 +13,8 @@ public APIs must add an entry under `## [Unreleased]`.
 ### Added
 - Rule 6.5 (quality degradation): detector now tracks quality probe failure rates and creates `quality_degradation` incidents when the current 5-minute failure rate exceeds 3× the 24-hour baseline or surpasses 30% in absolute terms; `QualityByProvider` query filters `probe_type = 'quality'`
 - `POST /v1/admin/test-email` endpoint (requires `X-Internal-Token`) for verifying the Resend email integration end-to-end
+- Published `@llmstatus/mcp@1.0.0` to npm — MCP server with 6 tools (list_providers, get_provider_status, list_active_incidents, get_incident_detail, get_provider_history, compare_providers)
+- API docs page now includes Claude Code one-line install instruction for the MCP server
 
 ### Fixed
 - Add Redis 7 service to docker-compose; wire api healthcheck dependency — `REDIS_URL` was set in the Ansible env template but no Redis container existed, causing OTP rate limiting to silently fail on first use
