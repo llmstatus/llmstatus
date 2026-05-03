@@ -41,6 +41,10 @@ func (f *fakeReader) RegionalErrorRateByProvider(_ context.Context, _ time.Durat
 	return f.regional, f.err
 }
 
+func (f *fakeReader) QualityByProvider(_ context.Context, _ time.Duration) ([]ProbeStats, error) {
+	return nil, f.err
+}
+
 // ---- fake IncidentStore -----------------------------------------------------
 
 type fakeIncidentStore struct {

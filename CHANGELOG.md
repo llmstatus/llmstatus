@@ -10,8 +10,16 @@ public APIs must add an entry under `## [Unreleased]`.
 
 ## [Unreleased]
 
+### Added
+- Rule 6.5 (quality degradation): detector now tracks quality probe failure rates and creates `quality_degradation` incidents when the current 5-minute failure rate exceeds 3× the 24-hour baseline or surpasses 30% in absolute terms; `QualityByProvider` query filters `probe_type = 'quality'`
+- `POST /v1/admin/test-email` endpoint (requires `X-Internal-Token`) for verifying the Resend email integration end-to-end
+
 ### Fixed
 - Add Redis 7 service to docker-compose; wire api healthcheck dependency — `REDIS_URL` was set in the Ansible env template but no Redis container existed, causing OTP rate limiting to silently fail on first use
+- Fix `TestListProviders_Operational`, `TestListProviders_WithOngoingIncident`, and `TestListProviders_LiveStatsNil_OmitsFields` — tests lacked a live stats reader, causing providers to be filtered from the response
+
+### Changed
+- Update copy: "7 global locations" → "5 global locations" across homepage and providers page metadata
 
 ### Changed (UI overhaul)
 - Lighten canvas color tokens: base `#0D1117`, raised `#161D28`, overlay `#1C2638` — increases card-to-background contrast and makes the dark theme feel less cave-dark

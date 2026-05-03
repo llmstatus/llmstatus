@@ -87,6 +87,17 @@ func (r *Runner) runOnce(ctx context.Context) {
 	}
 	detections = append(detections, EvaluateRegionalRule(regional5m, stats5m)...)
 
+	// Rule 6.5 — quality degradation.
+	quality5m, err := r.reader.QualityByProvider(ctx, 5*time.Minute)
+	if err != nil {
+		slog.Warn("detector: read quality 5m stats", "err", err)
+	}
+	quality24h, err := r.reader.QualityByProvider(ctx, 24*time.Hour)
+	if err != nil {
+		slog.Warn("detector: read quality 24h stats", "err", err)
+	}
+	detections = append(detections, EvaluateQualityRule(quality5m, quality24h)...)
+
 	for _, d := range detections {
 		r.ensureIncident(ctx, d)
 	}
@@ -196,6 +207,8 @@ func incidentTitle(providerID, rule string) string {
 		return providerID + " latency degradation detected"
 	case RuleRegionalOutage:
 		return providerID + " regional outage detected"
+	case RuleQualityDegradation:
+		return providerID + " quality degradation detected"
 	default:
 		return providerID + " " + rule
 	}

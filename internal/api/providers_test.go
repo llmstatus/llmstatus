@@ -32,7 +32,12 @@ func TestListProviders_Operational(t *testing.T) {
 	store := &fakeStore{
 		providers: []pgstore.Provider{fixtureProvider("openai", "OpenAI")},
 	}
-	srv := api.New(store)
+	liveReader := &fakeLiveStatsReader{
+		stats: []influx.ProviderLiveStat{
+			{ProviderID: "openai", Uptime24h: 0.99, P95Ms: 200},
+		},
+	}
+	srv := api.New(store, api.WithLiveStatsReader(liveReader))
 
 	rec := doGet(t, srv, "/v1/providers")
 
@@ -65,7 +70,12 @@ func TestListProviders_WithOngoingIncident(t *testing.T) {
 		providers: []pgstore.Provider{fixtureProvider("openai", "OpenAI")},
 		incidents: []pgstore.Incident{inc},
 	}
-	srv := api.New(store)
+	liveReader := &fakeLiveStatsReader{
+		stats: []influx.ProviderLiveStat{
+			{ProviderID: "openai", Uptime24h: 0.40, P95Ms: 1200},
+		},
+	}
+	srv := api.New(store, api.WithLiveStatsReader(liveReader))
 
 	rec := doGet(t, srv, "/v1/providers")
 
@@ -126,10 +136,12 @@ func TestListProviders_WithLiveStats(t *testing.T) {
 }
 
 func TestListProviders_LiveStatsNil_OmitsFields(t *testing.T) {
+	// When liveStats reader is configured but returns no data for a provider,
+	// that provider is excluded from the response (no data = not yet probed).
 	store := &fakeStore{
 		providers: []pgstore.Provider{fixtureProvider("openai", "OpenAI")},
 	}
-	srv := api.New(store) // no WithLiveStatsReader
+	srv := api.New(store) // no WithLiveStatsReader → provider excluded
 
 	rec := doGet(t, srv, "/v1/providers")
 
@@ -137,19 +149,9 @@ func TestListProviders_LiveStatsNil_OmitsFields(t *testing.T) {
 		Data []json.RawMessage `json:"data"`
 	}
 	mustDecode(t, rec.Body, &body)
-	if len(body.Data) != 1 {
-		t.Fatalf("data length: got %d, want 1", len(body.Data))
-	}
-	// Fields must be absent (omitempty), not null.
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(body.Data[0], &raw); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	if _, ok := raw["uptime_24h"]; ok {
-		t.Error("uptime_24h should be absent when liveStats is nil")
-	}
-	if _, ok := raw["p95_ms"]; ok {
-		t.Error("p95_ms should be absent when liveStats is nil")
+	// Provider has no live data, so it is filtered out entirely.
+	if len(body.Data) != 0 {
+		t.Fatalf("data length: got %d, want 0 (provider excluded when no live stats)", len(body.Data))
 	}
 }
 

@@ -330,6 +330,9 @@ func (f *latencyFakeReader) LatencyByProvider(_ context.Context, window time.Dur
 func (f *latencyFakeReader) RegionalErrorRateByProvider(_ context.Context, _ time.Duration) ([]RegionalStats, error) {
 	return nil, nil
 }
+func (f *latencyFakeReader) QualityByProvider(_ context.Context, _ time.Duration) ([]ProbeStats, error) {
+	return nil, nil
+}
 
 // regionalFakeReader only populates regional stats.
 type regionalFakeReader struct {
@@ -344,6 +347,31 @@ func (f *regionalFakeReader) LatencyByProvider(_ context.Context, _ time.Duratio
 }
 func (f *regionalFakeReader) RegionalErrorRateByProvider(_ context.Context, _ time.Duration) ([]RegionalStats, error) {
 	return f.regional, nil
+}
+func (f *regionalFakeReader) QualityByProvider(_ context.Context, _ time.Duration) ([]ProbeStats, error) {
+	return nil, nil
+}
+
+// qualityFakeReader returns distinct data for current (5m) vs baseline (24h).
+type qualityFakeReader struct {
+	current  []ProbeStats
+	baseline []ProbeStats
+}
+
+func (f *qualityFakeReader) ErrorRateByProvider(_ context.Context, _ time.Duration) ([]ProbeStats, error) {
+	return nil, nil
+}
+func (f *qualityFakeReader) LatencyByProvider(_ context.Context, _ time.Duration) ([]LatencyStats, error) {
+	return nil, nil
+}
+func (f *qualityFakeReader) RegionalErrorRateByProvider(_ context.Context, _ time.Duration) ([]RegionalStats, error) {
+	return nil, nil
+}
+func (f *qualityFakeReader) QualityByProvider(_ context.Context, window time.Duration) ([]ProbeStats, error) {
+	if window <= 5*time.Minute {
+		return f.current, nil
+	}
+	return f.baseline, nil
 }
 
 func TestProbeStats_ErrorRate(t *testing.T) {
@@ -361,5 +389,92 @@ func TestProbeStats_ErrorRate(t *testing.T) {
 		if got := s.ErrorRate(); got != tc.want {
 			t.Errorf("ErrorRate(%d/%d) = %f, want %f", tc.errors, tc.total, got, tc.want)
 		}
+	}
+}
+
+// ---- Rule 6.5 — quality degradation -----------------------------------------
+
+func TestEvaluateQualityRule_NoProbes(t *testing.T) {
+	got := EvaluateQualityRule(nil, nil)
+	if len(got) != 0 {
+		t.Errorf("expected 0 detections on empty stats, got %d", len(got))
+	}
+}
+
+func TestEvaluateQualityRule_TooFewProbes(t *testing.T) {
+	current := []ProbeStats{{ProviderID: "openai", Total: 1, Errors: 1}}
+	got := EvaluateQualityRule(current, nil)
+	if len(got) != 0 {
+		t.Errorf("expected 0 detections with only 1 probe, got %d", len(got))
+	}
+}
+
+func TestEvaluateQualityRule_AbsoluteThreshold_NoBaseline(t *testing.T) {
+	// 3 of 5 quality probes fail (60%) — exceeds 30% absolute threshold with no baseline data.
+	current := []ProbeStats{{ProviderID: "openai", Total: 5, Errors: 3}}
+	got := EvaluateQualityRule(current, nil)
+	if len(got) != 1 {
+		t.Fatalf("expected 1 detection, got %d", len(got))
+	}
+	d := got[0]
+	if d.Rule != RuleQualityDegradation {
+		t.Errorf("Rule: got %q, want %q", d.Rule, RuleQualityDegradation)
+	}
+	if d.Severity != "minor" {
+		t.Errorf("Severity: got %q, want minor", d.Severity)
+	}
+}
+
+func TestEvaluateQualityRule_BelowAbsoluteThreshold(t *testing.T) {
+	// 1 of 5 quality probes fail (20%) — below 30% absolute threshold.
+	current := []ProbeStats{{ProviderID: "openai", Total: 5, Errors: 1}}
+	got := EvaluateQualityRule(current, nil)
+	if len(got) != 0 {
+		t.Errorf("expected no detection below absolute threshold, got %d", len(got))
+	}
+}
+
+func TestEvaluateQualityRule_RelativeThreshold_Fires(t *testing.T) {
+	// Baseline: 1/20 = 5%. Current: 4/5 = 80% → 16× baseline, exceeds 3× threshold.
+	current := []ProbeStats{{ProviderID: "anthropic", Total: 5, Errors: 4}}
+	baseline := []ProbeStats{{ProviderID: "anthropic", Total: 20, Errors: 1}}
+	got := EvaluateQualityRule(current, baseline)
+	if len(got) != 1 {
+		t.Fatalf("expected 1 detection, got %d", len(got))
+	}
+	if got[0].Rule != RuleQualityDegradation {
+		t.Errorf("Rule: got %q, want %q", got[0].Rule, RuleQualityDegradation)
+	}
+}
+
+func TestEvaluateQualityRule_RelativeThreshold_BelowFactor(t *testing.T) {
+	// Baseline: 2/20 = 10%. Current: 1/5 = 20% → 2× baseline, below 3× threshold.
+	current := []ProbeStats{{ProviderID: "anthropic", Total: 5, Errors: 1}}
+	baseline := []ProbeStats{{ProviderID: "anthropic", Total: 20, Errors: 2}}
+	got := EvaluateQualityRule(current, baseline)
+	if len(got) != 0 {
+		t.Errorf("expected no detection when ratio below factor, got %d", len(got))
+	}
+}
+
+func TestRunner_QualityDegradation_CreatesIncident(t *testing.T) {
+	store := &fakeIncidentStore{}
+	r := New(&qualityFakeReader{
+		current:  []ProbeStats{{ProviderID: "openai", Total: 5, Errors: 3}}, // 60% failure
+		baseline: []ProbeStats{},                                             // no baseline → absolute threshold applies
+	}, store, time.Hour)
+	r.runOnce(context.Background())
+
+	found := false
+	for _, inc := range store.created {
+		if inc.DetectionRule.String == RuleQualityDegradation {
+			found = true
+			if inc.Severity != "minor" {
+				t.Errorf("Severity: got %q, want minor", inc.Severity)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected quality_degradation incident to be created")
 	}
 }

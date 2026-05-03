@@ -35,6 +35,9 @@ type ProbeReader interface {
 	LatencyByProvider(ctx context.Context, window time.Duration) ([]LatencyStats, error)
 	// RegionalErrorRateByProvider returns per-provider, per-region error stats.
 	RegionalErrorRateByProvider(ctx context.Context, window time.Duration) ([]RegionalStats, error)
+	// QualityByProvider returns per-provider quality probe stats for the given window.
+	// Only probes with probe_type = 'quality' are counted.
+	QualityByProvider(ctx context.Context, window time.Duration) ([]ProbeStats, error)
 }
 
 // InfluxReaderConfig holds connection parameters for the InfluxDB 3 query API.
@@ -195,6 +198,52 @@ func (r *influxReader) RegionalErrorRateByProvider(ctx context.Context, window t
 		})
 	}
 	return out, nil
+}
+
+func (r *influxReader) QualityByProvider(ctx context.Context, window time.Duration) ([]ProbeStats, error) {
+	sql := fmt.Sprintf(
+		`SELECT provider_id,
+		        COUNT(*) AS total,
+		        COUNT(*) FILTER (WHERE success = false) AS errors
+		 FROM probes
+		 WHERE time >= now() - INTERVAL '%d seconds'
+		   AND probe_type = 'quality'
+		 GROUP BY provider_id`,
+		int(window.Seconds()),
+	)
+
+	resp, err := r.querySQLRaw(ctx, sql)
+	if err != nil {
+		return nil, fmt.Errorf("detector quality: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("detector quality: influx status %d: %s", resp.StatusCode, detail)
+	}
+
+	var rows []struct {
+		ProviderID string  `json:"provider_id"`
+		Total      float64 `json:"total"`
+		Errors     float64 `json:"errors"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
+		return nil, fmt.Errorf("detector quality: decode: %w", err)
+	}
+
+	stats := make([]ProbeStats, 0, len(rows))
+	for _, row := range rows {
+		if row.ProviderID == "" {
+			continue
+		}
+		stats = append(stats, ProbeStats{
+			ProviderID: row.ProviderID,
+			Total:      int64(row.Total),
+			Errors:     int64(row.Errors),
+		})
+	}
+	return stats, nil
 }
 
 // querySQLRaw sends a SQL query to InfluxDB 3 and returns the raw HTTP response.

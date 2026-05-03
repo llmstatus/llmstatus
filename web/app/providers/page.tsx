@@ -8,11 +8,11 @@ export const metadata: Metadata = {
   title: "All Providers",
   description:
     "Real-time status for 20+ AI API providers. Filter by status and category. " +
-    "Independent monitoring from 7 global locations.",
+    "Independent monitoring from 5 global locations.",
   openGraph: {
     title: "AI API Providers — llmstatus.io",
     description:
-      "Real-time status for 20+ AI API providers monitored from 7 global locations.",
+      "Real-time status for 20+ AI API providers monitored from 5 global locations.",
   },
 };
 
@@ -29,7 +29,7 @@ export default async function ProvidersPage() {
           All monitored providers
         </h1>
         <p className="text-sm text-[var(--ink-400)]">
-          Real API calls from 7 global locations. Updated every 30 s.
+          Real API calls from 5 global locations. Updated every 30 s.
         </p>
       </div>
 

@@ -101,6 +101,36 @@ func (s *Server) adminRejectSponsor(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, sp)
 }
 
+// POST /v1/admin/test-email — send a test email to verify the Resend integration.
+// Requires X-Internal-Token header (shared internal secret). Not restricted to admins
+// so it can be called without a user account.
+func (s *Server) adminTestEmail(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("X-Internal-Token") != s.auth.InternalSecret {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	if s.mailer == nil {
+		writeError(w, http.StatusServiceUnavailable, "mailer not configured")
+		return
+	}
+	to := r.URL.Query().Get("to")
+	if to == "" {
+		writeError(w, http.StatusBadRequest, "to query param required")
+		return
+	}
+	if err := s.mailer.Send(r.Context(), email.Message{
+		To:      to,
+		Subject: "[llmstatus] Test email — integration check",
+		Text:    "If you received this, the Resend integration is working correctly.",
+	}); err != nil {
+		slog.Error("admin: test email failed", "to", to, "err", err)
+		writeError(w, http.StatusInternalServerError, "send failed: "+err.Error())
+		return
+	}
+	slog.Info("admin: test email sent", "to", to)
+	writeJSON(w, http.StatusOK, map[string]string{"status": "sent", "to": to})
+}
+
 func (s *Server) sendSponsorStatusEmail(r *http.Request, userID int64, sponsorName, status string) {
 	if s.mailer == nil || s.auth == nil {
 		return
