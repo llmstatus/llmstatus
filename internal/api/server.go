@@ -141,6 +141,7 @@ func (s *Server) registerRoutes() {
 		s.mux.HandleFunc("GET /v1/admin/sponsors", s.adminListSponsors)
 		s.mux.HandleFunc("POST /v1/admin/sponsors/{id}/approve", s.adminApproveSponsor)
 		s.mux.HandleFunc("POST /v1/admin/sponsors/{id}/reject", s.adminRejectSponsor)
+		s.mux.HandleFunc("POST /v1/admin/test-email", s.adminTestEmail)
 	}
 }
 

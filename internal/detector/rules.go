@@ -2,10 +2,11 @@ package detector
 
 // Detection rule identifiers.
 const (
-	RuleProviderDown       = "provider_down"
-	RuleElevatedErrors     = "elevated_errors"
-	RuleLatencyDegradation = "latency_degradation"
-	RuleRegionalOutage     = "regional_outage"
+	RuleProviderDown        = "provider_down"
+	RuleElevatedErrors      = "elevated_errors"
+	RuleLatencyDegradation  = "latency_degradation"
+	RuleRegionalOutage      = "regional_outage"
+	RuleQualityDegradation  = "quality_degradation"
 
 	downThreshold     = 0.50
 	elevatedThreshold = 0.05
@@ -18,6 +19,12 @@ const (
 	// Rule 6.4: fire when one region exceeds this error rate while not globally down.
 	regionalOutageThreshold = 0.50
 	minRegionalProbeCount   = int64(3)
+
+	// Rule 6.5: fire when quality error rate in current window > qualityDegradationFactor
+	// times the baseline rate, or exceeds qualityAbsoluteThreshold when baseline is zero.
+	qualityDegradationFactor    = 3.0
+	qualityAbsoluteThreshold    = 0.30
+	minQualityProbeCount        = int64(2)
 )
 
 // Detection is a rule match for a single provider.
@@ -145,6 +152,46 @@ func EvaluateLatencyRule(current, baseline []LatencyStats) []Detection {
 				TotalProbes:   c.SampleCount,
 				P95Ms:         c.P95Ms,
 				BaselineP95Ms: b.P95Ms,
+			})
+		}
+	}
+	return detections
+}
+
+// EvaluateQualityRule applies rule 6.5 — quality degradation.
+//
+// Fires when a provider's quality probe failure rate in `current` exceeds
+// qualityDegradationFactor × the `baseline` rate, or surpasses
+// qualityAbsoluteThreshold when the baseline rate is effectively zero.
+// Both windows require at least minQualityProbeCount probes.
+func EvaluateQualityRule(current, baseline []ProbeStats) []Detection {
+	baselineByProvider := make(map[string]ProbeStats, len(baseline))
+	for _, b := range baseline {
+		baselineByProvider[b.ProviderID] = b
+	}
+
+	var detections []Detection
+	for _, c := range current {
+		if c.Total < minQualityProbeCount {
+			continue
+		}
+		rate := c.ErrorRate()
+		b := baselineByProvider[c.ProviderID]
+
+		var fires bool
+		if b.Total < minQualityProbeCount || b.ErrorRate() == 0 {
+			fires = rate >= qualityAbsoluteThreshold
+		} else {
+			fires = rate > qualityDegradationFactor*b.ErrorRate()
+		}
+
+		if fires {
+			detections = append(detections, Detection{
+				ProviderID:  c.ProviderID,
+				Rule:        RuleQualityDegradation,
+				Severity:    "minor",
+				ErrorRate:   rate,
+				TotalProbes: c.Total,
 			})
 		}
 	}

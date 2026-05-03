@@ -10,12 +10,12 @@ export const metadata: Metadata = {
   title: "AI API Status Monitor",
   description:
     "Independent real-time monitoring for the AI infrastructure. " +
-    "Measured from 7 global locations. Not scraped from official status pages.",
+    "Measured from 5 global locations. Not scraped from official status pages.",
   openGraph: {
     title: "llmstatus.io — AI API Status Monitor",
     description:
       "Independent real-time monitoring for the AI infrastructure. " +
-      "Measured from 7 global locations. Not scraped from official status pages.",
+      "Measured from 5 global locations. Not scraped from official status pages.",
   },
 };
 
@@ -78,7 +78,7 @@ export default async function HomePage() {
           for the AI infrastructure.
         </h1>
         <p className="text-base text-[var(--ink-300)] leading-relaxed">
-          Measured from 7 global locations.
+          Measured from 5 global locations.
           <br />
           Not scraped from official status pages.
         </p>
