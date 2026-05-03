@@ -127,10 +127,27 @@ export default function ApiPage() {
         </p>
 
         {/* Installation */}
-        <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-6">
+        {/* Claude Code */}
+        <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-4">
           <div className="px-4 py-3 border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
             <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
-              Claude Desktop — <code className="font-mono normal-case tracking-normal text-[var(--ink-300)]">~/Library/Application Support/Claude/claude_desktop_config.json</code>
+              Claude Code — one-line install
+            </span>
+          </div>
+          <div className="px-4 py-4 space-y-3">
+            <pre className="text-xs font-mono text-[var(--ink-200)] overflow-x-auto leading-relaxed">{`claude mcp add llmstatus -- npx -y @llmstatus/mcp`}</pre>
+            <p className="text-xs text-[var(--ink-500)] leading-relaxed">
+              Adds to the current project (<code className="font-mono text-[var(--ink-400)]">.claude.json</code>).
+              Append <code className="font-mono text-[var(--ink-400)]">--scope global</code> to enable in all projects.
+            </p>
+          </div>
+        </div>
+
+        {/* Claude Desktop */}
+        <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-4">
+          <div className="px-4 py-3 border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
+            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
+              Claude Desktop — <code className="font-mono normal-case tracking-normal text-[var(--ink-300)]">claude_desktop_config.json</code>
             </span>
           </div>
           <div className="px-4 py-4">
@@ -145,6 +162,7 @@ export default function ApiPage() {
           </div>
         </div>
 
+        {/* Cursor */}
         <div className="rounded-lg border border-[var(--ink-600)] overflow-hidden mb-6">
           <div className="px-4 py-3 border-b border-[var(--ink-600)] bg-[var(--canvas-sunken)]">
             <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ink-400)]">
