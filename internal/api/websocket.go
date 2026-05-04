@@ -309,7 +309,7 @@ func (c *Client) handleSubscribe(msg map[string]interface{}) {
 
 		// Send subscription confirmation
 		confirmMsg := map[string]interface{}{
-			wsKeyType:   "subscribed",
+			wsKeyType: "subscribed",
 			"channel": channel,
 		}
 		data, err := json.Marshal(confirmMsg)
@@ -331,7 +331,7 @@ func (c *Client) handleUnsubscribe(msg map[string]interface{}) {
 
 		// Send unsubscription confirmation
 		confirmMsg := map[string]interface{}{
-			wsKeyType:   "unsubscribed",
+			wsKeyType: "unsubscribed",
 			"channel": channel,
 		}
 		data, err := json.Marshal(confirmMsg)
