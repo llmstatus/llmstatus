@@ -14,7 +14,9 @@ const (
 	statusOperational = "operational"
 	statusDown        = "down"
 	statusDegraded    = "degraded"
+	severityMinor     = "minor"
 	severityMajor     = "major"
+	severityCritical  = "critical"
 )
 
 // ---- response types ---------------------------------------------------------
@@ -220,7 +222,7 @@ func deriveStatus(providerID string, incMap map[string]pgstore.Incident) (string
 	}
 	id := inc.ID.String()
 	switch inc.Severity {
-	case "critical":
+	case severityCritical:
 		return statusDown, &id
 	case severityMajor:
 		return statusDegraded, &id
@@ -231,11 +233,11 @@ func deriveStatus(providerID string, incMap map[string]pgstore.Incident) (string
 
 func severityRank(s string) int {
 	switch s {
-	case "critical":
+	case severityCritical:
 		return 3
 	case severityMajor:
 		return 2
-	case "minor":
+	case severityMinor:
 		return 1
 	default:
 		return 0

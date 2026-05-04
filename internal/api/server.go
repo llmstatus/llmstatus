@@ -157,7 +157,10 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 
 // ---- response helpers -------------------------------------------------------
 
-const cacheTTL = 30
+const (
+	cacheTTL    = 30
+	jsonKeyError = "error"
+)
 
 type meta struct {
 	GeneratedAt time.Time `json:"generated_at"`
@@ -180,7 +183,7 @@ func writeEnvelope(w http.ResponseWriter, data any) {
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {
-	writeJSON(w, status, map[string]string{"error": msg})
+	writeJSON(w, status, map[string]string{jsonKeyError: msg})
 }
 
 // coalesceSlice ensures nil slices become [] in JSON (never null).

@@ -78,7 +78,7 @@ func writeBadge(w http.ResponseWriter, label, message, color string) {
 
 func statusColor(status string) string {
 	switch status {
-	case "operational":
+	case statusOperational:
 		return "#4CAF50"
 	case "degraded":
 		return "#FF9800"
