@@ -155,10 +155,10 @@ func (rm *RealtimeManager) SubscriberCount(channel string) int {
 // handleSubscription processes subscription and unsubscription requests.
 func handleSubscription(client *Client, msg SubscriptionMessage) {
 	switch msg.Type {
-	case "subscribe":
+	case wsTypeSubscribe:
 		client.subscriptions[msg.Topic] = true
 		slog.Info("client subscribed", "topic", msg.Topic)
-	case "unsubscribe":
+	case wsTypeUnsubscribe:
 		delete(client.subscriptions, msg.Topic)
 		slog.Info("client unsubscribed", "topic", msg.Topic)
 	}
