@@ -22,7 +22,8 @@ type openAICompatProvider struct {
 	baseURL    string
 	apiKey     string
 	region     string
-	lightModel string
+	lightModel string   // primary/default model; also the first element when models is empty
+	models     []string // if non-empty, overrides [lightModel] in Models()
 	probeType  string
 	errorMax   int
 	client     *http.Client
@@ -58,8 +59,20 @@ func compatHTTPClient(c *http.Client) compatOption {
 	return func(p *openAICompatProvider) { p.client = c }
 }
 
-func (p *openAICompatProvider) ID() string       { return p.providerID }
-func (p *openAICompatProvider) Models() []string { return []string{p.lightModel} }
+// compatModels overrides the model list returned by Models(). The first entry
+// is also used as the default model for ProbeLightInference.
+func compatModels(models ...string) compatOption {
+	return func(p *openAICompatProvider) { p.models = models }
+}
+
+func (p *openAICompatProvider) ID() string { return p.providerID }
+
+func (p *openAICompatProvider) Models() []string {
+	if len(p.models) > 0 {
+		return p.models
+	}
+	return []string{p.lightModel}
+}
 
 func (p *openAICompatProvider) ProbeLightInference(ctx context.Context, model string) (probes.ProbeResult, error) {
 	return probeOpenAICompat(ctx, p.baseURL, p.apiKey, p.region, p.providerID, p.probeType, p.errorMax, model, p.client)
