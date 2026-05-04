@@ -46,7 +46,7 @@ func (s *Server) getStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	counts := statusCounts{Total: len(providers)}
-	worst := "operational"
+	worst := statusOperational
 	for _, p := range providers {
 		st, _ := deriveStatus(p.ID, incidentByProvider)
 		switch st {

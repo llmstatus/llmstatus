@@ -14,7 +14,7 @@ import (
 	pgstore "github.com/llmstatus/llmstatus/internal/store/postgres/gen"
 )
 
-var validSeverities = map[string]bool{"minor": true, "major": true, "critical": true}
+var validSeverities = map[string]bool{severityMinor: true, severityMajor: true, severityCritical: true}
 
 // subUpdateBody is shared between create/update decoders.
 type subUpdateBody struct {

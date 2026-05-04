@@ -12,6 +12,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// WebSocket message type and key constants.
+const (
+	wsKeyType         = "type"
+	wsTypeSubscribe   = "subscribe"
+	wsTypeUnsubscribe = "unsubscribe"
+)
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		// Validate origin to prevent CSRF attacks
@@ -192,7 +199,7 @@ func HandleWebSocketWithHub(w http.ResponseWriter, r *http.Request, hub *Hub) {
 	hub.register <- client
 
 	// Send connection confirmation
-	confirmMsg := map[string]string{"type": "connected"}
+	confirmMsg := map[string]string{wsKeyType: "connected"}
 	if err := conn.WriteJSON(confirmMsg); err != nil {
 		slog.Error("websocket: failed to send connection confirmation", "err", err)
 		_ = conn.Close()
@@ -228,15 +235,15 @@ func (c *Client) readPump() {
 		}
 
 		// Process message based on type
-		if msgType, ok := msg["type"].(string); ok {
+		if msgType, ok := msg[wsKeyType].(string); ok {
 			switch msgType {
-			case "subscribe":
+			case wsTypeSubscribe:
 				c.handleSubscribe(msg)
-			case "unsubscribe":
+			case wsTypeUnsubscribe:
 				c.handleUnsubscribe(msg)
 			case "ping":
 				// Send pong response using proper JSON marshaling
-				pongMsg := map[string]string{"type": "pong"}
+				pongMsg := map[string]string{wsKeyType: "pong"}
 				data, err := json.Marshal(pongMsg)
 				if err != nil {
 					slog.Error("websocket: failed to marshal pong message", "err", err)
@@ -244,7 +251,7 @@ func (c *Client) readPump() {
 				}
 				c.send <- data
 			default:
-				slog.Debug("websocket: unknown message type", "type", msgType)
+				slog.Debug("websocket: unknown message type", wsKeyType, msgType)
 			}
 		}
 	}
@@ -287,8 +294,8 @@ func (c *Client) handleSubscribe(msg map[string]interface{}) {
 		if !isValidChannelName(channel) {
 			slog.Warn("websocket: invalid channel name", "channel", channel)
 			errMsg := map[string]interface{}{
-				"type":  "error",
-				"error": "invalid channel name",
+				wsKeyType:    jsonKeyError,
+				jsonKeyError: "invalid channel name",
 			}
 			data, _ := json.Marshal(errMsg)
 			c.send <- data
@@ -302,7 +309,7 @@ func (c *Client) handleSubscribe(msg map[string]interface{}) {
 
 		// Send subscription confirmation
 		confirmMsg := map[string]interface{}{
-			"type":    "subscribed",
+			wsKeyType:   "subscribed",
 			"channel": channel,
 		}
 		data, err := json.Marshal(confirmMsg)
@@ -324,7 +331,7 @@ func (c *Client) handleUnsubscribe(msg map[string]interface{}) {
 
 		// Send unsubscription confirmation
 		confirmMsg := map[string]interface{}{
-			"type":    "unsubscribed",
+			wsKeyType:   "unsubscribed",
 			"channel": channel,
 		}
 		data, err := json.Marshal(confirmMsg)
