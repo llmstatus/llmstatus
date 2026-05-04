@@ -9,7 +9,8 @@ import (
 const (
 	deepseekDefaultBaseURL = "https://api.deepseek.com/v1"
 	deepseekProviderID     = "deepseek"
-	deepseekLightModel     = "deepseek-chat"
+	deepseekFlashModel     = "deepseek-v4-flash"
+	deepseekProModel       = "deepseek-v4-pro"
 	deepseekLightProbeType = "light_inference"
 	deepseekErrorDetailMax = 200
 )
@@ -26,5 +27,10 @@ func WithDeepSeekHTTPClient(c *http.Client) DeepSeekOption { return compatHTTPCl
 // NewDeepSeekProvider returns a probes.Provider backed by api.deepseek.com.
 // DeepSeek exposes an OpenAI-compatible Chat Completions API.
 func NewDeepSeekProvider(apiKey, region string, opts ...DeepSeekOption) probes.Provider {
-	return newOpenAICompatProvider(deepseekProviderID, deepseekDefaultBaseURL, apiKey, region, deepseekLightModel, deepseekLightProbeType, deepseekErrorDetailMax, opts...)
+	baseOpts := []DeepSeekOption{compatModels(deepseekFlashModel, deepseekProModel)}
+	return newOpenAICompatProvider(
+		deepseekProviderID, deepseekDefaultBaseURL, apiKey, region,
+		deepseekFlashModel, deepseekLightProbeType, deepseekErrorDetailMax,
+		append(baseOpts, opts...)...,
+	)
 }

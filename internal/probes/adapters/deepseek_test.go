@@ -27,8 +27,9 @@ func TestDeepSeek_Identity(t *testing.T) {
 	if got := p.ID(); got != "deepseek" {
 		t.Errorf("ID: got %q, want deepseek", got)
 	}
-	if got := p.Models(); len(got) == 0 || got[0] != "deepseek-chat" {
-		t.Errorf("Models: got %v", got)
+	got := p.Models()
+	if len(got) != 2 || got[0] != "deepseek-v4-flash" || got[1] != "deepseek-v4-pro" {
+		t.Errorf("Models: got %v, want [deepseek-v4-flash deepseek-v4-pro]", got)
 	}
 }
 
@@ -59,7 +60,7 @@ func TestDeepSeek_ProbeLightInference(t *testing.T) {
 			t.Cleanup(srv.Close)
 
 			p := NewDeepSeekProvider("sk-fake", "node-1", WithDeepSeekBaseURL(srv.URL))
-			r, err := p.ProbeLightInference(context.Background(), "deepseek-chat")
+			r, err := p.ProbeLightInference(context.Background(), "deepseek-v4-flash")
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -90,7 +91,7 @@ func TestDeepSeek_Timeout(t *testing.T) {
 		WithDeepSeekBaseURL(srv.URL),
 		WithDeepSeekHTTPClient(&http.Client{Timeout: 30 * time.Millisecond}),
 	)
-	r, err := p.ProbeLightInference(context.Background(), "deepseek-chat")
+	r, err := p.ProbeLightInference(context.Background(), "deepseek-v4-flash")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
