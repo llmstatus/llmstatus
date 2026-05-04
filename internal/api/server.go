@@ -158,7 +158,7 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 // ---- response helpers -------------------------------------------------------
 
 const (
-	cacheTTL    = 30
+	cacheTTL     = 30
 	jsonKeyError = "error"
 )
 

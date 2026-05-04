@@ -2,11 +2,11 @@ package detector
 
 // Detection rule identifiers.
 const (
-	RuleProviderDown        = "provider_down"
-	RuleElevatedErrors      = "elevated_errors"
-	RuleLatencyDegradation  = "latency_degradation"
-	RuleRegionalOutage      = "regional_outage"
-	RuleQualityDegradation  = "quality_degradation"
+	RuleProviderDown       = "provider_down"
+	RuleElevatedErrors     = "elevated_errors"
+	RuleLatencyDegradation = "latency_degradation"
+	RuleRegionalOutage     = "regional_outage"
+	RuleQualityDegradation = "quality_degradation"
 
 	downThreshold     = 0.50
 	elevatedThreshold = 0.05
@@ -22,9 +22,9 @@ const (
 
 	// Rule 6.5: fire when quality error rate in current window > qualityDegradationFactor
 	// times the baseline rate, or exceeds qualityAbsoluteThreshold when baseline is zero.
-	qualityDegradationFactor    = 3.0
-	qualityAbsoluteThreshold    = 0.30
-	minQualityProbeCount        = int64(2)
+	qualityDegradationFactor = 3.0
+	qualityAbsoluteThreshold = 0.30
+	minQualityProbeCount     = int64(2)
 )
 
 // Detection is a rule match for a single provider.

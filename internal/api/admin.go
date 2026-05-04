@@ -123,11 +123,11 @@ func (s *Server) adminTestEmail(w http.ResponseWriter, r *http.Request) {
 		Subject: "[llmstatus] Test email — integration check",
 		Text:    "If you received this, the Resend integration is working correctly.",
 	}); err != nil {
-		slog.Error("admin: test email failed", "to", to, "err", err)
+		slog.Error("admin: test email failed", "to", to, "err", err) //nolint:gosec // to is a db-stored email address
 		writeError(w, http.StatusInternalServerError, "send failed: "+err.Error())
 		return
 	}
-	slog.Info("admin: test email sent", "to", to)
+	slog.Info("admin: test email sent", "to", to) //nolint:gosec // to is a db-stored email address
 	writeJSON(w, http.StatusOK, map[string]string{"status": "sent", "to": to})
 }
 
