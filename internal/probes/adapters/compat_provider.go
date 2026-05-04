@@ -12,6 +12,12 @@ import (
 	"github.com/llmstatus/llmstatus/internal/probes"
 )
 
+// Shared string constants used across multiple adapter implementations.
+const (
+	chatRoleUser     = "user"
+	probePingContent = "ping"
+)
+
 // compatOption configures an openAICompatProvider at construction time.
 type compatOption func(*openAICompatProvider)
 
@@ -106,7 +112,7 @@ func probeOpenAICompat(ctx context.Context, baseURL, apiKey, region, providerID,
 
 	payload, err := json.Marshal(openaiChatRequest{
 		Model:     model,
-		Messages:  []openaiChatMessage{{Role: "user", Content: "ping"}},
+		Messages:  []openaiChatMessage{{Role: chatRoleUser, Content: probePingContent}},
 		MaxTokens: 1,
 	})
 	if err != nil {

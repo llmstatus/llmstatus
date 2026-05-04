@@ -461,7 +461,7 @@ func TestRunner_QualityDegradation_CreatesIncident(t *testing.T) {
 	store := &fakeIncidentStore{}
 	r := New(&qualityFakeReader{
 		current:  []ProbeStats{{ProviderID: "openai", Total: 5, Errors: 3}}, // 60% failure
-		baseline: []ProbeStats{},                                             // no baseline → absolute threshold applies
+		baseline: []ProbeStats{},                                            // no baseline → absolute threshold applies
 	}, store, time.Hour)
 	r.runOnce(context.Background())
 
