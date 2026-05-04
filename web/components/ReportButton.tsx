@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { postReport } from "@/app/providers/[id]/actions";
 
 const COOLDOWN_MS = 5 * 60 * 1000;
@@ -22,12 +22,8 @@ interface Props {
 }
 
 export function ReportButton({ providerId, providerName }: Props) {
-  const [reported, setReported] = useState(false);
+  const [reported, setReported] = useState(() => isCoolingDown(providerId));
   const [pending, startTransition] = useTransition();
-
-  useEffect(() => {
-    setReported(isCoolingDown(providerId));
-  }, [providerId]);
 
   function handleClick() {
     if (reported || pending) return;

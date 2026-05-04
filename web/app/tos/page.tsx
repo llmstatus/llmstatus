@@ -150,13 +150,13 @@ export default function TosPage() {
       <Section title="Disclaimers">
         <p>
           <strong className="text-[var(--ink-100)]">No warranty.</strong> llmstatus.io is provided
-          "as is" and "as available." We make no warranties, express or implied, regarding accuracy,
+          &ldquo;as is&rdquo; and &ldquo;as available.&rdquo; We make no warranties, express or implied, regarding accuracy,
           completeness, availability, or fitness for a particular purpose.
         </p>
         <p>
           <strong className="text-[var(--ink-100)]">Data is observational.</strong> Probe results
           reflect what our infrastructure observed from specific locations at specific times. They
-          may not reflect all users' experience and should not be used as the sole basis for legal
+          may not reflect all users&apos; experience and should not be used as the sole basis for legal
           or contractual claims against a provider.
         </p>
         <p>

@@ -140,7 +140,7 @@ export default function PrivacyPage() {
                 rel="noopener noreferrer"
                 className="text-[var(--ink-300)] hover:text-[var(--ink-100)] transition-colors underline underline-offset-2"
               >
-                Google's Privacy Policy
+                Google&apos;s Privacy Policy
               </a>.
             </span>
           </div>
@@ -153,7 +153,7 @@ export default function PrivacyPage() {
                 rel="noopener noreferrer"
                 className="text-[var(--ink-300)] hover:text-[var(--ink-100)] transition-colors underline underline-offset-2"
               >
-                GitHub's Privacy Statement
+                GitHub&apos;s Privacy Statement
               </a>.
             </span>
           </div>
