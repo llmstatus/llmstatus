@@ -71,39 +71,7 @@ func (r *influxReader) ErrorRateByProvider(ctx context.Context, window time.Dura
 		 GROUP BY provider_id`,
 		int(window.Seconds()),
 	)
-
-	resp, err := r.querySQLRaw(ctx, sql)
-	if err != nil {
-		return nil, fmt.Errorf("detector: query influx: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return nil, fmt.Errorf("detector: influx status %d: %s", resp.StatusCode, detail)
-	}
-
-	var rows []struct {
-		ProviderID string  `json:"provider_id"`
-		Total      float64 `json:"total"`
-		Errors     float64 `json:"errors"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
-		return nil, fmt.Errorf("detector: decode response: %w", err)
-	}
-
-	stats := make([]ProbeStats, 0, len(rows))
-	for _, row := range rows {
-		if row.ProviderID == "" {
-			continue
-		}
-		stats = append(stats, ProbeStats{
-			ProviderID: row.ProviderID,
-			Total:      int64(row.Total),
-			Errors:     int64(row.Errors),
-		})
-	}
-	return stats, nil
+	return r.queryProbeStats(ctx, sql, "detector")
 }
 
 func (r *influxReader) LatencyByProvider(ctx context.Context, window time.Duration) ([]LatencyStats, error) {
@@ -211,16 +179,21 @@ func (r *influxReader) QualityByProvider(ctx context.Context, window time.Durati
 		 GROUP BY provider_id`,
 		int(window.Seconds()),
 	)
+	return r.queryProbeStats(ctx, sql, "detector quality")
+}
 
+// queryProbeStats executes sql against InfluxDB and decodes the result into
+// a []ProbeStats slice. errPrefix is prepended to all returned errors.
+func (r *influxReader) queryProbeStats(ctx context.Context, sql, errPrefix string) ([]ProbeStats, error) {
 	resp, err := r.querySQLRaw(ctx, sql)
 	if err != nil {
-		return nil, fmt.Errorf("detector quality: %w", err)
+		return nil, fmt.Errorf("%s: query influx: %w", errPrefix, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return nil, fmt.Errorf("detector quality: influx status %d: %s", resp.StatusCode, detail)
+		return nil, fmt.Errorf("%s: influx status %d: %s", errPrefix, resp.StatusCode, detail)
 	}
 
 	var rows []struct {
@@ -229,7 +202,7 @@ func (r *influxReader) QualityByProvider(ctx context.Context, window time.Durati
 		Errors     float64 `json:"errors"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
-		return nil, fmt.Errorf("detector quality: decode: %w", err)
+		return nil, fmt.Errorf("%s: decode: %w", errPrefix, err)
 	}
 
 	stats := make([]ProbeStats, 0, len(rows))
