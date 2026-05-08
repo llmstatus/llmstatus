@@ -90,6 +90,15 @@
     - influx
     - redis
 
+# InfluxDB 3 Core runs as an unprivileged user inside the container; the
+# bind-mounted host directory must be world-writable so it can create the
+# catalog and WAL subdirectories on first boot.
+- name: allow influxdb container user to write data directory
+  file:
+    path: "{{ data_dir }}/influx"
+    state: directory
+    mode: "0777"
+
 # ── App directory ─────────────────────────────────────────────────────────
 - name: create app directory
   file:
