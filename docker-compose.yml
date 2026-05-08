@@ -52,7 +52,7 @@ services:
     image: influxdb:3-core
     container_name: llmstatus-influx
     restart: unless-stopped
-    command: serve --without-auth --object-store file --data-dir /var/lib/influxdb3 --query-file-limit 5000
+    command: serve --without-auth --object-store file --data-dir /var/lib/influxdb3 --query-file-limit 5000 --gen1-duration 10m
     environment:
       INFLUXDB3_NODE_IDENTIFIER_PREFIX: ${REGION_ID:-local-dev}
     volumes:

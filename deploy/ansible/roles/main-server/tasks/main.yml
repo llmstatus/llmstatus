@@ -216,3 +216,31 @@
   args:
     chdir: "{{ app_dir }}"
   become_user: ubuntu
+
+# ── InfluxDB database retention ───────────────────────────────────────────
+- name: wait for influxdb to be healthy
+  shell: docker inspect --format="{{ '{{' }}.State.Health.Status{{ '}}' }}" llmstatus-influx
+  register: influx_health
+  until: influx_health.stdout == "healthy"
+  retries: 20
+  delay: 5
+  become_user: ubuntu
+  changed_when: false
+
+# Retention is immutable after DB creation. The sentinel file prevents
+# subsequent deploys from dropping the DB once data has accumulated.
+- name: configure probes database with 35-day retention (first run only)
+  shell: |
+    set -e
+    docker exec llmstatus-influx \
+      curl -sf -X DELETE \
+      "http://localhost:8181/api/v3/configure/database?db=probes" || true
+    docker exec llmstatus-influx \
+      curl -sf -X POST \
+      "http://localhost:8181/api/v3/configure/database" \
+      -H "Content-Type: application/json" \
+      -d '{"db":"probes","retention_period":"35d"}'
+    touch {{ data_dir }}/.influx-retention-configured
+  args:
+    creates: "{{ data_dir }}/.influx-retention-configured"
+  become_user: ubuntu
