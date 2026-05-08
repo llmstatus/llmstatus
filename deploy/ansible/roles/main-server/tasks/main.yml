@@ -240,7 +240,7 @@
       "http://localhost:8181/api/v3/configure/database" \
       -H "Content-Type: application/json" \
       -d '{"db":"probes","retention_period":"35d"}'
-    touch {{ data_dir }}/.influx-retention-configured
+    touch {{ app_dir }}/.influx-retention-configured
   args:
-    creates: "{{ data_dir }}/.influx-retention-configured"
+    creates: "{{ app_dir }}/.influx-retention-configured"
   become_user: ubuntu
