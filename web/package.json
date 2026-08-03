@@ -13,11 +13,11 @@
   "dependencies": {
     "arctic": "^3.7.0",
     "clsx": "^2.1.1",
-    "jose": "^6.2.3",
-    "next": "16.2.4",
-    "react": "19.2.5",
-    "react-dom": "19.2.5",
-    "swr": "^2.4.1"
+    "jose": "^6.2.5",
+    "next": "16.2.12",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "swr": "^2.4.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -29,12 +29,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^10",
-    "eslint-config-next": "16.2.4",
+    "eslint-config-next": "16.2.12",
     "identity-obj-proxy": "^3.0.0",
-    "jest": "^30.3.0",
-    "jest-environment-jsdom": "^30.3.0",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
     "tailwindcss": "^4",
-    "ts-jest": "^29.4.9",
+    "ts-jest": "^29.4.12",
     "typescript": "^5"
   }
 }
