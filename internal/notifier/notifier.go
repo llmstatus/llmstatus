@@ -19,6 +19,9 @@ var _ email.Sender = (*email.Client)(nil)
 const (
 	eventCreated  = "incident.created"
 	eventResolved = "incident.resolved"
+
+	statusOngoing  = "ongoing"
+	statusResolved = "resolved"
 )
 
 var severityLevel = map[string]int{"minor": 1, "major": 2, "critical": 3}
@@ -157,9 +160,9 @@ func (n *Notifier) deliver(ctx context.Context, sub pgstore.ListSubscriptionsFor
 // Returns "" for statuses we don't notify on.
 func incidentEvent(status string) string {
 	switch status {
-	case "ongoing":
+	case statusOngoing:
 		return eventCreated
-	case "resolved":
+	case statusResolved:
 		return eventResolved
 	default:
 		return ""

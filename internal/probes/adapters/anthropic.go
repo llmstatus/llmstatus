@@ -71,7 +71,7 @@ func (p *anthropicProvider) ProbeLightInference(ctx context.Context, model strin
 }
 
 func (p *anthropicProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: anthropicProviderID, ProbeType: "embedding"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: anthropicProviderID, ProbeType: openaiEmbeddingProbeType}
 }
 
 // ---- request / response types -----------------------------------------------
@@ -112,7 +112,7 @@ func (p *anthropicProvider) buildLightRequest(ctx context.Context, model string)
 	body, err := json.Marshal(anthropicMessagesRequest{
 		Model:     model,
 		MaxTokens: 1,
-		Messages:  []anthropicMessage{{Role: "user", Content: "ping"}},
+		Messages:  []anthropicMessage{{Role: chatRoleUser, Content: probePingContent}},
 	})
 	if err != nil {
 		return nil, err

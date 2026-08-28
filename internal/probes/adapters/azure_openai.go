@@ -67,13 +67,13 @@ func (p *azureOpenAIProvider) ProbeLightInference(ctx context.Context, model str
 }
 
 func (p *azureOpenAIProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: azureOpenAIProviderID, ProbeType: "quality"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: azureOpenAIProviderID, ProbeType: openaiQualityProbeType}
 }
 func (p *azureOpenAIProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: azureOpenAIProviderID, ProbeType: "embedding"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: azureOpenAIProviderID, ProbeType: openaiEmbeddingProbeType}
 }
 func (p *azureOpenAIProvider) ProbeStreaming(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: azureOpenAIProviderID, ProbeType: "streaming"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: azureOpenAIProviderID, ProbeType: openaiStreamingProbeType}
 }
 
 // probeAzureOpenAI fires a minimal chat completion against an Azure OpenAI deployment.
@@ -90,7 +90,7 @@ func probeAzureOpenAI(ctx context.Context, baseURL, apiKey, deployment, apiVersi
 
 	payload, err := json.Marshal(openaiChatRequest{
 		Model:     deployment,
-		Messages:  []openaiChatMessage{{Role: "user", Content: "ping"}},
+		Messages:  []openaiChatMessage{{Role: chatRoleUser, Content: probePingContent}},
 		MaxTokens: 1,
 	})
 	if err != nil {

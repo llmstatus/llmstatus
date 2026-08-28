@@ -31,7 +31,7 @@ type openaiStreamChunk struct {
 // classified as ErrorClassMalformedBody.
 func (p *openaiProvider) ProbeStreaming(ctx context.Context, model string) (probes.ProbeResult, error) {
 	if isOpenAIEmbeddingModel(model) {
-		return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: "streaming"}
+		return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: openaiStreamingProbeType}
 	}
 	started := time.Now()
 	r := probes.ProbeResult{
@@ -50,7 +50,7 @@ func (p *openaiProvider) ProbeStreaming(ctx context.Context, model string) (prob
 	}
 	body, err := json.Marshal(streamRequest{
 		Model:     model,
-		Messages:  []openaiChatMessage{{Role: "user", Content: "ping"}},
+		Messages:  []openaiChatMessage{{Role: chatRoleUser, Content: probePingContent}},
 		MaxTokens: openaiStreamingMaxTokens,
 		Stream:    true,
 	})

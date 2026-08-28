@@ -126,7 +126,7 @@ func buildDigestEmail(ctx context.Context, ds DigestStore, subs []pgstore.ListDi
 				status := inc.Status
 				fmt.Fprintf(&sb, "  [%s] %s (%s)\n", severity, inc.Title, status)
 				color := "#f5a623"
-				if status == "resolved" {
+				if status == statusResolved {
 					color = "#4caf50"
 				}
 				fmt.Fprintf(&hb,

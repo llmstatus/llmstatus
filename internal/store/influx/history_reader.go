@@ -84,9 +84,9 @@ func (r *influxHistoryReader) ProviderHistory(
 	)
 
 	body, err := json.Marshal(map[string]string{
-		"q":      sql,
-		"db":     r.cfg.Database,
-		"format": "json",
+		"q":             sql,
+		"db":            r.cfg.Database,
+		influxFormatKey: influxJSONFormat,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("influx history: marshal query: %w", err)

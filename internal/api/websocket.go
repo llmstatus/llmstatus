@@ -69,6 +69,7 @@ type Client struct {
 	conn          *websocket.Conn
 	send          chan []byte
 	subscriptions map[string]bool
+	ready         chan struct{} // closed once the hub has registered this client
 	mu            sync.RWMutex
 }
 
@@ -139,6 +140,7 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			h.clients[client] = true
 			h.mu.Unlock()
+			close(client.ready)
 			slog.Debug("websocket: client registered", "total_clients", len(h.clients))
 
 		case client := <-h.unregister:
@@ -194,9 +196,21 @@ func HandleWebSocketWithHub(w http.ResponseWriter, r *http.Request, hub *Hub) {
 		conn:          conn,
 		send:          make(chan []byte, 256),
 		subscriptions: make(map[string]bool),
+		ready:         make(chan struct{}),
 	}
 
 	hub.register <- client
+
+	// Wait until the hub has registered the client before sending the
+	// connection confirmation, so "connected" is never observed before the
+	// client is reachable via Broadcast (and tests are deterministic).
+	select {
+	case <-client.ready:
+	case <-hub.ctx.Done():
+		slog.Error("websocket: hub stopped during client registration")
+		_ = conn.Close()
+		return
+	}
 
 	// Send connection confirmation
 	confirmMsg := map[string]string{wsKeyType: "connected"}

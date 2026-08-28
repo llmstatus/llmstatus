@@ -132,11 +132,11 @@ func (r *Runner) ensureIncident(ctx context.Context, d Detection) {
 		ProviderID:      d.ProviderID,
 		Severity:        d.Severity,
 		Title:           incidentTitle(d.ProviderID, d.Rule),
-		Status:          "ongoing",
+		Status:          statusOngoing,
 		AffectedModels:  []string{},
 		AffectedRegions: []string{},
 		StartedAt:       pgtype.Timestamptz{Time: now, Valid: true},
-		DetectionMethod: "auto",
+		DetectionMethod: detectionMethodAuto,
 		DetectionRule:   pgtype.Text{String: d.Rule, Valid: true},
 		MetricsSnapshot: json.RawMessage(snapshot),
 	}); err != nil {
@@ -156,7 +156,7 @@ func (r *Runner) ensureIncident(ctx context.Context, d Detection) {
 // longer firing.
 func (r *Runner) resolveStale(ctx context.Context, active []Detection) {
 	ongoing, err := r.store.ListIncidentsByStatus(ctx, pgstore.ListIncidentsByStatusParams{
-		Status: "ongoing",
+		Status: statusOngoing,
 		Limit:  200,
 		Offset: 0,
 	})
@@ -172,7 +172,7 @@ func (r *Runner) resolveStale(ctx context.Context, active []Detection) {
 
 	now := time.Now().UTC()
 	for _, inc := range ongoing {
-		if inc.DetectionMethod != "auto" || !inc.DetectionRule.Valid {
+		if inc.DetectionMethod != detectionMethodAuto || !inc.DetectionRule.Valid {
 			continue
 		}
 		key := inc.ProviderID + "|" + inc.DetectionRule.String

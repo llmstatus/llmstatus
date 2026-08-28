@@ -82,7 +82,7 @@ func isOpenAIEmbeddingModel(model string) bool {
 
 func (p *openaiProvider) ProbeLightInference(ctx context.Context, model string) (probes.ProbeResult, error) {
 	if isOpenAIEmbeddingModel(model) {
-		return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: "light_inference"}
+		return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: openaiLightProbeType}
 	}
 	started := time.Now()
 	r := probes.ProbeResult{
@@ -151,7 +151,7 @@ type openaiErrorEnvelope struct {
 func (p *openaiProvider) buildLightRequest(ctx context.Context, model string) (*http.Request, error) {
 	body, err := json.Marshal(openaiChatRequest{
 		Model:     model,
-		Messages:  []openaiChatMessage{{Role: "user", Content: "ping"}},
+		Messages:  []openaiChatMessage{{Role: chatRoleUser, Content: probePingContent}},
 		MaxTokens: 1,
 	})
 	if err != nil {

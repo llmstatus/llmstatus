@@ -69,15 +69,15 @@ func (p *geminiProvider) ProbeLightInference(ctx context.Context, model string) 
 }
 
 func (p *geminiProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: geminiProviderID, ProbeType: "quality"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: geminiProviderID, ProbeType: openaiQualityProbeType}
 }
 
 func (p *geminiProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: geminiProviderID, ProbeType: "embedding"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: geminiProviderID, ProbeType: openaiEmbeddingProbeType}
 }
 
 func (p *geminiProvider) ProbeStreaming(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: geminiProviderID, ProbeType: "streaming"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: geminiProviderID, ProbeType: openaiStreamingProbeType}
 }
 
 // gemini request/response types
@@ -120,7 +120,7 @@ type geminiErrorEnvelope struct {
 
 func (p *geminiProvider) buildRequest(ctx context.Context, model string) (*http.Request, error) {
 	payload := geminiGenerateRequest{
-		Contents:         []geminiContent{{Parts: []geminiPart{{Text: "ping"}}, Role: "user"}},
+		Contents:         []geminiContent{{Parts: []geminiPart{{Text: probePingContent}}, Role: chatRoleUser}},
 		GenerationConfig: geminiGenConfig{MaxOutputTokens: 1},
 	}
 	body, err := json.Marshal(payload)

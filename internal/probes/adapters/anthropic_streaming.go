@@ -48,7 +48,7 @@ func (p *anthropicProvider) ProbeStreaming(ctx context.Context, model string) (p
 	body, err := json.Marshal(streamRequest{
 		Model:     model,
 		MaxTokens: anthropicStreamingMaxTokens,
-		Messages:  []anthropicMessage{{Role: "user", Content: "ping"}},
+		Messages:  []anthropicMessage{{Role: chatRoleUser, Content: probePingContent}},
 		Stream:    true,
 	})
 	if err != nil {
