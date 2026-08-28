@@ -1,0 +1,31 @@
+# llmstatus.io site for the shared nginx-nginx-1 container (2026-08-28 topology).
+# Upstreams are the llmstatus containers on the llmstatus_default network.
+server {
+    listen 80;
+    server_name llmstatus.io www.llmstatus.io;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name llmstatus.io www.llmstatus.io;
+
+    ssl_certificate     /etc/nginx/ssl/llmstatus.crt;
+    ssl_certificate_key /etc/nginx/ssl/llmstatus.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    proxy_set_header X-Real-IP       $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host            $host;
+
+    location /v1/    { proxy_pass http://llmstatus-api:8081; proxy_read_timeout 10s; }
+    location /badge/ { proxy_pass http://llmstatus-api:8081; proxy_read_timeout 5s; }
+    location = /feed.xml { proxy_pass http://llmstatus-api:8081; proxy_read_timeout 5s; }
+    location /ingest/ { proxy_pass http://llmstatus-ingest:8080/; proxy_read_timeout 10s; }
+    location / {
+        proxy_pass http://llmstatus-web:3000;
+        proxy_read_timeout 30s;
+        proxy_buffering off;
+    }
+}

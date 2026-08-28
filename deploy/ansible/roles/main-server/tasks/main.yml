@@ -25,6 +25,7 @@
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     state: present
+  when: not shared_host | default(false)
 
 - name: add Docker apt repo
   apt_repository:
@@ -43,7 +44,7 @@
 
 - name: add ubuntu user to docker group
   user:
-    name: ubuntu
+    name: "{{ ansible_user }}"
     groups: docker
     append: true
 
@@ -52,6 +53,7 @@
     name: docker
     enabled: true
     state: started
+  when: not shared_host | default(false)
 
 # ── EBS data volume ───────────────────────────────────────────────────────
 - name: check if data volume has a filesystem
@@ -59,12 +61,13 @@
   register: blkid_result
   failed_when: false
   changed_when: false
+  when: not shared_host | default(false)
 
 - name: format data volume (first run only)
   filesystem:
     fstype: ext4
     dev: /dev/nvme1n1
-  when: blkid_result.rc != 0
+  when: (not shared_host | default(false)) and blkid_result.rc != 0
 
 - name: create mount point
   file:
@@ -79,6 +82,7 @@
     fstype: ext4
     opts: defaults,nofail
     state: mounted
+  when: not shared_host | default(false)
 
 - name: create data subdirectories
   file:
@@ -104,8 +108,8 @@
   file:
     path: "{{ app_dir }}"
     state: directory
-    owner: ubuntu
-    group: ubuntu
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: "0755"
 
 - name: clone/update repo
@@ -114,33 +118,39 @@
     dest: "{{ app_dir }}"
     version: main
     force: true
-  become_user: ubuntu
+  become_user: "{{ ansible_user }}"
 
 - name: deploy .env
   template:
     src: env.j2
     dest: "{{ app_dir }}/.env"
-    owner: ubuntu
-    group: ubuntu
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: "0600"
 
 # ── nginx ─────────────────────────────────────────────────────────────────
+# Shared host (shared_host: true): nginx is the operator's nginx-nginx-1
+# container — we only add llmstatus.io config/certs to its mounted dirs and
+# reload. Dedicated hosts: install and configure host nginx as before.
 - name: install nginx
   apt:
     name: nginx
     state: present
+  when: not shared_host | default(false)
 
 - name: create SSL directory
   file:
     path: /etc/nginx/ssl
     state: directory
     mode: "0700"
+  when: not shared_host | default(false)
 
 - name: deploy SSL certificate
   copy:
     src: ssl/llmstatus.crt
     dest: /etc/nginx/ssl/llmstatus.crt
     mode: "0644"
+  when: not shared_host | default(false)
   notify: reload nginx
 
 - name: deploy SSL private key
@@ -148,6 +158,7 @@
     src: ssl/llmstatus.key
     dest: /etc/nginx/ssl/llmstatus.key
     mode: "0600"
+  when: not shared_host | default(false)
   notify: reload nginx
 
 - name: deploy Cloudflare real-ip snippet
@@ -155,6 +166,7 @@
     src: cloudflare-realip.conf.j2
     dest: /etc/nginx/conf.d/cloudflare-realip.conf
     mode: "0644"
+  when: not shared_host | default(false)
   notify: reload nginx
 
 - name: deploy nginx site config
@@ -162,6 +174,7 @@
     src: nginx.conf.j2
     dest: /etc/nginx/sites-available/llmstatus
     mode: "0644"
+  when: not shared_host | default(false)
   notify: reload nginx
 
 - name: enable nginx site
@@ -169,12 +182,14 @@
     src: /etc/nginx/sites-available/llmstatus
     dest: /etc/nginx/sites-enabled/llmstatus
     state: link
+  when: not shared_host | default(false)
   notify: reload nginx
 
 - name: remove default nginx site
   file:
     path: /etc/nginx/sites-enabled/default
     state: absent
+  when: not shared_host | default(false)
   notify: reload nginx
 
 - name: enable and start nginx
@@ -182,40 +197,76 @@
     name: nginx
     enabled: true
     state: started
+  when: not shared_host | default(false)
+
+# ── nginx (shared host: operator's nginx-nginx-1 container) ────────────────
+- name: deploy SSL certificate (shared nginx container)
+  copy:
+    src: ssl/llmstatus.crt
+    dest: /opt/soxai/nginx/ssl/llmstatus.crt
+    mode: "0644"
+  when: shared_host | default(false)
+
+- name: deploy SSL private key (shared nginx container)
+  copy:
+    src: ssl/llmstatus.key
+    dest: /opt/soxai/nginx/ssl/llmstatus.key
+    mode: "0600"
+  when: shared_host | default(false)
+
+- name: deploy llmstatus.io site config (shared nginx container)
+  template:
+    src: nginx-container.conf.j2
+    dest: /opt/soxai/nginx/conf.d/llmstatus.io.conf
+    mode: "0644"
+  when: shared_host | default(false)
+
+- name: reload shared nginx container
+  command: docker exec nginx-nginx-1 nginx -s reload
+  when: shared_host | default(false)
 
 # ── Docker Compose services ───────────────────────────────────────────────
 - name: log in to GHCR
   command: docker login ghcr.io -u {{ ghcr_username }} -p {{ ghcr_token }}
-  become_user: ubuntu
+  become_user: "{{ ansible_user }}"
   no_log: true
 
 - name: pull Docker images from GHCR
-  command: docker compose pull
+  command: docker compose -f {{ compose_file }} pull
   args:
     chdir: "{{ app_dir }}"
-  become_user: ubuntu
+  become_user: "{{ ansible_user }}"
 
 - name: start services
-  command: docker compose up -d --no-build
+  command: docker compose -f {{ compose_file }} up -d --no-build
   args:
     chdir: "{{ app_dir }}"
-  become_user: ubuntu
+  become_user: "{{ ansible_user }}"
 
-- name: wait for postgres to be ready
+- name: "wait for postgres to be ready (shared host: postgres-postgres-1)"
+  command: docker exec postgres-postgres-1 pg_isready -U llmstatus
+  when: shared_host | default(false)
+  register: pg_ready_shared
+  until: pg_ready_shared.rc == 0
+  retries: 15
+  delay: 5
+
+- name: wait for postgres to be ready (compose db)
   command: docker compose exec -T db pg_isready -U llmstatus
   args:
     chdir: "{{ app_dir }}"
-  become_user: ubuntu
+  when: not shared_host | default(false)
+  become_user: "{{ ansible_user }}"
   register: pg_ready
   until: pg_ready.rc == 0
   retries: 15
   delay: 5
 
 - name: run database migrations
-  command: docker compose run --rm migrate
+  command: docker compose -f {{ compose_file }} --profile run run --rm migrate up
   args:
     chdir: "{{ app_dir }}"
-  become_user: ubuntu
+  become_user: "{{ ansible_user }}"
 
 # ── InfluxDB database retention ───────────────────────────────────────────
 - name: wait for influxdb to be healthy
@@ -224,23 +275,13 @@
   until: influx_health.stdout == "healthy"
   retries: 20
   delay: 5
-  become_user: ubuntu
+  become_user: "{{ ansible_user }}"
   changed_when: false
 
-# Retention is immutable after DB creation. The sentinel file prevents
-# subsequent deploys from dropping the DB once data has accumulated.
-- name: configure probes database with 35-day retention (first run only)
-  shell: |
-    set -e
-    docker exec llmstatus-influx \
-      curl -sf -X DELETE \
-      "http://localhost:8181/api/v3/configure/database?db=probes" || true
-    docker exec llmstatus-influx \
-      curl -sf -X POST \
-      "http://localhost:8181/api/v3/configure/database" \
-      -H "Content-Type: application/json" \
-      -d '{"db":"probes","retention_period":"35d"}'
-    touch {{ app_dir }}/.influx-retention-configured
-  args:
-    creates: "{{ app_dir }}/.influx-retention-configured"
-  become_user: ubuntu
+# Idempotent: `create database` fails when the DB already exists; retention is
+# set at creation (the 2026-08-28 rebuild created probes with 35d retention).
+- name: configure probes database with 35-day retention (create-if-missing)
+  command: docker exec llmstatus-influx influxdb3 create database probes --retention-period 35d
+  register: influx_db_create
+  failed_when: influx_db_create.rc != 0 and 'already exists' not in influx_db_create.stderr
+  become_user: "{{ ansible_user }}"

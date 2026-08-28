@@ -1,0 +1,88 @@
+# Production compose for the 2026-08-28 topology: everything runs on the
+# operator's OVH host (15.235.186.156) using shared host components.
+#
+#   - PostgreSQL: shared `postgres-postgres-1` (dedicated `llmstatus` db/user)
+#   - Redis:      shared `redis-redis-1` (db index 3)
+#   - nginx:      shared `nginx-nginx-1` (llmstatus.io.conf in /opt/soxai/nginx/conf.d)
+#   - Network:    `llmstatus_default` (external; created by `docker network create`)
+#
+# Usage (from the repo root on the host):
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d --no-build
+#   docker compose -f docker-compose.prod.yml run --rm migrate up
+name: llmstatus
+
+services:
+  influx:
+    image: influxdb:3-core
+    container_name: llmstatus-influx
+    restart: unless-stopped
+    command: serve --without-auth --object-store file --data-dir /var/lib/influxdb3 --query-file-limit 5000 --gen1-duration 10m
+    environment:
+      INFLUXDB3_NODE_IDENTIFIER_PREFIX: ${REGION_ID:-llmstatus}
+    volumes:
+      - ${INFLUX_DATA_DIR:-/data/llmstatus/influx}:/var/lib/influxdb3
+    networks:
+      - llmstatus_default
+
+  api:
+    image: ghcr.io/llmstatus/llmstatus-api:${IMAGE_TAG:-latest}
+    container_name: llmstatus-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://llmstatus:${POSTGRES_PASSWORD}@postgres-postgres-1:5432/llmstatus?sslmode=disable
+      INFLUX_HOST: http://llmstatus-influx:8181
+      INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
+      INFLUX_DATABASE: ${INFLUX_DATABASE:-probes}
+      API_ADDR: ":8081"
+      SITE_URL: ${SITE_URL:-https://llmstatus.io}
+      API_RATE_LIMIT: ${API_RATE_LIMIT:-60}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@llmstatus.io}
+      REDIS_URL: ${REDIS_URL}
+    networks:
+      - llmstatus_default
+
+  ingest:
+    image: ghcr.io/llmstatus/llmstatus-ingest:${IMAGE_TAG:-latest}
+    container_name: llmstatus-ingest
+    restart: unless-stopped
+    environment:
+      INFLUX_HOST: http://llmstatus-influx:8181
+      INFLUX_TOKEN: ${INFLUX_TOKEN:-dev-token}
+      INFLUX_DATABASE: ${INFLUX_DATABASE:-probes}
+      INGEST_ADDR: ":8080"
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+    networks:
+      - llmstatus_default
+
+  web:
+    image: ghcr.io/llmstatus/llmstatus-web:${IMAGE_TAG:-latest}
+    container_name: llmstatus-web
+    restart: unless-stopped
+    environment:
+      API_URL: http://llmstatus-api:8081
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://llmstatus.io}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      REDIS_URL: ${REDIS_URL}
+    networks:
+      - llmstatus_default
+
+  migrate:
+    image: ghcr.io/llmstatus/llmstatus-migrate:${IMAGE_TAG:-latest}
+    profiles: ["run"]
+    environment:
+      DATABASE_URL: pgx5://llmstatus:${POSTGRES_PASSWORD}@postgres-postgres-1:5432/llmstatus?sslmode=disable
+    networks:
+      - llmstatus_default
+
+networks:
+  llmstatus_default:
+    external: true

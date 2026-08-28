@@ -1,0 +1,5 @@
+# Defaults — override per host group.
+# compose_file: docker-compose.yml on dedicated hosts; docker-compose.prod.yml
+#               on the shared OVH host (shared_host: true).
+compose_file: docker-compose.yml
+shared_host: false

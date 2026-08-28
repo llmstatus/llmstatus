@@ -11,20 +11,23 @@
       - git
       - unzip
       - htop
-      - fail2ban
-      - ufw
       - ca-certificates
       - gnupg
     state: present
 
+# Firewall management is opt-in: the shared host (debian@15.235.186.156) hosts
+# other production services and must NOT have ufw force-enabled here.
+# Set manage_firewall: true only on dedicated single-purpose hosts.
 - name: allow SSH through ufw
   ufw:
     rule: allow
     port: "22"
     proto: tcp
+  when: manage_firewall | default(false)
 
 - name: enable ufw
   ufw:
     state: enabled
     policy: deny
     direction: incoming
+  when: manage_firewall | default(false)
