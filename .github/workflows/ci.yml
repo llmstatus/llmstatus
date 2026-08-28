@@ -30,7 +30,10 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: latest
+          # Pinned: `latest` drifted to a release whose goconst behavior
+          # changed, silently unblocking then re-blocking every PR.
+          # Bump deliberately, verify locally, then commit the change.
+          version: v2.12.2
           args: --timeout=5m ./cmd/... ./internal/... ./pkg/...
 
       - name: gocyclo (complexity gate)
