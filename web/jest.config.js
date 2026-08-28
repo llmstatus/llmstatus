@@ -10,7 +10,9 @@ const config = {
   },
   testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
+    // ts-jest also transforms .js files (e.g. jest.setup.js, which imports
+    // @testing-library/jest-dom with ESM syntax).
+    '^.+\\.(ts|tsx|js)$': ['ts-jest', {
       tsconfig: {
         jsx: 'react-jsx',
       },
