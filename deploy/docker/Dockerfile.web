@@ -16,6 +16,13 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY web/ .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* values are inlined into client bundles at build time, so the
+# public URLs must be baked here (runtime env does not reach client code).
+# CI should pass both; defaults match local development.
+ARG NEXT_PUBLIC_SITE_URL=http://localhost:13000
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_API_URL=http://localhost:18081
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 # ---- runtime ----------------------------------------------------------------

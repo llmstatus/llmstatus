@@ -61,17 +61,21 @@ To be explicit about what our data is not:
 
 ### 3.1 Probe Nodes
 
-Probes originate from **7 geographic locations**:
+Probes originate from **Singapore (ap-southeast-1)**. As of the 2026-08-28
+infrastructure consolidation the fleet was reduced from five AWS nodes to a
+single AWS probe node; the platform main host (also Singapore) will run a
+second probe instance once its provider keys are provisioned. The main host
+and the AWS node are independent networks, so a regional issue affecting one
+provider's path may still be observable from the other.
 
-| Region | Provider | Rationale |
+| Node | Provider | Notes |
 |---|---|---|
-| US West (Oregon) | AWS us-west-2 | Near most North American AI provider origins |
-| US East (Virginia) | AWS us-east-1 | Secondary North American coverage |
-| Europe (Germany) | Hetzner | Independent of major cloud providers |
-| Japan (Tokyo) | AWS ap-northeast-1 | East Asian coverage |
-| Singapore | AWS ap-southeast-1 | Southeast Asian coverage |
-| China (Shanghai) | Alibaba Cloud | Mainland China access reality |
-| China (Guangzhou) | Tencent Cloud | Mainland China redundancy |
+| Main host | OVH (Singapore) | Runs the platform; prober not yet live (keys pending) |
+| AWS probe | AWS ap-southeast-1 | Sole live probe as of 2026-08-28 |
+
+**Historical note**: prior probe locations (AWS us-west-2 / us-east-1,
+ap-northeast-1, eu-central-1) were decommissioned on 2026-08-28; samples from
+those regions remain in the archive until the 35-day retention rolls them out.
 
 All nodes run the same probe code. Code version is recorded with each probe
 result.
@@ -85,7 +89,7 @@ result.
 | Medium inference | every 5 minutes | Realistic latency measurement |
 | Streaming probe | every 5 minutes | TTFT and throughput |
 
-All probe types run from all 7 nodes independently. Times are coordinated
+All probe types run from all active nodes independently. Times are coordinated
 via NTP; each probe result includes a timestamp in UTC.
 
 ### 3.3 What Each Probe Does
