@@ -11,7 +11,8 @@
 
 `[` **[llmstatus.io](https://llmstatus.io)** `]` observes 40+ AI API providers
 in real time. We measure what actually happens when you call these APIs,
-from seven geographic locations — we do not scrape official status pages.
+from probe nodes in Singapore (ap-southeast-1) — we do not scrape official
+status pages.
 
 This is a public project. Data is free to access, embed, and cite.
 
@@ -20,7 +21,8 @@ This is a public project. Data is free to access, embed, and cite.
 ## What it is
 
 - **Real-time monitoring** of 20+ AI API providers
-- **7 geographic probe nodes** including two in mainland China
+- **Independent probe nodes** in Singapore (ap-southeast-1), including two
+  vantage points once the main host's prober is live
 - **Independent measurement** — no scraping, no crowdsourcing, only direct probes
 - **Permanent historical data** — uptime, latency, incidents all stored forever
 - **Public API and RSS feeds** for anyone to consume
@@ -123,7 +125,8 @@ Our measurement methodology is fully documented at
 Key principles:
 
 1. **We use paid API accounts** — no free trials, no shared keys
-2. **We probe every 30-60 seconds** from 7 geographic nodes
+2. **We probe every 30-60 seconds** from independent nodes in Singapore
+   (ap-southeast-1)
 3. **We classify errors via a fixed taxonomy** — not ad-hoc labels
 4. **We publish everything** — probe logic, methodology, raw data
 5. **We monitor ourselves** — any service operated by the maintainers is probed like any other provider

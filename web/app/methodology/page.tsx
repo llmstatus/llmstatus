@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Methodology",
   description:
     "How llmstatus.io measures AI API uptime, latency, and incidents. " +
-    "Real probe calls from 7 global locations — every metric is reproducible.",
+    "Real probe calls from Singapore (ap-southeast-1) — every metric is reproducible.",
   openGraph: {
     title: "Methodology — llmstatus.io",
     description:

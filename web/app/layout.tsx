@@ -10,9 +10,12 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 const DESCRIPTION =
   "Independent real-time uptime and latency monitoring for AI API providers. " +
-  "Measured from 7 global locations. Not scraped from official status pages.";
+  "Measured from Singapore (ap-southeast-1). Not scraped from official status pages.";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://llmstatus.io";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "llmstatus.io — AI API Status Monitor",
     template: "%s | llmstatus.io",

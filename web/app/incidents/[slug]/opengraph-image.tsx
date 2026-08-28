@@ -160,7 +160,7 @@ export default async function Image({
             color: "#5A6472",
           }}
         >
-          Independent real-time monitoring from 7 global locations
+          Independent real-time monitoring from Singapore (ap-southeast-1)
         </div>
       </div>
     ),

@@ -32,6 +32,15 @@ public APIs must add an entry under `## [Unreleased]`.
 
 - Update copy: "7 global locations" → "5 global locations" across homepage and providers page metadata
 
+### Changed (2026-08-28 platform migration + probe consolidation)
+
+- Platform main server moved off AWS to the operator's OVH host (`15.235.186.156`, Singapore): full stack runs in Docker there (Postgres 16 + Redis 7 reused from the host, InfluxDB 3 on the data disk `/data`), nginx reverse proxy added to the host's nginx container, Cloudflare origin updated
+- Probe fleet reduced from 5 AWS nodes to 1: us-east-1, ap-northeast-1, eu-central-1 and the AWS main server destroyed; sole live probe is AWS ap-southeast-1 (Singapore), with the main host to run a second probe instance once keys are provisioned
+- Public copy corrected to the real topology: probes originate from Singapore (ap-southeast-1); README + METHODOLOGY §3.1 rewritten to match
+- `Dockerfile.web` now accepts `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_API_URL` build args (client bundles need these baked); root `layout.tsx` sets `metadataBase` so OG/canonical URLs are correct
+- Terraform: `aws-main-server` module removed from `prod/main.tf`; only `probe_ap_southeast_1` remains
+- **Data impact (incident 2026-08-28)**: replacing the AWS main server destroyed its 80 GB data volume — PostgreSQL dynamic data (incidents, subscriptions, accounts) is lost and unrecoverable; probe samples were restored from local backups (kept regions only). Historical incidents should be disclosed on-site (pending operator copy)
+
 ### Changed (UI overhaul)
 
 - Lighten canvas color tokens: base `#0D1117`, raised `#161D28`, overlay `#1C2638` — increases card-to-background contrast and makes the dark theme feel less cave-dark

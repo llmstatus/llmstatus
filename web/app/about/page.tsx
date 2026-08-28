@@ -7,12 +7,12 @@ export const metadata: Metadata = {
   title: "About",
   description:
     "llmstatus.io is an independent real-time monitoring service for AI API providers. " +
-    "We make real API calls from 7 global locations — not scraped from official status pages.",
+    "We make real API calls from Singapore (ap-southeast-1) — not scraped from official status pages.",
   openGraph: {
     title: "About — llmstatus.io",
     description:
       "Independent real-time monitoring for the AI infrastructure. " +
-      "Measured from 7 global locations. Not scraped from official status pages.",
+      "Measured from Singapore (ap-southeast-1). Not scraped from official status pages.",
   },
 };
 
@@ -41,7 +41,7 @@ export default function AboutPage() {
           for the AI infrastructure.
         </h1>
         <p className="text-sm text-[var(--ink-400)] leading-relaxed">
-          We make real API calls from 7 global locations every 30–60 seconds
+          We make real API calls from Singapore (ap-southeast-1) every 30–60 seconds
           and publish what we find — uptime, latency, and incidents — as a public good.
         </p>
       </div>
