@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import React, {
   createContext,
@@ -7,64 +7,70 @@ import React, {
   useEffect,
   useRef,
   useCallback,
-} from 'react'
-import { WebSocketClient } from './websocket'
-import { realtimeReducer, initialState, RealtimeState } from './realtime-reducer'
-import type { WebSocketMessage } from './types'
+} from "react";
+import { WebSocketClient } from "./websocket";
+import {
+  realtimeReducer,
+  initialState,
+  RealtimeState,
+} from "./realtime-reducer";
+import type { WebSocketMessage } from "./types";
 
 interface RealtimeContextType {
-  providers: RealtimeState['providers']
-  connectionStatus: RealtimeState['connectionStatus']
-  subscriptions: RealtimeState['subscriptions']
-  subscribe: (topic: string) => void
-  unsubscribe: (topic: string) => void
+  providers: RealtimeState["providers"];
+  connectionStatus: RealtimeState["connectionStatus"];
+  subscriptions: RealtimeState["subscriptions"];
+  subscribe: (topic: string) => void;
+  unsubscribe: (topic: string) => void;
 }
 
-const RealtimeContext = createContext<RealtimeContextType | null>(null)
+const RealtimeContext = createContext<RealtimeContextType | null>(null);
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(realtimeReducer, initialState)
-  const wsClient = useRef<WebSocketClient | null>(null)
+  const [state, dispatch] = useReducer(realtimeReducer, initialState);
+  const wsClient = useRef<WebSocketClient | null>(null);
 
   useEffect(() => {
-    const client = new WebSocketClient('ws://localhost:8081/ws')
-    wsClient.current = client
+    const client = new WebSocketClient("ws://localhost:8081/ws");
+    wsClient.current = client;
 
     client.onMessage((message: WebSocketMessage) => {
-      if (message.type === 'status_update') {
+      if (message.type === "status_update") {
         dispatch({
-          type: 'PROVIDER_UPDATE',
+          type: "PROVIDER_UPDATE",
           provider: {
             id: message.provider_id as string,
-            status: message.status as 'operational' | 'degraded' | 'down',
-            lastUpdated: (message.timestamp as number | undefined) || Date.now(),
+            status: message.status as "operational" | "degraded" | "down",
+            lastUpdated:
+              (message.timestamp as number | undefined) || Date.now(),
           },
-        })
+        });
       }
-    })
+    });
 
-    client.connect()
+    client
+      .connect()
       .then(() => {
-        dispatch({ type: 'CONNECTION_STATUS', status: 'connected' })
+        dispatch({ type: "CONNECTION_STATUS", status: "connected" });
       })
       .catch(() => {
-        dispatch({ type: 'CONNECTION_STATUS', status: 'disconnected' })
-      })
+        dispatch({ type: "CONNECTION_STATUS", status: "disconnected" });
+      });
 
     return () => {
-      client.disconnect()
-    }
-  }, [])
+      client.disconnect();
+    };
+  }, []);
 
   const subscribe = useCallback((topic: string) => {
-    wsClient.current?.subscribe(topic)
-    dispatch({ type: 'SUBSCRIBE', topic })
-  }, [])
+    wsClient.current?.subscribe(topic);
+    dispatch({ type: "SUBSCRIBE", topic });
+  }, []);
 
   const unsubscribe = useCallback((topic: string) => {
-    wsClient.current?.unsubscribe(topic)
-    dispatch({ type: 'UNSUBSCRIBE', topic })
-  }, [])
+    wsClient.current?.unsubscribe(topic);
+    dispatch({ type: "UNSUBSCRIBE", topic });
+  }, []);
 
   const contextValue: RealtimeContextType = {
     providers: state.providers,
@@ -72,19 +78,19 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     subscriptions: state.subscriptions,
     subscribe,
     unsubscribe,
-  }
+  };
 
   return (
     <RealtimeContext.Provider value={contextValue}>
       {children}
     </RealtimeContext.Provider>
-  )
+  );
 }
 
 export function useRealtime(): RealtimeContextType {
-  const context = useContext(RealtimeContext)
+  const context = useContext(RealtimeContext);
   if (!context) {
-    throw new Error('useRealtime must be used within a RealtimeProvider')
+    throw new Error("useRealtime must be used within a RealtimeProvider");
   }
-  return context
+  return context;
 }

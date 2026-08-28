@@ -1,29 +1,28 @@
 /** @type {import('jest').Config} */
 const config = {
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  testEnvironment: "jsdom",
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '^react$': '<rootDir>/node_modules/react',
-    '^react-dom$': '<rootDir>/node_modules/react-dom',
+    "^@/(.*)$": "<rootDir>/$1",
+    "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    "^react$": "<rootDir>/node_modules/react",
+    "^react-dom$": "<rootDir>/node_modules/react-dom",
   },
-  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
+  testMatch: ["**/__tests__/**/*.test.ts", "**/__tests__/**/*.test.tsx"],
   transform: {
     // ts-jest also transforms .js files (e.g. jest.setup.js, which imports
     // @testing-library/jest-dom with ESM syntax).
-    '^.+\\.(ts|tsx|js)$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx',
+    "^.+\\.(ts|tsx|js)$": [
+      "ts-jest",
+      {
+        tsconfig: {
+          jsx: "react-jsx",
+        },
       },
-    }],
+    ],
   },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  collectCoverageFrom: [
-    '**/*.{ts,tsx}',
-    '!**/*.d.ts',
-    '!**/node_modules/**',
-  ],
-}
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
+  collectCoverageFrom: ["**/*.{ts,tsx}", "!**/*.d.ts", "!**/node_modules/**"],
+};
 
-module.exports = config
+module.exports = config;

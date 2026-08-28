@@ -17,7 +17,7 @@ main_server_ip: "15.235.186.156"
 
 # Probe node IPs — used to open Postgres port 15432 on the main server
 probe_node_ips:
-  - 13.215.198.220   # ap-southeast-1 (AWS)
+  - 13.215.198.220 # ap-southeast-1 (AWS)
 
 # Go binary version tag to deploy
 app_version: main
