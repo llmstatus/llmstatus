@@ -40,7 +40,7 @@ if [ ! -r "$PAT_FILE" ]; then
     exit 1
 fi
 
-TOKEN=$(tr -d '[:space:]' < "$PAT_FILE")
+TOKEN=$(tr -d '[:space:]' <"$PAT_FILE")
 if [[ ! "$TOKEN" =~ ^github_pat_ ]]; then
     echo "merge-pr: $PAT_FILE does not contain a github_pat_ token" >&2
     exit 3
@@ -139,7 +139,7 @@ check_ci() {
     fi
 
     echo "[merge-pr] #$pr: waiting for CI checks ($total) — up to ${wait}s..."
-    local deadline=$(( $(date +%s) + wait ))
+    local deadline=$(($(date +%s) + wait))
     while :; do
         local bad pending
         bad=$(gh api "$url" --jq '[.check_runs[] | select(.status=="completed" and (.conclusion != "success" and .conclusion != "skipped" and .conclusion != "neutral"))] | length' 2>/dev/null || echo 0)

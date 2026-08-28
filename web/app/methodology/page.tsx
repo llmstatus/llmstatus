@@ -16,13 +16,23 @@ export const metadata: Metadata = {
   },
 };
 
-function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+function Section({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section id={id} className="mb-12 scroll-mt-6">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
         {title}
       </h2>
-      <div className="space-y-3 text-sm text-[var(--ink-200)] leading-6">{children}</div>
+      <div className="space-y-3 text-sm text-[var(--ink-200)] leading-6">
+        {children}
+      </div>
     </section>
   );
 }
@@ -42,13 +52,17 @@ function Rule({
     severity === "critical"
       ? "text-[var(--signal-down)]"
       : severity === "major"
-      ? "text-[var(--signal-warn)]"
-      : "text-[var(--ink-300)]";
+        ? "text-[var(--signal-warn)]"
+        : "text-[var(--ink-300)]";
   return (
     <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-3">
       <div className="flex items-center gap-3 mb-1">
         <span className="text-xs font-mono text-[var(--ink-500)]">{id}</span>
-        <span className={`text-xs font-semibold uppercase tracking-wide ${color}`}>{severity}</span>
+        <span
+          className={`text-xs font-semibold uppercase tracking-wide ${color}`}
+        >
+          {severity}
+        </span>
       </div>
       <p className="text-sm font-medium text-[var(--ink-100)] mb-1">{title}</p>
       <p className="text-xs text-[var(--ink-400)]">{trigger}</p>
@@ -59,7 +73,9 @@ function Rule({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start gap-4">
-      <span className="w-32 shrink-0 text-xs text-[var(--ink-400)]">{label}</span>
+      <span className="w-32 shrink-0 text-xs text-[var(--ink-400)]">
+        {label}
+      </span>
       <span className="text-sm text-[var(--ink-200)]">{value}</span>
     </div>
   );
@@ -77,9 +93,9 @@ export default function MethodologyPage() {
           How we measure.
         </h1>
         <p className="text-sm text-[var(--ink-400)] leading-relaxed">
-          Every number on llmstatus.io is traceable to specific probe logic. This page
-          documents exactly what we do, how we classify failures, and how we decide
-          when an incident is real.
+          Every number on llmstatus.io is traceable to specific probe logic.
+          This page documents exactly what we do, how we classify failures, and
+          how we decide when an incident is real.
         </p>
         <p className="mt-3 text-xs text-[var(--ink-500)]">
           The complete specification is in{" "}
@@ -102,14 +118,19 @@ export default function MethodologyPage() {
         </p>
         <div className="rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] divide-y divide-[var(--ink-600)] overflow-hidden">
           <div className="px-4 py-3 grid grid-cols-[6rem_1fr] gap-4">
-            <span className="text-xs font-semibold text-[var(--ink-400)]">Light inference</span>
+            <span className="text-xs font-semibold text-[var(--ink-400)]">
+              Light inference
+            </span>
             <span className="text-xs text-[var(--ink-200)]">
-              Sends a minimal prompt (&quot;Reply with OK&quot;), expects ≤10 token response. Runs every 60 s.
-              This is the primary uptime signal.
+              Sends a minimal prompt (&quot;Reply with OK&quot;), expects ≤10
+              token response. Runs every 60 s. This is the primary uptime
+              signal.
             </span>
           </div>
           <div className="px-4 py-3 grid grid-cols-[6rem_1fr] gap-4">
-            <span className="text-xs font-semibold text-[var(--ink-400)]">Medium inference</span>
+            <span className="text-xs font-semibold text-[var(--ink-400)]">
+              Medium inference
+            </span>
             <span className="text-xs text-[var(--ink-200)]">
               ~200-token input, requests ~100-token output. Runs every 5 min.
               This is the latency signal.
@@ -117,8 +138,9 @@ export default function MethodologyPage() {
           </div>
         </div>
         <p>
-          We use dedicated paid API accounts for monitoring. We are paying customers
-          of every provider we monitor — we do not free-ride on trial accounts.
+          We use dedicated paid API accounts for monitoring. We are paying
+          customers of every provider we monitor — we do not free-ride on trial
+          accounts.
         </p>
       </Section>
 
@@ -134,7 +156,9 @@ export default function MethodologyPage() {
             ["cn-guangzhou", "Tencent Cloud Guangzhou — China redundancy"],
           ].map(([region, note]) => (
             <div key={region} className="flex items-start gap-3 text-xs">
-              <span className="font-mono text-[var(--ink-400)] w-36 shrink-0">{region}</span>
+              <span className="font-mono text-[var(--ink-400)] w-36 shrink-0">
+                {region}
+              </span>
               <span className="text-[var(--ink-300)]">{note}</span>
             </div>
           ))}
@@ -143,14 +167,23 @@ export default function MethodologyPage() {
 
       <Section id="what-we-measure" title="What we measure">
         <div className="space-y-3">
-          <Metric label="Uptime" value="Fraction of probe attempts that succeed in a given window." />
-          <Metric label="P95 latency" value="95th-percentile wall-clock time to receive the complete response, across successful probes only." />
-          <Metric label="Error type" value="When a probe fails, we classify the failure: timeout, network, rate_limit, auth, 5xx, 4xx, content_policy, model_overloaded, empty_response, malformed, or unknown." />
+          <Metric
+            label="Uptime"
+            value="Fraction of probe attempts that succeed in a given window."
+          />
+          <Metric
+            label="P95 latency"
+            value="95th-percentile wall-clock time to receive the complete response, across successful probes only."
+          />
+          <Metric
+            label="Error type"
+            value="When a probe fails, we classify the failure: timeout, network, rate_limit, auth, 5xx, 4xx, content_policy, model_overloaded, empty_response, malformed, or unknown."
+          />
         </div>
         <p className="mt-2">
-          Rate-limit errors (429) are counted in the error rate. If a provider is
-          consistently returning 429, that is a real service-availability issue
-          from the customer perspective.
+          Rate-limit errors (429) are counted in the error rate. If a provider
+          is consistently returning 429, that is a real service-availability
+          issue from the customer perspective.
         </p>
       </Section>
 
@@ -204,17 +237,26 @@ export default function MethodologyPage() {
         <p>
           An incident auto-resolves when its triggering rule has not fired for
           10 consecutive minutes. Critical incidents are published immediately.
-          Minor and major incidents are also published immediately by default;
-          a human reviewer can edit the title and description after publication.
+          Minor and major incidents are also published immediately by default; a
+          human reviewer can edit the title and description after publication.
         </p>
       </Section>
 
       <Section id="data-retention" title="Data retention">
         <div className="space-y-3">
-          <Metric label="Raw probe data" value="90 days, then rolled up into hourly aggregates." />
-          <Metric label="Hourly aggregates" value="Permanent — never deleted." />
+          <Metric
+            label="Raw probe data"
+            value="90 days, then rolled up into hourly aggregates."
+          />
+          <Metric
+            label="Hourly aggregates"
+            value="Permanent — never deleted."
+          />
           <Metric label="Daily aggregates" value="Permanent — never deleted." />
-          <Metric label="Incident records" value="Permanent. We do not retroactively delete or alter incident history." />
+          <Metric
+            label="Incident records"
+            value="Permanent. We do not retroactively delete or alter incident history."
+          />
         </div>
       </Section>
 
@@ -228,7 +270,9 @@ export default function MethodologyPage() {
             "We cannot distinguish a global rate-limit (429) from a partial outage if the provider uses 429 for both.",
           ].map((item) => (
             <li key={item} className="flex items-start gap-2 text-sm">
-              <span className="mt-0.5 text-[var(--signal-warn)] shrink-0">·</span>
+              <span className="mt-0.5 text-[var(--signal-warn)] shrink-0">
+                ·
+              </span>
               <span>{item}</span>
             </li>
           ))}

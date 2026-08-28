@@ -16,13 +16,21 @@ export const metadata: Metadata = {
   },
 };
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mb-10">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--ink-300)]">
         {title}
       </h2>
-      <div className="space-y-3 text-sm text-[var(--ink-200)] leading-6">{children}</div>
+      <div className="space-y-3 text-sm text-[var(--ink-200)] leading-6">
+        {children}
+      </div>
     </section>
   );
 }
@@ -41,8 +49,9 @@ export default function AboutPage() {
           for the AI infrastructure.
         </h1>
         <p className="text-sm text-[var(--ink-400)] leading-relaxed">
-          We make real API calls from Singapore (ap-southeast-1) every 30–60 seconds
-          and publish what we find — uptime, latency, and incidents — as a public good.
+          We make real API calls from Singapore (ap-southeast-1) every 30–60
+          seconds and publish what we find — uptime, latency, and incidents — as
+          a public good.
         </p>
       </div>
 
@@ -50,22 +59,22 @@ export default function AboutPage() {
         <p>
           llmstatus.io is a third-party monitoring service for AI API providers.
           We measure uptime, latency, and reliability by sending real inference
-          requests from multiple geographic regions — not by reading official status
-          pages or aggregating user reports.
+          requests from multiple geographic regions — not by reading official
+          status pages or aggregating user reports.
         </p>
         <p>
           When you see a provider listed as operational on their own status page
-          while your application is failing, llmstatus.io is the independent data
-          source you can point to.
+          while your application is failing, llmstatus.io is the independent
+          data source you can point to.
         </p>
       </Section>
 
       <Section title="Why we built it">
         <p>
           Official status pages are operated by the same teams experiencing the
-          incidents. Historically, updates lag reality by 15–60 minutes on average.
-          Crowdsourced reports like Downdetector reflect consumer sentiment, not
-          API behavior.
+          incidents. Historically, updates lag reality by 15–60 minutes on
+          average. Crowdsourced reports like Downdetector reflect consumer
+          sentiment, not API behavior.
         </p>
         <p>
           Developers and infrastructure teams need accurate, timely, independent
@@ -77,13 +86,14 @@ export default function AboutPage() {
       <Section title="How we work">
         <p>
           Every 30–60 seconds, probes run from 7 independent server locations
-          across North America, Europe, and Asia-Pacific. Each probe makes a real
-          authenticated API call — a short inference request — and records whether
-          it succeeded, how long it took, and what error type occurred if it failed.
+          across North America, Europe, and Asia-Pacific. Each probe makes a
+          real authenticated API call — a short inference request — and records
+          whether it succeeded, how long it took, and what error type occurred
+          if it failed.
         </p>
         <p>
-          An incident is declared when our detection rules fire based on aggregate
-          probe data. Rules are public and documented in full on the{" "}
+          An incident is declared when our detection rules fire based on
+          aggregate probe data. Rules are public and documented in full on the{" "}
           <Link
             href="/methodology"
             className="text-[var(--ink-300)] hover:text-[var(--ink-100)] transition-colors underline underline-offset-2"
@@ -125,7 +135,9 @@ export default function AboutPage() {
             "Delete historical data.",
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
-              <span className="mt-0.5 text-[var(--signal-down)] shrink-0">✕</span>
+              <span className="mt-0.5 text-[var(--signal-down)] shrink-0">
+                ✕
+              </span>
               <span>{item}</span>
             </li>
           ))}

@@ -17,7 +17,7 @@ function FilterChip({ label, active, onClick }: FilterChipProps) {
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1 rounded text-xs font-semibold uppercase tracking-[0.08em] border transition-colors ${
+      className={`px-3 py-1 rounded text-xs font-semibold uppercase tracking-[0.08em] border transition-all hover:-translate-y-px ${
         active
           ? "bg-[var(--canvas-overlay)] border-[var(--ink-400)] text-[var(--ink-100)]"
           : "border-[var(--ink-600)] text-[var(--ink-400)] hover:text-[var(--ink-200)] hover:border-[var(--ink-500)]"
@@ -53,18 +53,22 @@ export function ProvidersClient({ providers }: Props) {
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
 
   const filtered = providers.filter((p) => {
-    const statusOk = statusFilter === "all" || p.current_status === statusFilter;
-    const categoryOk = categoryFilter === "all" || p.category === categoryFilter;
+    const statusOk =
+      statusFilter === "all" || p.current_status === statusFilter;
+    const categoryOk =
+      categoryFilter === "all" || p.category === categoryFilter;
     return statusOk && categoryOk;
   });
 
   const counts = {
-    operational: providers.filter((p) => p.current_status === "operational").length,
+    operational: providers.filter((p) => p.current_status === "operational")
+      .length,
     degraded: providers.filter((p) => p.current_status === "degraded").length,
     down: providers.filter((p) => p.current_status === "down").length,
     official: providers.filter((p) => p.category === "official").length,
     aggregator: providers.filter((p) => p.category === "aggregator").length,
-    chinese_official: providers.filter((p) => p.category === "chinese_official").length,
+    chinese_official: providers.filter((p) => p.category === "chinese_official")
+      .length,
   };
 
   const statusChips: { key: StatusFilter; label: string }[] = [
@@ -78,13 +82,19 @@ export function ProvidersClient({ providers }: Props) {
     { key: "all", label: "All" },
     { key: "official", label: `Official (${counts.official})` },
     { key: "aggregator", label: `Aggregator (${counts.aggregator})` },
-    { key: "chinese_official", label: `CN Official (${counts.chinese_official})` },
+    {
+      key: "chinese_official",
+      label: `CN Official (${counts.chinese_official})`,
+    },
   ];
 
   return (
     <div>
       {/* Filters */}
-      <div className="mb-6 rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4 flex flex-col gap-3">
+      <div
+        className="mb-6 rounded-lg border border-[var(--ink-600)] bg-[var(--canvas-raised)] px-4 py-4 flex flex-col gap-3 animate-fade-up"
+        style={{ animationDelay: "0.15s" }}
+      >
         <FilterRow label="Status">
           {statusChips.map(({ key, label }) => (
             <FilterChip
@@ -114,7 +124,9 @@ export function ProvidersClient({ providers }: Props) {
           : `${filtered.length} of ${providers.length} providers`}
       </p>
 
-      <ProviderTable providers={filtered} />
+      <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
+        <ProviderTable providers={filtered} />
+      </div>
     </div>
   );
 }

@@ -31,6 +31,8 @@ public APIs must add an entry under `## [Unreleased]`.
 ### Changed
 
 - Update copy: "7 global locations" → "5 global locations" across homepage and providers page metadata
+- Update copy: drop the location count — "5 global locations" → "global locations" across the providers page and OG images (probes now originate from Singapore ap-southeast-1)
+- Redesign home + providers pages with a "direction B" visual system (BRAND_SYSTEM.md §6.7): animated radar hero signal, status distribution bar, and CSS-only motion — entrance fades, pulse rings, sparkline draw-in, card hover glows — all respecting `prefers-reduced-motion`
 
 ### Changed (2026-08-28 platform migration + probe consolidation)
 

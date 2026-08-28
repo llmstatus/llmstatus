@@ -1,11 +1,16 @@
 # llmstatus.io — Brand System
 
-**Version**: 0.1
-**Last updated**: 2026-04-17
+**Version**: 0.2
+**Last updated**: 2026-08-28
 **Philosophy**: This is not another AI tool site. This is the public observatory for AI infrastructure.
 
 > Non-English translations of taglines and UI copy live under `web/i18n/`.
 > This document is the canonical English source.
+
+> **0.2 (2026-08-28) — "Direction B":** permits purposeful CSS-only motion,
+> subtle glows/gradients, and abstract signal graphics. See §2.2, §4.5,
+> §6.5–§6.8. Location-count copy ("7/5 global locations") is deprecated in
+> favor of "global locations" / "Singapore (ap-southeast-1)".
 
 ---
 
@@ -19,7 +24,7 @@
 
 > llmstatus.io continuously observes 40+ AI API providers worldwide.
 > We do not scrape their status pages — we make real API calls from
-> 7 geographic locations every 30 seconds and publish latency, error
+> global locations every 30 seconds and publish latency, error
 > rate, and quality data as open, verifiable records.
 >
 > This is a public project. All data is free to access.
@@ -46,7 +51,7 @@ We do **not** want to be associated with:
 **How we speak:**
 
 | Is | Is not |
-|---|---|
+| --- | --- |
 | Calm | Alarmist |
 | Data-backed | Opinion-driven |
 | Precise | Vague |
@@ -64,7 +69,7 @@ We do **not** want to be associated with:
    - No favoritism toward the maintainers' other products. No disparagement of OpenRouter.
 
 3. **Acknowledge methodological limits.**
-   - Our data is "observed from 7 locations," not "absolute truth."
+   - Our data is "observed from global locations," not "absolute truth."
    - When something is uncertain, say so.
 
 ---
@@ -76,6 +81,7 @@ We do **not** want to be associated with:
 **Control Room Aesthetic**
 
 A blend of:
+
 - The data density of Bloomberg Terminal
 - The seriousness of 1970s NASA Mission Control
 - The restraint of the Japan Meteorological Agency
@@ -86,19 +92,26 @@ A blend of:
 **1. Dark-first**
 
 Dark is not a style choice for "coolness." It is because:
+
 - Developers work in dim environments (literally)
 - Data visualizations are clearer on dark backgrounds
 - It is the native language of serious tools
 
-**2. Undecorated**
+**2. Undecorated — purposeful, not absent**
 
-Do not use:
+Visual effects must carry meaning; decoration for its own sake is still
+banned. Direction B permits:
+
+- Subtle radial gradients / glows behind hero and status surfaces (never behind body text)
+- CSS-only motion: entrance fades, pulse rings, radar sweeps, sparkline draw-in
+- Abstract "signal" motifs (radar, oscilloscope, waveform) as inline SVG
+
+Still do not use:
+
 - Rounded corners (max 2px if needed)
-- Gradients
-- Soft shadows
+- Soft shadows (a single restrained glow on hover is allowed)
 - Frosted glass
-- Glow effects
-- Illustrations
+- Illustrations, stock photography, or 3D
 - Emoji (except in extremely specific cases)
 
 **3. Grid-obsessed**
@@ -107,14 +120,17 @@ All elements align to a 4px grid.
 Tables, dividers, and rulers are visible.
 Engineering blueprint, not fine art.
 
-**4. Typography as design**
+**4. Typography + signal graphics**
 
-No hero images, no illustrations, no 3D. Type is the primary visual language.
+Type remains the primary voice, now paired with abstract data-viz and
+"signal" graphics (radar sweeps, waveform traces, distribution bars).
+No hero images, no illustrations, no 3D.
 
 **5. Data as content**
 
 Numbers, percentages, timestamps, and latency values are first-class citizens.
-Copy is second-class. Decoration is zeroth-class (i.e., nonexistent).
+Copy is second-class. Decoration must serve legibility and signal — never
+distract from the data.
 
 ---
 
@@ -129,11 +145,13 @@ The primary mark is a **wordmark** wrapped in square brackets:
 ```
 
 **Meaning of the brackets:**
+
 - Developer language (array index, regex, JSON arrays)
 - A sense of observation / sampling / measurement
 - A frame, a viewport, a boundary
 
 **All-lowercase:**
+
 - Downplays "brandiness," emphasizes "tool-ness"
 - Reads like a CLI command or an import path
 - Does not shout — it observes calmly
@@ -141,27 +159,35 @@ The primary mark is a **wordmark** wrapped in square brackets:
 ### 3.2 Logo variants
 
 **Primary Logomark:**
+
 ```
 [ llmstatus ]
 ```
+
 Used for: site header, social banners, brand materials, OG images.
 
 **Compact Mark:**
+
 ```
 [ ls ]
 ```
+
 Used for: favicon, app icon, small-format applications, social avatars.
 
 **Status Pulse Mark:**
+
 ```
 [ ● ]
 ```
+
 Used for: badges, loading indicators, animated tab favicon.
 
 **Primary Wordmark (plain text):**
+
 ```
 llmstatus
 ```
+
 Used for: plaintext credit, footer, API response headers (e.g. `X-Powered-By`).
 
 ### 3.3 Logo color rules
@@ -257,12 +283,14 @@ For charts, leaderboards, maps, etc.:
 
 A well-designed llmstatus.io page should look roughly:
 
-- **85%** Canvas (dark background)
-- **12%** Ink (text, borders)
-- **2%** Signal OK (normal state)
-- **1%** Signal Warn / Down or brand accent
+- **80%** Canvas (dark background)
+- **14%** Ink (text, borders)
+- **5%** Signal OK (normal state + status surfaces)
+- **1%** Signal Warn / Down or brand accent (elevated during incidents)
 
-**Warning:** If your page looks colorful, you did it wrong.
+Glow and gradient accents are confined to the hero and summary surfaces;
+body content stays canvas-dominated. If a page reads as colorful at a
+glance, the accent budget has been exceeded.
 
 ---
 
@@ -271,23 +299,27 @@ A well-designed llmstatus.io page should look roughly:
 ### 5.1 Type choices
 
 **Display & Logo:**
+
 - **Primary**: `Berkeley Mono` (commercial license, ~$75 one-time)
 - **Fallback 1**: `MD IO` (free for commercial use)
 - **Fallback 2**: `JetBrains Mono` (free, Google Fonts)
 - **Strictly forbidden**: Inter, Space Grotesk, Roboto (these are "AI-slop fonts")
 
 **Body:**
+
 - **Primary**: `IBM Plex Sans` (free, Google Fonts)
 - **Fallback**: `Söhne` or `Untitled Sans` (commercial)
 - **Strictly forbidden**: Inter (same reason as above)
 
 **Numeric / Code:**
+
 - **Primary**: `Berkeley Mono` (same family as display for consistency)
 - **Fallback**: `JetBrains Mono`
 
 ### 5.2 Why Berkeley Mono / MD IO
 
 Both typefaces carry a strong "console / drafting / laboratory logbook" character. Their letterforms evoke:
+
 - 1980s terminals
 - Annotations on engineering drawings
 - Laboratory-equipment nameplates
@@ -350,6 +382,7 @@ Forbidden: 300 (light), 900 (black). They break the restraint.
 ```
 
 Rules:
+
 - Dot diameter 8px
 - 8px gap between dot and text
 - Text 11px, all-caps, 0.05em tracking
@@ -369,6 +402,7 @@ Rules:
 ```
 
 Rules:
+
 - Dividers use `--ink-600` (faint)
 - Numeric columns right-aligned
 - Numbers in Berkeley Mono (monospace)
@@ -380,22 +414,26 @@ Rules:
 ### 6.3 Buttons
 
 **Primary** — used rarely, only for critical CTAs.
+
 ```
 ┌──────────────┐
 │  SUBSCRIBE   │
 └──────────────┘
 ```
+
 - Background `--signal-amber`
 - Black text
 - No rounded corners
 - ALL CAPS
 
 **Secondary** — the default button.
+
 ```
 ┌──────────────┐
 │  View incident →
 └──────────────┘
 ```
+
 - Transparent background
 - Border `--ink-500`
 - Text `--ink-100`
@@ -412,6 +450,7 @@ Resolved 2d ago
 ```
 
 Rules:
+
 - Color `--ink-400` (supporting)
 - 11px
 - Auto-refresh every 10s on the client
@@ -427,7 +466,8 @@ background-image:
 background-size: 8px 8px;
 ```
 
-**Extremely restrained.** No more than one section.
+**Extremely restrained.** The hero plus at most one additional section
+(e.g. the providers summary); no more.
 
 ### 6.6 Prohibited component patterns
 
@@ -436,7 +476,36 @@ background-size: 8px 8px;
 - ❌ Cookie banners that block content (use the smallest variant when legally required)
 - ❌ "Sign up for newsletter" pop-ups (subscription lives only in the footer)
 - ❌ Rainbow-colored progress bars
-- ❌ Large gradient backgrounds
+- ❌ Animation libraries (motion is CSS-only — CLAUDE.md §7.2)
+- ❌ Auto-playing video, confetti, parallax, or scroll-jacking
+
+### 6.7 Motion system (direction B)
+
+Motion is **CSS-only** — no animation libraries. Every animation must respect
+`prefers-reduced-motion: reduce` (disable, or jump to the final state).
+
+| Effect | Keyframes | Timing | Where |
+| --- | --- | --- | --- |
+| Entrance fade-up | `fade-up` | 0.7s `cubic-bezier(0.22,1,0.36,1)`, `backwards` | hero, summary, cards (staggered ≤ 60ms/card, capped ~480ms) |
+| Entrance fade-in | `fade-in` | 0.9s ease, `backwards` | hero visual, tables |
+| Live pulse ring | `ring-pulse` | 2.2s infinite | degraded/down status dots, live indicator |
+| Radar sweep | `radar-sweep` | 5s linear infinite | hero signal |
+| Blip pulse | `blip-pulse` | 2.8s ease-out infinite | hero signal probe blips |
+| Sparkline draw-in | `draw-line` | 1.1s, `forwards` | provider card sparklines (opt-in) |
+| Bar grow | `grow-bar` | 0.9s, `backwards` | status distribution bar |
+| Card hover lift + glow | — | 0.25s ease | provider cards |
+
+Rules:
+
+- Entrance animations use `backwards` fill so elements settle at their
+  natural state and hover transforms keep working.
+- Stagger delays are capped so the page never feels like it is "loading."
+- Glows use `color-mix(in srgb, var(--signal-*) ...)`, never hard-coded hex.
+
+### 6.8 New components (direction B)
+
+- `StatusDistributionBar` — stacked operational/degraded/down bar with legend
+- `HeroSignal` — abstract radar "live signal" SVG for the home hero
 
 ---
 
@@ -451,7 +520,7 @@ The following copy is ready to use verbatim.
 > for the AI infrastructure.
 
 **Hero subhead:**
-> Measured from 7 global locations.
+> Measured from global locations.
 > Not scraped from official status pages.
 
 **Live indicator:**
@@ -463,7 +532,7 @@ The following copy is ready to use verbatim.
 > llmstatus.io observes 40+ AI API providers in real time.
 >
 > We measure what actually happens when you call these APIs,
-> from seven geographic locations. We do not scrape official
+> from global locations. We do not scrape official
 > status pages — we make real requests and report what we see.
 >
 > This is a public project. Data is free to access, free to
@@ -472,7 +541,7 @@ The following copy is ready to use verbatim.
 **Methodology hero (methodology page):**
 > How we measure:
 > — Real API calls, not scraped status pages
-> — From 7 geographic locations, including mainland China
+> — From global locations
 > — Every 30–60 seconds, 24/7
 > — We publish our probe logic as open source
 > — We monitor ourselves too — any service operated by the maintainers, probed by the same rules
@@ -504,7 +573,7 @@ Never use marketing speak. Use facts.
 These words must never appear anywhere on llmstatus.io:
 
 | Banned | Reason |
-|---|---|
+| --- | --- |
 | "leading" / "best-in-class" | Marketing filler |
 | "revolutionary" / "game-changing" | Marketing filler |
 | "AI-powered" / "powered by AI" | Everything is AI now; it says nothing |
@@ -519,7 +588,7 @@ These words must never appear anywhere on llmstatus.io:
 Words that carry our tone:
 
 | Context | Preferred words |
-|---|---|
+| --- | --- |
 | Observation verbs | observe, measure, probe, sample, detect |
 | Describing anomalies | elevated, degraded, disruption, irregularity |
 | Describing normal | operational, nominal, within baseline |
@@ -633,6 +702,7 @@ Show a designer these references to convey the tone:
 - **Braun Design** product manuals (Dieter Rams era)
 
 **Do not reference:**
+
 - Any Vercel template
 - Any Dribbble popular shot
 - Any typical SaaS landing page
