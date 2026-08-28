@@ -39,6 +39,7 @@ public APIs must add an entry under `## [Unreleased]`.
 - Public copy corrected to the real topology: probes originate from Singapore (ap-southeast-1); README + METHODOLOGY §3.1 rewritten to match
 - `Dockerfile.web` now accepts `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_API_URL` build args (client bundles need these baked); root `layout.tsx` sets `metadataBase` so OG/canonical URLs are correct
 - Terraform: `aws-main-server` module removed from `prod/main.tf`; only `probe_ap_southeast_1` remains
+- - Ansible roles now support the shared-host topology: `docker-compose.prod.yml` (dedicated influx on the data disk, api/ingest/web on `llmstatus_default`, shared `postgres-postgres-1`/`redis-redis-1`), `shared_host` conditionals (skip Docker install / volume mount / host nginx; deploy to the operator's `nginx-nginx-1` container instead), firewall gated behind `manage_firewall`, `env.j2` points at the shared components, `REGION_ID=ap-southeast-1`; deploy via `ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml --limit main`
 - **Data impact (incident 2026-08-28)**: replacing the AWS main server destroyed its 80 GB data volume — PostgreSQL dynamic data (incidents, subscriptions, accounts) is lost and unrecoverable; probe samples were restored from local backups (kept regions only). Historical incidents should be disclosed on-site (pending operator copy)
 
 ### Changed (UI overhaul)
