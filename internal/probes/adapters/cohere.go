@@ -64,13 +64,13 @@ func (p *cohereProvider) ProbeLightInference(ctx context.Context, model string) 
 }
 
 func (p *cohereProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: cohereProviderID, ProbeType: "quality"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: cohereProviderID, ProbeType: openaiQualityProbeType}
 }
 func (p *cohereProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: cohereProviderID, ProbeType: "embedding"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: cohereProviderID, ProbeType: openaiEmbeddingProbeType}
 }
 func (p *cohereProvider) ProbeStreaming(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: cohereProviderID, ProbeType: "streaming"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: cohereProviderID, ProbeType: openaiStreamingProbeType}
 }
 
 // ---- Cohere v2 API types ----------------------------------------------------
@@ -102,7 +102,7 @@ type cohereErrorEnvelope struct {
 func (p *cohereProvider) buildRequest(ctx context.Context, model string) (*http.Request, error) {
 	body, err := json.Marshal(cohereChatRequest{
 		Model:    model,
-		Messages: []cohereChatMessage{{Role: "user", Content: "ping"}},
+		Messages: []cohereChatMessage{{Role: chatRoleUser, Content: probePingContent}},
 	})
 	if err != nil {
 		return nil, err

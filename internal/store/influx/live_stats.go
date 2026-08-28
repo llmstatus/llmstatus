@@ -14,6 +14,11 @@ const (
 	sparklineBuckets    = 60
 	sparklineBucketSecs = 1440 // 24 min per bucket → 60 × 24 min = 24 h
 	windowSecs          = sparklineBuckets * sparklineBucketSecs
+
+	// influxFormatKey and influxJSONFormat identify the query-format
+	// key/value used in every InfluxDB HTTP query.
+	influxFormatKey  = "format"
+	influxJSONFormat = "json"
 )
 
 // ProviderLiveStat holds current 24 h aggregate stats for one provider.
@@ -65,7 +70,7 @@ func (r *influxHistoryReader) AllProviderLiveStats(ctx context.Context) ([]Provi
 	WHERE time >= now() - INTERVAL '86400 seconds'
 	GROUP BY provider_id`
 
-	body, err := json.Marshal(map[string]string{"q": sql, "db": r.cfg.Database, "format": "json"})
+	body, err := json.Marshal(map[string]string{"q": sql, "db": r.cfg.Database, influxFormatKey: influxJSONFormat})
 	if err != nil {
 		return nil, fmt.Errorf("influx live stats: marshal: %w", err)
 	}
@@ -118,7 +123,7 @@ func (r *influxHistoryReader) AllModelLiveStats(ctx context.Context) ([]ModelLiv
 	WHERE time >= now() - INTERVAL '86400 seconds'
 	GROUP BY provider_id, model`
 
-	body, err := json.Marshal(map[string]string{"q": sql, "db": r.cfg.Database, "format": "json"})
+	body, err := json.Marshal(map[string]string{"q": sql, "db": r.cfg.Database, influxFormatKey: influxJSONFormat})
 	if err != nil {
 		return nil, fmt.Errorf("influx model stats: marshal: %w", err)
 	}
@@ -187,7 +192,7 @@ func (r *influxHistoryReader) AllModelSparklines(ctx context.Context) (map[strin
 		windowSecs,
 	)
 
-	body, err := json.Marshal(map[string]string{"q": sql, "db": r.cfg.Database, "format": "json"})
+	body, err := json.Marshal(map[string]string{"q": sql, "db": r.cfg.Database, influxFormatKey: influxJSONFormat})
 	if err != nil {
 		return nil, fmt.Errorf("influx sparklines: marshal: %w", err)
 	}
@@ -273,7 +278,7 @@ func (r *influxHistoryReader) ProviderRegionStats(ctx context.Context, providerI
 		providerID,
 	)
 
-	body, err := json.Marshal(map[string]string{"q": sql, "db": r.cfg.Database, "format": "json"})
+	body, err := json.Marshal(map[string]string{"q": sql, "db": r.cfg.Database, influxFormatKey: influxJSONFormat})
 	if err != nil {
 		return nil, fmt.Errorf("influx region stats: marshal: %w", err)
 	}

@@ -85,15 +85,15 @@ func (p *openAICompatProvider) ProbeLightInference(ctx context.Context, model st
 }
 
 func (p *openAICompatProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: p.providerID, ProbeType: "quality"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: p.providerID, ProbeType: openaiQualityProbeType}
 }
 
 func (p *openAICompatProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: p.providerID, ProbeType: "embedding"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: p.providerID, ProbeType: openaiEmbeddingProbeType}
 }
 
 func (p *openAICompatProvider) ProbeStreaming(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: p.providerID, ProbeType: "streaming"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: p.providerID, ProbeType: openaiStreamingProbeType}
 }
 
 // probeOpenAICompat is the shared probe implementation for all providers that

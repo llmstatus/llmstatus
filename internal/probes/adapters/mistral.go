@@ -69,19 +69,19 @@ func (p *mistralProvider) ProbeLightInference(ctx context.Context, model string)
 }
 
 func (p *mistralProvider) ProbeQuality(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: mistralProviderID, ProbeType: "quality"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: mistralProviderID, ProbeType: openaiQualityProbeType}
 }
 func (p *mistralProvider) ProbeEmbedding(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: mistralProviderID, ProbeType: "embedding"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: mistralProviderID, ProbeType: openaiEmbeddingProbeType}
 }
 func (p *mistralProvider) ProbeStreaming(_ context.Context, _ string) (probes.ProbeResult, error) {
-	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: mistralProviderID, ProbeType: "streaming"}
+	return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: mistralProviderID, ProbeType: openaiStreamingProbeType}
 }
 
 func (p *mistralProvider) buildRequest(ctx context.Context, model string) (*http.Request, error) {
 	body, err := json.Marshal(openaiChatRequest{
 		Model:     model,
-		Messages:  []openaiChatMessage{{Role: "user", Content: "ping"}},
+		Messages:  []openaiChatMessage{{Role: chatRoleUser, Content: probePingContent}},
 		MaxTokens: 1,
 	})
 	if err != nil {

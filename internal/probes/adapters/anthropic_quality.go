@@ -35,7 +35,7 @@ func (p *anthropicProvider) ProbeQuality(ctx context.Context, model string) (pro
 	body, err := json.Marshal(anthropicMessagesRequest{
 		Model:     model,
 		MaxTokens: anthropicQualityMaxTokens,
-		Messages:  []anthropicMessage{{Role: "user", Content: anthropicQualityPrompt}},
+		Messages:  []anthropicMessage{{Role: chatRoleUser, Content: anthropicQualityPrompt}},
 	})
 	if err != nil {
 		r.DurationMs = time.Since(started).Milliseconds()

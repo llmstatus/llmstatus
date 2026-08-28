@@ -20,6 +20,7 @@ public APIs must add an entry under `## [Unreleased]`.
 ### Fixed
 - Add Redis 7 service to docker-compose; wire api healthcheck dependency — `REDIS_URL` was set in the Ansible env template but no Redis container existed, causing OTP rate limiting to silently fail on first use
 - Fix `TestListProviders_Operational`, `TestListProviders_WithOngoingIncident`, and `TestListProviders_LiveStatsNil_OmitsFields` — tests lacked a live stats reader, causing providers to be filtered from the response
+- Unblock CI (was red on every PR since 2026-05): pin `golangci-lint` to v2.12.2 in `ci.yml` (the `latest` tag drifted into releases whose goconst behavior changed), fix all 38 goconst violations by extracting severity/status/probe-type constants in `internal/detector`, `internal/notifier`, `internal/probes/adapters`, and `internal/store/influx`; pin web `eslint` back to `^9.39.4` — `eslint-plugin-react` 7.37.5 (bundled via `eslint-config-next`) crashes under ESLint 10 with `contextOrFilename.getFilename is not a function`, and no ESLint-10-compatible release exists yet
 
 ### Changed
 - Update copy: "7 global locations" → "5 global locations" across homepage and providers page metadata

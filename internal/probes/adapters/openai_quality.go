@@ -24,7 +24,7 @@ const (
 // word is classified as ErrorClassQualityMismatch.
 func (p *openaiProvider) ProbeQuality(ctx context.Context, model string) (probes.ProbeResult, error) {
 	if isOpenAIEmbeddingModel(model) {
-		return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: "quality"}
+		return probes.ProbeResult{}, &probes.ErrNotSupported{ProviderID: openaiProviderID, ProbeType: openaiQualityProbeType}
 	}
 	started := time.Now()
 	r := probes.ProbeResult{
@@ -37,7 +37,7 @@ func (p *openaiProvider) ProbeQuality(ctx context.Context, model string) (probes
 
 	body, err := json.Marshal(openaiChatRequest{
 		Model:     model,
-		Messages:  []openaiChatMessage{{Role: "user", Content: openaiQualityPrompt}},
+		Messages:  []openaiChatMessage{{Role: chatRoleUser, Content: openaiQualityPrompt}},
 		MaxTokens: openaiQualityMaxTokens,
 	})
 	if err != nil {

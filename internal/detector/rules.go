@@ -25,6 +25,15 @@ const (
 	qualityDegradationFactor = 3.0
 	qualityAbsoluteThreshold = 0.30
 	minQualityProbeCount     = int64(2)
+
+	// Incident severity levels, stored in incidents.severity.
+	severityCritical = "critical"
+	severityMajor    = "major"
+	severityMinor    = "minor"
+
+	// Incident status and detection method values.
+	statusOngoing       = "ongoing"
+	detectionMethodAuto = "auto"
 )
 
 // Detection is a rule match for a single provider.
@@ -91,7 +100,7 @@ func EvaluateRules(stats5m, stats10m []ProbeStats) []Detection {
 			detections = append(detections, Detection{
 				ProviderID:  s.ProviderID,
 				Rule:        RuleProviderDown,
-				Severity:    "critical",
+				Severity:    severityCritical,
 				ErrorRate:   s.ErrorRate(),
 				TotalProbes: s.Total,
 			})
@@ -111,7 +120,7 @@ func EvaluateRules(stats5m, stats10m []ProbeStats) []Detection {
 			detections = append(detections, Detection{
 				ProviderID:  s.ProviderID,
 				Rule:        RuleElevatedErrors,
-				Severity:    "major",
+				Severity:    severityMajor,
 				ErrorRate:   s.ErrorRate(),
 				TotalProbes: s.Total,
 			})
@@ -148,7 +157,7 @@ func EvaluateLatencyRule(current, baseline []LatencyStats) []Detection {
 			detections = append(detections, Detection{
 				ProviderID:    c.ProviderID,
 				Rule:          RuleLatencyDegradation,
-				Severity:      "minor",
+				Severity:      severityMinor,
 				TotalProbes:   c.SampleCount,
 				P95Ms:         c.P95Ms,
 				BaselineP95Ms: b.P95Ms,
@@ -189,7 +198,7 @@ func EvaluateQualityRule(current, baseline []ProbeStats) []Detection {
 			detections = append(detections, Detection{
 				ProviderID:  c.ProviderID,
 				Rule:        RuleQualityDegradation,
-				Severity:    "minor",
+				Severity:    severityMinor,
 				ErrorRate:   rate,
 				TotalProbes: c.Total,
 			})
@@ -223,7 +232,7 @@ func EvaluateRegionalRule(regional []RegionalStats, globalStats5m []ProbeStats) 
 			detections = append(detections, Detection{
 				ProviderID:  r.ProviderID,
 				Rule:        RuleRegionalOutage,
-				Severity:    "minor",
+				Severity:    severityMinor,
 				ErrorRate:   r.ErrorRate(),
 				TotalProbes: r.Total,
 				Region:      r.Region,
