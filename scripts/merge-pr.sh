@@ -20,6 +20,11 @@
 # Usage:
 #   bash scripts/merge-pr.sh <pr-number> [<approval-message>]
 #
+# CI gate: the script waits for the PR's checks to finish and refuses to
+# merge unless every completed check is SUCCESS (see LLMS-074). Tune with:
+#   CHECK_WAIT=900   seconds to wait for pending checks (default 600)
+#   CHECK_FORCE=1    bypass the CI gate entirely (emergency only)
+#
 # Exits 0 on merge, non-zero otherwise. Idempotent: an already-merged PR
 # exits 0 with a notice.
 
@@ -106,7 +111,60 @@ else
         "https://api.github.com/repos/$REPO/pulls/$PR/reviews" || true
 fi
 
+# ── step 1.5: CI gate ──────────────────────────────────────────────────────
+# Never merge with failing or pending checks — LLMS-074: #219 was merged with
+# a red web job and broke main. Polls check-runs on the PR head until they
+# complete (or CHECK_WAIT elapses), then requires all-SUCCESS.
+check_ci() {
+    local pr=$1
+    local wait=${CHECK_WAIT:-600}
+    if [ "${CHECK_FORCE:-0}" = "1" ]; then
+        echo "[merge-pr] #$pr: CHECK_FORCE=1 — skipping CI gate"
+        return 0
+    fi
+
+    local sha
+    sha=$(gh pr view "$pr" --repo "$REPO" --json headRefOid --jq '.headRefOid')
+    if [ -z "$sha" ]; then
+        echo "[merge-pr] #$pr: cannot read head SHA — skipping CI gate" >&2
+        return 0
+    fi
+
+    local url="repos/$REPO/commits/$sha/check-runs"
+    local total
+    total=$(gh api "$url" --jq '.total_count' 2>/dev/null || echo 0)
+    if [ "$total" -eq 0 ]; then
+        echo "[merge-pr] #$pr: no checks reported on head — skipping CI gate"
+        return 0
+    fi
+
+    echo "[merge-pr] #$pr: waiting for CI checks ($total) — up to ${wait}s..."
+    local deadline=$(( $(date +%s) + wait ))
+    while :; do
+        local bad pending
+        bad=$(gh api "$url" --jq '[.check_runs[] | select(.status=="completed" and (.conclusion != "success" and .conclusion != "skipped" and .conclusion != "neutral"))] | length' 2>/dev/null || echo 0)
+        pending=$(gh api "$url" --jq '[.check_runs[] | select(.status != "completed")] | length' 2>/dev/null || echo 0)
+
+        if [ "$bad" -gt 0 ]; then
+            echo "[merge-pr] #$pr: CI check FAILED — refusing to merge (CHECK_FORCE=1 overrides):" >&2
+            gh api "$url" --jq '.check_runs[] | select(.status=="completed" and .conclusion != "success" and .conclusion != "skipped" and .conclusion != "neutral") | "  ✗ \(.name): \(.conclusion)"' 2>/dev/null >&2
+            return 1
+        fi
+        if [ "$pending" -eq 0 ]; then
+            echo "[merge-pr] #$pr: all $total checks pass."
+            return 0
+        fi
+        if [ "$(date +%s)" -ge "$deadline" ]; then
+            echo "[merge-pr] #$pr: $pending checks still pending after ${wait}s — aborting. Raise CHECK_WAIT to extend." >&2
+            return 1
+        fi
+        sleep 15
+    done
+}
+
 # ── step 2: merge ──────────────────────────────────────────────────────────
+check_ci "$PR" || exit 6
+
 echo "[merge-pr] #$PR: merge via curl (onetown PAT)"
 http=$(curl -sS -o "$resp" -w '%{http_code}' \
     -X PUT \
