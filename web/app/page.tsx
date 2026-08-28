@@ -3,6 +3,8 @@ import Link from "next/link";
 import { listProviders, listIncidents } from "@/lib/api";
 import { ProviderCard } from "@/components/ProviderCard";
 import { IncidentCard } from "@/components/IncidentCard";
+import { HeroSignal } from "@/components/HeroSignal";
+import { StatusDistributionBar } from "@/components/StatusDistributionBar";
 
 export const revalidate = 30;
 
@@ -25,12 +27,17 @@ export default async function HomePage() {
     listIncidents("all", 10),
   ]);
 
-  const providers = providerResult.status === "fulfilled" ? providerResult.value : null;
-  const allIncidents = incidentResult.status === "fulfilled" ? incidentResult.value : [];
+  const providers =
+    providerResult.status === "fulfilled" ? providerResult.value : null;
+  const allIncidents =
+    incidentResult.status === "fulfilled" ? incidentResult.value : [];
 
   // Ongoing/monitoring incidents first, then resolved; cap at 5.
   const recentIncidents = [...allIncidents]
-    .sort((a, b) => (a.status === "resolved" ? 1 : 0) - (b.status === "resolved" ? 1 : 0))
+    .sort(
+      (a, b) =>
+        (a.status === "resolved" ? 1 : 0) - (b.status === "resolved" ? 1 : 0),
+    )
     .slice(0, 5);
 
   const allOk =
@@ -41,51 +48,80 @@ export default async function HomePage() {
   const hasOutage =
     providers !== null && providers.some((p) => p.current_status === "down");
 
+  const opCount =
+    providers === null
+      ? 0
+      : providers.filter((p) => p.current_status === "operational").length;
+  const degCount =
+    providers === null
+      ? 0
+      : providers.filter((p) => p.current_status === "degraded").length;
+  const downCount =
+    providers === null
+      ? 0
+      : providers.filter((p) => p.current_status === "down").length;
+
   const summaryText =
     providers === null
       ? "Unable to load provider data."
       : allOk
-      ? "All systems operational."
-      : hasOutage
-      ? "One or more providers are experiencing issues."
-      : "Some providers are degraded.";
+        ? "All systems operational."
+        : hasOutage
+          ? "One or more providers are experiencing issues."
+          : "Some providers are degraded.";
 
   const summaryColor =
     providers === null || hasOutage
       ? "text-[var(--signal-down)]"
       : allOk
-      ? "text-[var(--signal-ok)]"
-      : "text-[var(--signal-warn)]";
+        ? "text-[var(--signal-ok)]"
+        : "text-[var(--signal-warn)]";
 
   return (
     <main className="flex-1 mx-auto w-full max-w-4xl px-6">
-      {/* Hero — brand spec §7.1 + optional grid background §6.5 */}
-      <div
-        className="py-14 mb-2"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px)," +
-            "linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px)",
-          backgroundSize: "8px 8px",
-        }}
-      >
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--signal-amber)] mb-4">
-          llmstatus.io
-        </p>
-        <h1 className="text-4xl sm:text-5xl font-semibold text-[var(--ink-100)] leading-tight mb-4">
-          Independent real-time monitoring
-          <br />
-          for the AI infrastructure.
-        </h1>
-        <p className="text-base text-[var(--ink-300)] leading-relaxed">
-          Measured from Singapore (ap-southeast-1).
-          <br />
-          Not scraped from official status pages.
-        </p>
-      </div>
+      {/* Hero — grid + radial glow (BRAND_SYSTEM.md §6.5, direction B) */}
+      <section className="relative overflow-hidden py-14 mb-2 md:py-20">
+        <div className="hero-grid absolute inset-0" aria-hidden="true" />
+        <div className="hero-glow absolute inset-0" aria-hidden="true" />
+        <div className="relative grid grid-cols-1 items-center gap-10 md:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="animate-fade-up">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--signal-amber)] mb-4">
+              llmstatus.io
+            </p>
+            <h1 className="text-4xl sm:text-5xl font-semibold text-[var(--ink-100)] leading-tight mb-4">
+              Independent real-time monitoring
+              <br />
+              for the AI infrastructure.
+            </h1>
+            <p className="text-base text-[var(--ink-300)] leading-relaxed">
+              Measured from Singapore (ap-southeast-1).
+              <br />
+              Not scraped from official status pages.
+            </p>
+          </div>
+          <div
+            className="animate-fade-in hidden md:block"
+            style={{ animationDelay: "0.2s" }}
+          >
+            <HeroSignal />
+          </div>
+        </div>
+      </section>
 
-      <div className="mb-6">
-        <p className={`text-base font-medium ${summaryColor}`}>{summaryText}</p>
+      <div className="mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+        <div className="mb-3 flex items-center gap-3">
+          <span className={`status-pulse ${summaryColor}`} aria-hidden="true" />
+          <p className={`text-base font-medium ${summaryColor}`}>
+            {summaryText}
+          </p>
+        </div>
+        {providers !== null && (
+          <StatusDistributionBar
+            operational={opCount}
+            degraded={degCount}
+            down={downCount}
+          />
+        )}
       </div>
 
       {/* Recent incidents — shown only when data exists */}
@@ -104,7 +140,11 @@ export default async function HomePage() {
           </div>
           <div className="flex flex-col gap-2">
             {recentIncidents.map((inc) => (
-              <IncidentCard key={inc.id} incident={inc} href={`/incidents/${inc.slug}`} />
+              <IncidentCard
+                key={inc.id}
+                incident={inc}
+                href={`/incidents/${inc.slug}`}
+              />
             ))}
           </div>
         </section>
@@ -124,8 +164,8 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {providers.map((p) => (
-              <ProviderCard key={p.id} provider={p} />
+            {providers.map((p, i) => (
+              <ProviderCard key={p.id} provider={p} index={i} />
             ))}
           </div>
         </section>

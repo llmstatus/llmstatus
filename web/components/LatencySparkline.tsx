@@ -6,6 +6,8 @@ interface Props {
   area?: boolean;
   color?: string;
   gradientId?: string;
+  /** Draw the line in on mount (CSS-only stroke-dashoffset animation). */
+  animate?: boolean;
 }
 
 function buildLinePath(data: number[], w: number, h: number): string {
@@ -20,8 +22,11 @@ function buildLinePath(data: number[], w: number, h: number): string {
 
   for (let i = 0; i < data.length; i++) {
     const x = ((i / divisor) * w).toFixed(1);
-    if (data[i] <= 0) { prevHadData = false; continue; }
-    const y = (h - pad - ((data[i] / max) * (h - pad * 2))).toFixed(1);
+    if (data[i] <= 0) {
+      prevHadData = false;
+      continue;
+    }
+    const y = (h - pad - (data[i] / max) * (h - pad * 2)).toFixed(1);
     d += prevHadData ? `L${x} ${y}` : `M${x} ${y}`;
     prevHadData = true;
   }
@@ -42,16 +47,19 @@ function buildAreaPaths(data: number[], w: number, h: number): string {
   for (let i = 0; i < data.length; i++) {
     const x = (i / divisor) * w;
     if (data[i] <= 0) {
-      if (cur.length > 0) { segments.push(cur); cur = []; }
+      if (cur.length > 0) {
+        segments.push(cur);
+        cur = [];
+      }
       continue;
     }
-    const y = h - pad - ((data[i] / max) * (h - pad * 2));
+    const y = h - pad - (data[i] / max) * (h - pad * 2);
     cur.push({ x, y });
   }
   if (cur.length > 0) segments.push(cur);
 
   return segments
-    .filter((s) => s.length >= 2)  // single-point segments produce no visible line or area
+    .filter((s) => s.length >= 2) // single-point segments produce no visible line or area
     .map((seg) => {
       const first = seg[0];
       const last = seg[seg.length - 1];
@@ -73,6 +81,7 @@ export function LatencySparkline({
   area = false,
   color = "var(--viz-1)",
   gradientId,
+  animate = false,
 }: Props) {
   const lineD = buildLinePath(data, width, height);
   if (!lineD) {
@@ -101,17 +110,17 @@ export function LatencySparkline({
           </linearGradient>
         </defs>
       )}
-      {area && areaD && (
-        <path d={areaD} fill={`url(#${gid})`} />
-      )}
+      {area && areaD && <path d={areaD} fill={`url(#${gid})`} />}
       <path
         d={lineD}
+        pathLength={100}
         fill="none"
         stroke={color}
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
         opacity="0.9"
+        className={animate ? "sparkline-draw" : undefined}
       />
     </svg>
   );
