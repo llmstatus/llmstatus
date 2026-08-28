@@ -1,8 +1,15 @@
 'use client'
 
-import React, { createContext, useContext, useReducer, useEffect, useRef } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useRef,
+  useCallback,
+} from 'react'
 import { WebSocketClient } from './websocket'
-import { realtimeReducer, initialState, RealtimeState, RealtimeAction } from './realtime-reducer'
+import { realtimeReducer, initialState, RealtimeState } from './realtime-reducer'
 import type { WebSocketMessage } from './types'
 
 interface RealtimeContextType {
@@ -49,15 +56,15 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const subscribe = (topic: string) => {
+  const subscribe = useCallback((topic: string) => {
     wsClient.current?.subscribe(topic)
     dispatch({ type: 'SUBSCRIBE', topic })
-  }
+  }, [])
 
-  const unsubscribe = (topic: string) => {
+  const unsubscribe = useCallback((topic: string) => {
     wsClient.current?.unsubscribe(topic)
     dispatch({ type: 'UNSUBSCRIBE', topic })
-  }
+  }, [])
 
   const contextValue: RealtimeContextType = {
     providers: state.providers,

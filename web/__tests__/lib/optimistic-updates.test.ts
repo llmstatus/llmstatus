@@ -1,9 +1,16 @@
-import { optimisticUpdate, rollbackUpdate } from '@/lib/optimistic-updates'
+import {
+  optimisticUpdate,
+  rollbackUpdate,
+  type OptimisticItem,
+} from '@/lib/optimistic-updates'
 
 describe('optimistic updates', () => {
   it('should apply optimistic update immediately', () => {
-    const originalData = [{ id: 'openai', status: 'operational' }]
-    const update = { id: 'openai', status: 'degraded' }
+    const originalData: OptimisticItem[] = [{ id: 'openai', status: 'operational' }]
+    const update: Partial<OptimisticItem> & { id: string } = {
+      id: 'openai',
+      status: 'degraded',
+    }
 
     const result = optimisticUpdate(originalData, update)
 
@@ -12,8 +19,10 @@ describe('optimistic updates', () => {
   })
 
   it('should rollback failed optimistic update', () => {
-    const optimisticData = [{ id: 'openai', status: 'degraded', _optimistic: true }]
-    const originalData = [{ id: 'openai', status: 'operational' }]
+    const optimisticData: OptimisticItem[] = [
+      { id: 'openai', status: 'degraded', _optimistic: true },
+    ]
+    const originalData: OptimisticItem[] = [{ id: 'openai', status: 'operational' }]
 
     const result = rollbackUpdate(optimisticData, originalData)
 
